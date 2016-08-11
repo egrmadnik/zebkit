@@ -176,8 +176,11 @@ pkg.WinLayer = Class(pkg.CanvasLayer, [
                         e.x < d.x + d.width &&
                         e.y < d.y + d.height)
                     {
-                        this.activate(d);
-                        return true;
+                        if (d !== this.activeWin) {
+                            this.activate(d);
+                            return true;
+                        }
+                        return false;
                     }
                 }
 
@@ -186,6 +189,7 @@ pkg.WinLayer = Class(pkg.CanvasLayer, [
                     return false;
                 }
             }
+
             return false;
         };
 
@@ -444,7 +448,7 @@ pkg.WinLayer = Class(pkg.CanvasLayer, [
         // inserted in the layer
         // TODO: this line brings to fails if window layer inherits Panel
         if (typeof this.element !== "undefined") {
-            this.element.style["z-index"] = "10000";
+            this.element.style["z-index"] = 10000;
         }
     }
 ]);
@@ -588,8 +592,8 @@ pkg.Window = Class(pkg.StatePan, [
 
         this.catchInput = function(c){
             var tp = this.caption;
-            return c === tp || (zebkit.layout.isAncestorOf(tp, c)         &&
-                   zebkit.instanceOf(c, pkg.Button) === false) ||
+            return c === tp ||
+                  (zebkit.layout.isAncestorOf(tp, c) && zebkit.instanceOf(c, pkg.Button) === false) ||
                    this.sizer === c;
         };
 
@@ -1253,7 +1257,7 @@ pkg.Menu = Class(pkg.CompList, [
          * @method hasSelectableItems
          */
         this.hasSelectableItems = function(){
-            for(var i = 0;i < this.kids.length; i++) {
+            for(var i = 0; i < this.kids.length; i++) {
                 if (this.isItemSelectable(i)) return true;
             }
             return false;
@@ -1376,19 +1380,18 @@ pkg.Menu = Class(pkg.CompList, [
 
         /**
          * Hide the menu and all visible sub-menus
-         * @param {zebkit.ui.Menu} triggeredBy a menu that has triggered the hiding of
-         * menu hierarchy
          * @method $hideMenu
          * @protected
          */
-        this.$hideMenu = function(triggeredBy) {
+        this.$hideMenu = function() {
             if (this.parent != null) {
                 var ch = this.$childMenu();
                 if (ch != null) {
-                    ch.$hideMenu(triggeredBy);
+                    ch.$hideMenu();
                 }
 
                 this.removeMe();
+                this.select(-1);
             }
         };
 
@@ -1441,7 +1444,7 @@ pkg.Menu = Class(pkg.CompList, [
             if (this.parent != null) {
                 var p = this.$parentMenu;
                 this.$canceled(this);
-                this.$hideMenu(this);
+                this.$hideMenu();
                 if (p != null) p.requestFocus();
             }
         } else {
@@ -1499,8 +1502,9 @@ pkg.Menu = Class(pkg.CompList, [
             if (this.selectedIndex >= 0  && off != this.selectedIndex) {
                 var sub = this.getMenuAt(this.selectedIndex);
                 if (sub != null) {
-                    sub.$hideMenu(this);
+                    sub.$hideMenu();
                     rs = -1; // request to clear selection
+                    this.requestFocus();
                 }
             }
 
@@ -1518,37 +1522,51 @@ pkg.Menu = Class(pkg.CompList, [
     },
 
     function fireSelected(prev) {
-        if (this.parent != null && this.selectedIndex >= 0) {
-            var sub = this.getMenuAt(this.selectedIndex);
-
-            if (sub != null) {
-                if (sub.parent != null) {
-                    // hide menu since it has been already shown
-                    sub.$hideMenu(this);
+        if (this.parent != null) {
+            if (this.selectedIndex >= 0) {
+                var sub = this.getMenuAt(this.selectedIndex);
+                if (sub != null) { // handle sub menu here
+                    if (sub.parent != null) {
+                        // hide menu since it has been already shown
+                        sub.$hideMenu();
+                    } else {
+                        // show menu
+                        sub.$parentMenu = this;
+                        this.$showSubMenu(sub);
+                    }
                 } else {
-                    // show menu
-                    sub.$parentMenu = this;
-                    this.$showSubMenu(sub);
-                }
-            } else {
+                    // handle an item menu selection here.
+                    // hide the whole menu hierarchy
+                    var k = this.kids[this.selectedIndex];
+                    if (k.itemSelected != null) {
+                        k.itemSelected();
+                    }
 
-                console.log("fireSelected() ... ");
-
-                var k = this.kids[this.selectedIndex];
-                if (k.itemSelected != null) {
-                    k.itemSelected();
+                    // an atomic menu, what means a menu item has been selected
+                    // remove this menu an all parents menus
+                    var top = this.$topMenu();
+                    if (top != null) {
+                        top.$hideMenu();
+                    }
                 }
 
-                // an atomic menu, what means a menu item has been selected
-                // remove this menu an all parents menus
-                var top = this.$topMenu();
-                if (top != null) {
-                    top.$hideMenu(this);
+                pkg.events.fireEvent("menuItemSelected",
+                                     MENU_EVENT.$fillWith(this,
+                                                          this.selectedIndex,
+                                                          this.kids[this.selectedIndex]));
+            } else if (prev >= 0) {
+                // hide child menus if null item has been selected
+                var sub = this.getMenuAt(prev);
+                if (sub != null && sub.parent != null) {
+                    // hide menu since it has been already shown
+                    sub.$hideMenu();
                 }
+
+                pkg.events.fireEvent("menuItemSelected",
+                                     MENU_EVENT.$fillWith(this,
+                                                          this.selectedIndex,
+                                                          this.kids[prev]));
             }
-
-            pkg.events.fireEvent("menuItemSelected",
-                                 MENU_EVENT.$fillWith(this, this.selectedIndex, this.kids[this.selectedIndex]));
         }
         this.$super(prev);
     },
@@ -1635,24 +1653,20 @@ pkg.Menubar = Class(pkg.Menu, [
     },
 
     function $prototype() {
-        this.$isActive = false;
+        this.canHaveFocus = false;
 
         this.triggerSelectionByPos = function (i) {
-            return this.isItemSelectable(i) && this.$isActive === true;
+            return this.isItemSelectable(i) && this.selectedIndex >= 0;
         };
 
-        // making menu bar not removable by overriding the method
-        this.$hideMenu = function(triggeredBy) {
+        // making menu bar not removable from its layer by overriding the method
+        this.$hideMenu = function() {
             var child = this.$childMenu();
             if (child != null) {
-                child.$hideMenu(triggeredBy);
+                child.$hideMenu();
             }
 
-            // handle situation when calling hideMenu method has been triggered
-            // by a child sub-menu initiate it (an item has been selected or menu
-            if (triggeredBy != this) {
-                this.select(-1);
-            }
+            this.select(-1);
         };
 
         this.$showSubMenu = function(menu) {
@@ -1674,27 +1688,14 @@ pkg.Menubar = Class(pkg.Menu, [
         this.select(-1);
     },
 
-    function select(i) {
-        var d   = this.getCanvas(),
-            pop = d != null ? d.getLayer(pkg.PopupLayer.ID) : null;
-
-        if (pop != null) {
-            if (i < 0) {
-                pop.setMenubar(null);
-                this.$isActive = false;
-            } else {
-                pop.setMenubar(this);
-            }
-        }
-        this.$super(i);
-    },
-
     // called when an item is selected by user with pointer click or key
     function $select(i) {
-        this.$isActive = !this.$isActive;
-        if (this.$isActive === false) {
+        // if a user again pressed the same item consider it as
+        // de-selection
+        if (this.selectedIndex >= 0 && this.selectedIndex === i) {
             i = -1;
         }
+
         this.$super(i);
     }
 ]);
@@ -1712,33 +1713,29 @@ pkg.PopupLayer = Class(pkg.CanvasLayer, [
     },
 
     function $prototype() {
-        this.activeMenubar = null;
-        this.mTop = this.mLeft = this.mBottom = this.mRight = 0;
-
-        this.layerPointerPressed = function(e) {
-            var b = false;
-            if (this.activeMenubar != null) {
-                // this code brings to error when pointer pressed
-                // handled by other layer
-                // this.activeMenubar.select(-1);
-            }
-
-            if (this.kids.length > 0) {
-                //this.removeAll();
-            }
-
-            return b;
-        };
-
-        this.pointerPressed = function(e) {
-            if (this.kids.length > 0) {
-                this.removeAll();
-            }
-            return true;
-        };
+        this.$prevFocusOwner = null;
 
         this.getFocusRoot = function() {
             return this;
+        };
+
+        this.childFocusGained = function(e) {
+            if (zebkit.instanceOf(e.source, pkg.Menu)) {
+                if (e.related != null && zebkit.layout.isAncestorOf(this, e.related) === false ) {
+                    this.$prevFocusOwner = e.related;
+                }
+            } else {
+                // means other than menu type of component grabs the focus
+                // in this case we should not restore focus when the popup
+                // component will be removed
+                this.$prevFocusOwner = null;
+            }
+
+
+            // save the focus owner whose owner was not a pop up layer
+            if (e.related != null && zebkit.layout.isAncestorOf(this, e.related) === false && zebkit.instanceOf(e.source, pkg.Menu)) {
+                this.$prevFocusOwner = e.related;
+            }
         };
 
         /**
@@ -1747,23 +1744,19 @@ pkg.PopupLayer = Class(pkg.CanvasLayer, [
          * @method childKeyPressed
          */
         this.childKeyPressed = function(e){
-            var dc = zebkit.layout.getDirectChild(this, e.source);
-
-            if (this.activeMenubar != null && zebkit.instanceOf(dc, pkg.Menu)) {
-                var s = this.activeMenubar.selectedIndex;
+            var p = e.source.$parentMenu;
+            if (p != null) {
                 switch (e.code) {
                     case pkg.KeyEvent.RIGHT :
-                        if (s < this.activeMenubar.model.count()-1) {
-                            //this.removeAll();
-                            this.activeMenubar.requestFocus();
-                            this.activeMenubar.position.seekLineTo("down");
+                        if (p.selectedIndex < p.model.count() - 1) {
+                            p.requestFocus();
+                            p.position.seekLineTo("down");
                         }
                         break;
                     case pkg.KeyEvent.LEFT :
-                        if (s > 0) {
-                           // this.removeAll();
-                            this.activeMenubar.requestFocus();
-                            this.activeMenubar.position.seekLineTo("up");
+                        if (p.selectedIndex > 0) {
+                            p.requestFocus();
+                            p.position.seekLineTo("up");
                         }
                         break;
                 }
@@ -1772,24 +1765,6 @@ pkg.PopupLayer = Class(pkg.CanvasLayer, [
 
         this.calcPreferredSize = function (target){
             return { width:0, height:0 };
-        };
-
-        this.setMenubar = function(mb){
-            if (this.activeMenubar != mb){
-                this.removeAll();
-
-                this.activeMenubar = mb;
-                if (this.activeMenubar != null){
-                    // save an area the menu bar component takes
-                    // it is required to allow the menu bar getting input
-                    // event by inactivating the pop up layer
-                    var abs = zebkit.layout.toParentOrigin(0, 0, this.activeMenubar);
-                    this.mLeft   = abs.x;
-                    this.mRight  = this.mLeft + this.activeMenubar.width - 1;
-                    this.mTop    = abs.y;
-                    this.mBottom = this.mTop + this.activeMenubar.height - 1;
-                }
-            }
         };
 
         this.doLayout = function (target){
@@ -1824,14 +1799,69 @@ pkg.PopupLayer = Class(pkg.CanvasLayer, [
                 }
             }
         };
+
+        this.$topMenu = function() {
+            if (this.kids.length > 0) {
+                for (var i = this.kids.length - 1; i >= 0; i--) {
+                    if (zebkit.instanceOf(this.kids[i], pkg.Menu)) {
+                        return this.kids[i].$topMenu();
+                    }
+                }
+            }
+            return null;
+        };
+
+        this.compRemoved = function(e) {
+            // if last component has been removed and the component is a menu
+            // than try to restore focus owner
+            if (this.$prevFocusOwner !== null && this.kids.length === 0 && zebkit.instanceOf(e.kid, pkg.Menu)) {
+                this.$prevFocusOwner.requestFocus();
+                this.$prevFocusOwner = null;
+            }
+        };
+    },
+
+    function layerPointerPressed(e) {
+        // if a shown menu exists
+        if (this.kids.length > 0) {
+            // if pressed has happened over a popup layer no a menu
+            if (this.$getSuper("getComponentAt").call(this, e.x, e.y) === this) {
+                var top = this.$topMenu();
+                if (top !== null) {
+
+                    // if top menu is menu bar. menu bar is located in other layer
+                    // we need check if the pressed has happened not over the
+                    // menu bar
+                    if (zebkit.instanceOf(top, pkg.Menubar)) {
+                        var origin = zebkit.layout.toParentOrigin(top);
+                        if (e.x >= origin.x && e.y >= origin.y && e.x < origin.x + top.width && e.y < origin.y + top.height) {
+                            return;
+                        }
+                    }
+
+                    // hide all shown menu
+                    top.$hideMenu();
+                }
+
+                // still have a pop up components, than remove it
+                if (this.kids.length > 0) {
+                    this.removeAll();
+                }
+            }
+        }
     },
 
     function getComponentAt(x, y) {
-        return this.kids.length === 0 || (this.activeMenubar !== null &&
-                                          y <= this.mBottom &&
-                                          y >= this.mTop &&
-                                          x >= this.mLeft &&
-                                          x <= this.mRight    )   ? null : this.$super(x, y);
+        // if there is a component on popup layer and the component is
+        // not the popup layer itself than return the component otherwise
+        // return null what delegates getComponentAt() to other layer
+        if (this.kids.length > 0) {
+            var comp = this.$super(x, y);
+            if (comp !== this) {
+                return comp;
+            }
+        }
+        return null;
     }
 ]);
 
@@ -2188,7 +2218,6 @@ pkg.PopupManager = Class(pkg.Manager, [
                         }
 
                         this.$targetTooltipLayer.addWin(this.$tooltip, this);
-
                         if (this.$tooltip.winType !== "info") {
                             pkg.activateWindow(this.$tooltip);
                         }

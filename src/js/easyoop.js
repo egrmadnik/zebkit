@@ -66,7 +66,7 @@ function Package(name) {
             i  = ss == null ? -1 : ss.lastIndexOf("/");
 
         this.$url = (i > 0) ? new zebkit.URL(ss.substring(0, i + 1))
-                            : new zebkit.URL(document.location.toString()).getParentURL() ;
+                            : new zebkit.URL(document.location.toString()).getParentURL();
     }
 }
 
@@ -170,7 +170,7 @@ var pkg = zebra = zebkit = namespace('zebkit'),
 pkg.$FN = (isString.name !== "isString") ? (function(f) {  // IE stuff
                                                 if (f.$methodName == null) { // test if name has been earlier detected
                                                     var mt = f.toString().match(/^function\s+([^\s(]+)/);
-                                                    f.$methodName = (mt == null) ? CDNAME : mt[1];
+                                                    f.$methodName = (mt == null) ? CDNAME : (typeof mt[1] === "undefined" ? CDNAME : mt[1]);
                                                 }
                                                 return f.$methodName;
                                             })
@@ -1381,7 +1381,7 @@ pkg.Dummy = Class([]);
 pkg.$resolveClassNames = function(p) {
     function collect(prefix, p) {
         for(var k in p) {
-            if (k[0]   !== "$"         &&
+            if (k[0] !== "$"         &&
                 p[k] != null         &&
                 p[k].$name == null   &&
                 p.hasOwnProperty(k)  &&
@@ -1497,17 +1497,30 @@ if (pkg.isInBrowser) {
      * If the passed path starts from "/" character
      * it will be joined without taking in account
      * the URL path
-     * @param  {String} p a relative path
+     * @param  {String} p* a relative paths
      * @return {String} an absolute URL
      * @method join
      */
     pkg.URL.prototype.join = function(p) {
-        if (pkg.URL.isAbsolute(p)) {
-            throw new Error("Absolute URL '" + p + "' cannot be joined");
+        var fp = this.protocol + "//" + this.host + (arguments[0][0] === '/' ? '/' : this.path);
+        for(var i = 0; i < arguments.length; i++) {
+            var p = arguments[i];
+            if (pkg.URL.isAbsolute(p)) {
+                throw new Error("Absolute URL '" + p + "' cannot be joined");
+            }
+
+            if (fp[fp.length - 1] !== '/' && p[0] !== '/') {
+                fp = fp + "/" + p;
+            } else {
+                if (fp[fp.length - 1] === '/' && p[0] === '/') {
+                    fp = fp + p.substring(1);
+                } else {
+                    fp = fp + p;
+                }
+            }
         }
 
-        return p[0] === '/' ? this.protocol + "//" + this.host + p
-                            : this.protocol + "//" + this.host + this.path + (this.path[this.path.length-1] === '/' ? '' : '/') + p;
+        return fp;
     };
 
     var $interval = setInterval(function () {
@@ -1524,35 +1537,6 @@ pkg.ready(function() {
     pkg.$resolveClassNames();
 });
 
-
-// var fonts = [
-//             "2em \"Open Sans\", sans-serif",
-//             "italic 2em \"Open Sans\", sans-serif",
-//             "italic small-cap 2em \"Open Sans\", sans-serif",
-//             "2em \"Open Sans\", sans-serif, Arial",
-//             "bold 3px \"Open Sans\", sans-serif, Arial",
-//             "2px \"Open Sans\", sans-serif, Arial",
-//             "italic 16px cursive"
-//             ]
-
-// var re = /([a-zA-Z_\- ]+)?(([0-9]+px|[0-9]+em)\s+([,\"a-zA-Z_ \-]+))?/;
-
-
-//console = { log : print };
-
-// for(var i=0; i<fonts.length; i++) {
-//     var m = fonts[i].match(re);
-//     console.log(">>>>> " + fonts[i] + " ::: " + m.length);
-//     console.log("Name  : (" + m[4] + ")") ;
-//     console.log("Size  : (" + m[3] + ")");
-//     console.log("Style : (" + m[1] + ")");
-
-
-//     console.log(m);
-// }
-
-
-//print(/^([0-9]+)(em|px)$/.test("100px "));
 
 /**
  * @for

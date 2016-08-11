@@ -283,6 +283,8 @@ pkg.ShaperPan = Class(ui.Panel, [
             if (rp) {
                 this.repaint();
             }
+
+            return this;
         };
 
         this.setColors = function(col1, col2) {
@@ -290,6 +292,7 @@ pkg.ShaperPan = Class(ui.Panel, [
             if (col2 != null) {
                 this.setColor(true, col2);
             }
+            return this;
         };
     },
 

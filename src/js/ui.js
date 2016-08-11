@@ -30,7 +30,6 @@ pkg.$ViewsSetterMix = zebkit.Interface([
     }
 ]);
 
-
 pkg.$component = function(desc, instance) {
     if (zebkit.isString(desc)) {
         //  [x] Text
@@ -534,6 +533,7 @@ pkg.StatePan = Class(pkg.ViewPan, [
                 this.state = s;
                 this.stateUpdated(prev, s);
             }
+            return this;
         };
 
         /**
@@ -3078,6 +3078,7 @@ pkg.Scroll = Class(pkg.Panel, zebkit.util.Position.Metric, [
          */
         this.setValue = function(v){
             this.position.setOffset(v);
+            return this;
         };
 
         this.setPosition = function(p){
@@ -3090,6 +3091,7 @@ pkg.Scroll = Class(pkg.Panel, zebkit.util.Position.Metric, [
                     this.position.setOffset(0);
                 }
             }
+            return this;
         };
 
         this.setExtraSize = function(e){
@@ -3097,6 +3099,7 @@ pkg.Scroll = Class(pkg.Panel, zebkit.util.Position.Metric, [
                 this.extra = e;
                 this.vrp();
             }
+            return this;
         };
     },
 
@@ -3163,13 +3166,13 @@ pkg.Scroll = Class(pkg.Panel, zebkit.util.Position.Metric, [
 
     function kidRemoved(index,lw){
         this.$super(index, lw);
-        if (lw === this.bundle) this.bundle = null;
-        else {
-            if(lw === this.incBt){
+        if (lw === this.bundle) {
+            this.bundle = null;
+        } else {
+            if (lw === this.incBt){
                 this.incBt.unbind(this);
                 this.incBt = null;
-            }
-            else {
+            } else {
                 if(lw === this.decBt){
                     this.decBt.unbind(this);
                     this.decBt = null;
@@ -4608,6 +4611,37 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
  * @extends {zebkit.ui.Panel}
  */
 pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
+    function $clazz() {
+        this.ViewProvider = Class([
+            function $prototype() {
+                this.color = "white";
+                this.font  = new pkg.Font("Arial", "bold", 12);
+
+                this.getView = function(d, o) {
+                    this.render.setValue(o != null ? o.toString() : "");
+                    return this.render;
+                };
+            },
+
+            function(color, font) {
+                this.render = new pkg.BoldTextRender("");
+
+                zebkit.properties(this, this.clazz);
+
+                if (arguments.length > 0) {
+                    this.color = color;
+                }
+
+                if (arguments.length > 1) {
+                    this.font = font;
+                }
+
+                this.render.setColor(this.color);
+                this.render.setFont(this.font);
+            }
+        ]);
+    },
+
     function $prototype() {
         this.max = this.min = this.value = this.roughStep = this.exactStep = 0;
         this.netSize = this.gap = 3;
@@ -4615,6 +4649,9 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
         this.intervals = this.pl = null;
         this.canHaveFocus = true;
         this.orient       = "horizontal";
+
+        this.isShowScale = this.isShowTitle = true;
+        this.dragged = this.isIntervalMode = false;
 
         /**
          * Get a value
@@ -4808,7 +4845,7 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
             }
 
             var v = value + (d * s);
-            if(v > this.max) v = this.max;
+            if (v > this.max) v = this.max;
             else {
                 if (v < this.min) v = this.min;
             }
@@ -4883,8 +4920,7 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
             if (this.orient === "horizontal"){
                 this.psW = dt * 2 + ps.width;
                 this.psH = ps.height + ns + hMax;
-            }
-            else{
+            } else {
                 this.psW = ps.width + ns + wMax;
                 this.psH = dt * 2 + ps.height;
             }
@@ -4924,8 +4960,8 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
                     break;
                 case pkg.KeyEvent.HOME: this.setValue(b ? this.getPointValue(0) : this.min);break;
                 case pkg.KeyEvent.END:  this.setValue(b ? this.getPointValue(this.intervals.length - 1)
-                                            : this.max);
-                              break;
+                                                        : this.max);
+                                        break;
             }
         };
 
@@ -4960,11 +4996,6 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
         this.pointerDragEnded = function(e) {
             this.dragged = false;
         };
-
-        this.getView = function(d,o){
-            this.render.setValue(o != null ? o.toString() : "");
-            return this.render;
-        };
     },
 
     function focused() {
@@ -4977,6 +5008,7 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
             this.gap = g;
             this.vrp();
         }
+        return this;
     },
 
     function setScaleColor(c){
@@ -4993,6 +5025,7 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
             this.scaleStep = s;
             this.repaint();
         }
+        return this;
     },
 
     function setShowScale(b){
@@ -5000,6 +5033,7 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
             this.isShowScale = b;
             this.vrp();
         }
+        return this;
     },
 
     function setShowTitle(b){
@@ -5007,6 +5041,7 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
             this.isShowTitle = b;
             this.vrp();
         }
+        return this;
     },
 
     function setViewProvider(p){
@@ -5014,10 +5049,10 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
             this.provider = p;
             this.vrp();
         }
+        return this;
     },
 
     function setValues(min,max,intervals,roughStep,exactStep) {
-
         if (roughStep <= 0 || exactStep < 0 || min >= max ||
             min + roughStep > max || min + exactStep > max  )
         {
@@ -5043,6 +5078,8 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
             this.setValue(this.isIntervalMode ? min + intervals[0] : min);
         }
         this.vrp();
+
+        return this;
     },
 
     function invalidate(){
@@ -5053,10 +5090,6 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
     function (o) {
         this._ = new zebkit.util.Listeners();
         this.views = {};
-        this.isShowScale = this.isShowTitle = true;
-        this.dragged = this.isIntervalMode = false;
-        this.render = new pkg.BoldTextRender("");
-        this.render.setColor("gray");
         if (arguments.length > 0) {
             this.orient = o;
         }
@@ -5066,7 +5099,7 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
         this.$super();
         this.views.bundle = (this.orient === "horizontal" ? this.views.hbundle : this.views.vbundle);
 
-        this.provider = this;
+        this.provider = new this.clazz.ViewProvider();
     }
 ]);
 
@@ -5305,7 +5338,7 @@ pkg.VideoPan = Class(pkg.Panel,  [
 
         this.$animStallCounter = this.$aspectRatio = 0;
         this.$adjustProportions = true;
-        this.$lastError = this.$videoBound = this.$animTask = this.$cancelTask = null;
+        this.$lastError = this.$videoBound = this.$cancelTask = null;
         this.$animCurrentTime = -1;
 
         this._ = new this.clazz.Listeners();
@@ -5319,6 +5352,25 @@ pkg.VideoPan = Class(pkg.Panel,  [
         };
 
         this.paint = function(g) {
+            if (this.video.paused === false &&
+                this.video.ended  === false &&
+                this.$cancelTask  === null    )
+            {
+                if (this.video.currentTime !== this.$animCurrentTime) {
+                    this.$animStallCounter = 0;
+                    this.repaint();
+                } else {
+                    if (this.$animStallCounter > 180) {
+                        this.$cancelPlayback();
+                    } else {
+                        this.$animStallCounter++;
+                        this.repaint();
+                    }
+                }
+            }
+
+            this.$animCurrentTime = this.video.currentTime;
+
             if (this.$videoBound === null) {
                 this.calcVideoBound();
             }
@@ -5328,7 +5380,8 @@ pkg.VideoPan = Class(pkg.Panel,  [
                                     this.$videoBound.width,
                                     this.$videoBound.height);
 
-            if (this.showSign === true) {
+            // draw status sign
+            if (this.showSign) {
                 var sign = null;
 
                 if (this.$lastError !== null) {
@@ -5470,37 +5523,10 @@ pkg.VideoPan = Class(pkg.Panel,  [
 
         this.$continuePlayback = function() {
             this.$interruptCancelTask();
-
             if (this.video.paused === false && this.video.ended === false) {
-                if (this.$animTask === null) {
-                    var $this = this;
-                    this.$animCurrentTime  = this.video.currentTime;
-                    this.$animStallCounter = 0;
-
-                    this.$animTask = zebkit.web.$task(function anim() {
-                        $this.$animTask = null;
-
-                        if ($this.video.readyState > 1) {
-                            if ($this.video.currentTime !== $this.$animCurrentTime) {
-                                $this.$animStallCounter = 0;
-                                $this.repaint();
-                            } else {
-                                $this.$animStallCounter++;
-                                if ($this.$animStallCounter > 180) {
-                                    $this.$cancelPlayback();
-                                    return;
-                                }
-                            }
-                        }
-
-                        if ($this.video.paused === false &&
-                            $this.video.ended  === false &&
-                            $this.$cancelTask  === null    )
-                        {
-                            $this.$animTask = zebkit.web.$task(anim);
-                        }
-                    });
-                }
+                this.$animCurrentTime  = this.video.currentTime;
+                this.$animStallCounter = 0;
+                this.repaint();
             }
         };
 
@@ -5565,7 +5591,6 @@ pkg.VideoPan = Class(pkg.Panel,  [
             $this.$continuePlayback();
         }, false);
 
-
         this.video.addEventListener("ended", function() {
             $this._.playbackStateUpdated($this, "end");
             $this.$interruptCancelTask();
@@ -5593,7 +5618,7 @@ pkg.VideoPan = Class(pkg.Panel,  [
 
                 // detect if progress event has to try to start animation that has not been
                 // started yet or has been canceled for a some reason
-                if ($this.$animTask === null && $this.video.paused === false) {
+                if ($this.video.paused === false) {
                     $this.$continuePlayback();
                     $this._.playbackStateUpdated($this, "continue");
                 }
@@ -5721,7 +5746,9 @@ pkg.MobileScrollMan = Class(pkg.Manager, [
     }
 ]);
 
-
+/**
+ * Stack layout out panel
+ */
 pkg.StackPan = Class(pkg.Panel, [
     function() {
         this.$super(new zebkit.layout.StackLayout());

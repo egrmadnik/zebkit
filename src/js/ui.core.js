@@ -155,6 +155,17 @@ pkg.load = function(path, callback) {
     return new pkg.Bag(pkg).load(path, callback);
 };
 
+pkg.$loadThemeResource = function(pkg, path, callback) {
+    var url = pkg.$url.join(zebkit.ui.$theme, path);
+    return new pkg.Bag(pkg).load(url, callback);
+};
+
+pkg.$loadCommonResource = function(pkg, path, callback) {
+    var url = pkg.$url.join(zebkit.ui.$theme, "common", path);
+    return new pkg.Bag(pkg).load(url, callback);
+};
+
+
 pkg.Bag = Class(zebkit.util.Bag, [
     function $prototype() {
         this.globalPropertyLookup = this.usePropertySetters = true;
@@ -684,6 +695,85 @@ pkg.calcOrigin = function(x,y,w,h,px,py,t,tt,ll,bb,rr){
   * @event clipPaste
   */
 
+
+var $paintTask = null, $paintTasks = [];
+
+
+pkg.$doPaint = function() {
+    for (var i = $paintTasks.length - 1; i >= 0; i--) {
+        var canvas = $paintTasks.shift();
+        try {
+            // do validation before timer will be set to null to avoid
+            // unnecessary timer initiating what can be caused by validation
+            // procedure by calling repaint method
+            if (canvas.isValid === false || canvas.isLayoutValid === false) {
+                canvas.validate();
+            }
+
+            if (canvas.$da.width > 0) {
+                canvas.$context.save();
+
+                // check if the given canvas has transparent background
+                // if it is true call clearRect method to clear dirty area
+                // with transparent background, otherwise it will be cleaned
+                // by filling the canvas with background later
+                if (canvas.bg == null || canvas.bg.isOpaque !== true) {
+                    canvas.$context.clearRect(canvas.$da.x, canvas.$da.y,
+                                              canvas.$da.width, canvas.$da.height);
+                }
+                // !!!
+                // call clipping area later than possible
+                // clearRect since it can bring to error in IE
+                canvas.$context.clipRect(canvas.$da.x,
+                                         canvas.$da.y,
+                                         canvas.$da.width,
+                                         canvas.$da.height);
+
+                // no dirty area anymore. put it hear to prevent calling
+                // animation  task from repaint() method that can be called
+                // inside paintComponent method.
+                canvas.$da.width = -1;
+
+                // clear flag that says the canvas is waiting for repaint, that allows to call
+                // repaint from paint method
+                canvas.$waitingForPaint = false;
+
+                canvas.paintComponent(canvas.$context);
+                canvas.$context.restore();
+            } else {
+                canvas.$waitingForPaint = false;
+            }
+        } catch(ex) {
+
+            // catch error and clean task list if any to avoid memory leaks
+            try {
+                if (canvas != null) {
+                    canvas.$waitingForPaint = false;
+                    canvas.$da.width = -1;
+                    if (canvas.$context !== null) {
+                        canvas.$context.restoreAll();
+                    }
+                }
+            } catch(exx) {
+                $paintTask = null;
+                $paintTasks.length = 0;
+                throw exx;
+            }
+
+            console.error(ex);
+        }
+    }
+
+    // paint task is done
+    $paintTask = null;
+
+    // test if new dirty canvases have appeared and start
+    // animation again
+    if ($paintTasks.length !== 0) {
+        $paintTask = zebkit.web.$task(pkg.$doPaint);
+    }
+};
+
 pkg.Panel = Class(zebkit.layout.Layoutable, [
     function $prototype() {
         // TODO: not stable api, probably it should be moved to static
@@ -808,57 +898,68 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
                     }
                 }
 
-                // step III: initiate repainting thread
-                if (canvas.$paintTask === null && (canvas.isValid === false || canvas.$da.width > 0 || canvas.isLayoutValid === false)) {
-                    var $this = this;
-                    canvas.$paintTask = zebkit.web.$task(function() {
-                        var g = null;
-                        try {
-                            // do validation before timer will be set to null to avoid
-                            // unnecessary timer initiating what can be caused by validation
-                            // procedure by calling repaint method
-                            if (canvas.isValid === false || canvas.isLayoutValid === false) {
-                                canvas.validate();
-                            }
-
-                            if (canvas.$da.width > 0) {
-                                g = canvas.$context;
-                                g.save();
-
-                                // check if the given canvas has transparent background
-                                // if it is true call clearRect method to clear dirty area
-                                // with transparent background, otherwise it will be cleaned
-                                // by filling the canvas with background later
-                                if (canvas.bg == null || canvas.bg.isOpaque !== true) {
-                                    g.clearRect(canvas.$da.x, canvas.$da.y,
-                                                canvas.$da.width, canvas.$da.height);
-                                }
-                                // !!!
-                                // call clipping area later than possible
-                                // clearRect since it can bring to error in IE
-                                g.clipRect(canvas.$da.x,
-                                           canvas.$da.y,
-                                           canvas.$da.width,
-                                           canvas.$da.height);
-
-                                canvas.paintComponent(g);
-                            }
-
-                            canvas.$paintTask = null;
-                            // no dirty area anymore
-                            canvas.$da.width = -1;
-                            if (g !== null) g.restore();
-                        }
-                        catch(ee) {
-                            canvas.$paintTask = null;
-                            canvas.$da.width = -1;
-                            if (g !== null) {
-                                g.restoreAll();
-                            }
-                            throw ee;
-                        }
-                    });
+                if (canvas.$waitingForPaint !== true && (canvas.isValid === false ||
+                                                         canvas.$da.width > 0     ||
+                                                         canvas.isLayoutValid === false))
+                {
+                    $paintTasks[$paintTasks.length] = canvas;
+                    canvas.$waitingForPaint = true;
+                    if ($paintTask === null) {
+                        $paintTask = zebkit.web.$task(pkg.$doPaint);
+                    }
                 }
+
+                // step III: initiate repainting thread
+                // if (canvas.$paintTask === null && (canvas.isValid === false || canvas.$da.width > 0 || canvas.isLayoutValid === false)) {
+
+                //     var $this = this;
+                //     canvas.$paintTask = zebkit.web.$task(function() {
+                //         var g = null;
+                //         try {
+                //             // do validation before timer will be set to null to avoid
+                //             // unnecessary timer initiating what can be caused by validation
+                //             // procedure by calling repaint method
+                //             if (canvas.isValid === false || canvas.isLayoutValid === false) {
+                //                 canvas.validate();
+                //             }
+
+                //             if (canvas.$da.width > 0) {
+                //                 g = canvas.$context;
+                //                 g.save();
+
+                //                 // check if the given canvas has transparent background
+                //                 // if it is true call clearRect method to clear dirty area
+                //                 // with transparent background, otherwise it will be cleaned
+                //                 // by filling the canvas with background later
+                //                 if (canvas.bg == null || canvas.bg.isOpaque !== true) {
+                //                     g.clearRect(canvas.$da.x, canvas.$da.y,
+                //                                 canvas.$da.width, canvas.$da.height);
+                //                 }
+                //                 // !!!
+                //                 // call clipping area later than possible
+                //                 // clearRect since it can bring to error in IE
+                //                 g.clipRect(canvas.$da.x,
+                //                            canvas.$da.y,
+                //                            canvas.$da.width,
+                //                            canvas.$da.height);
+
+                //                 canvas.paintComponent(g);
+                //             }
+
+                //             canvas.$paintTask = null;
+                //             // no dirty area anymore
+                //             canvas.$da.width = -1;
+                //             if (g !== null) g.restore();
+                //         } catch(ee) {
+                //             canvas.$paintTask = null;
+                //             canvas.$da.width = -1;
+                //             if (g !== null) {
+                //                 g.restoreAll();
+                //             }
+                //             throw ee;
+                //         }
+                //     });
+                // }
             }
         };
 
@@ -2124,7 +2225,7 @@ pkg.HtmlElement = Class(pkg.Panel, [
         }
 
         // set ID if it has not been already defined
-        if (e.getAttribute("id") == null) {
+        if (e.getAttribute("id") === null) {
             e.setAttribute("id", this.toString());
         }
 
@@ -2144,7 +2245,6 @@ pkg.HtmlElement = Class(pkg.Panel, [
             var $this = this;
 
             zebkit.web.$focusin(fe, function(e) {
-
                 // sync native focus with zebkit focus if necessary
                 if ($this.hasFocus() === false) {
                     $this.requestFocus();
@@ -2421,6 +2521,17 @@ pkg.HtmlCanvas = Class(pkg.HtmlElement, [
 
                 this.width  = w;
                 this.height = h;
+
+                // sync state of visibility
+                // TODO: probably it should e in html element manager, manager has
+                // to catch resize event and if size is not 0 correct visibility
+                // now manager doesn't set style visibility to "visible" state
+                // if component size is zero
+                if (this.$container.style.visibility === "hidden") {
+                    if (this.isVisible) {
+                        this.$container.style.visibility = "visible";
+                    }
+                }
 
                 this.invalidate();
 
@@ -2768,16 +2879,8 @@ pkg.FocusManager = Class(pkg.Manager, [
             if (pkg.KeyEvent.TAB === e.code) {
                 var cc = this.ff(e.source, e.shiftKey ?  -1 : 1);
                 if (cc != null) {
-
-                    // TODO: WEB specific code has to be removed moved to another place
-                    if (document.activeElement != cc.getCanvas().element) {
-                        cc.getCanvas().element.focus();
-                        this.requestFocus(cc);
-                    } else {
-                        this.requestFocus(cc);
-                    }
+                    this.requestFocus(cc);
                 }
-
                 return true;
             }
         };
@@ -2901,6 +3004,15 @@ pkg.FocusManager = Class(pkg.Manager, [
                     FOCUS_EVENT.source  = this.focusOwner;
                     FOCUS_EVENT.related = oldFocusOwner;
                     this.focusOwner.focused();
+
+                    // TODO: try to remove this WEb specific code
+                    // the code below bring native focus back to canvas of focus owner element
+                    // if the focus has been lost for some reason
+                    var canvas = this.focusOwner.getCanvas();
+                    if (canvas != null && document.activeElement !== canvas.element) {
+                        canvas.element.focus();
+                    }
+
                     pkg.events.fireEvent("focusGained", FOCUS_EVENT);
                 }
 
@@ -3544,7 +3656,7 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
                 y  = this.$toElementY(e.pageX, e.pageY),
                 pp = pkg.$pointerPressedOwner[e.identifier];
 
-            // free pointer prev presssed if any
+            // free pointer prev pressed if any
             if (pp != null) {
                 try {
                     pkg.events.fireEvent("pointerReleased", e.update(pp, x, y));
@@ -3976,8 +4088,11 @@ pkg.HtmlElementMan = Class(pkg.Manager, [
             if (c.$container.parentNode != null) {
                 // hide DOM component before move
                 // makes moving more smooth
-                var prevVisibility = c.$container.style.visibility;
-                c.$container.style.visibility = "hidden";
+                var prevVisibility = null;
+                if (c.$container.style.visibility !== "hidden") {
+                    prevVisibility = c.$container.style.visibility;
+                    c.$container.style.visibility = "hidden";
+                }
 
                 // find a location relatively to the first parent HTML element
                 var p = c, xx = c.x, yy = c.y;
@@ -3988,7 +4103,9 @@ pkg.HtmlElementMan = Class(pkg.Manager, [
 
                 c.$container.style.left = "" + xx + "px";
                 c.$container.style.top  = "" + yy + "px";
-                c.$container.style.visibility = prevVisibility;
+                if (prevVisibility !== null) {
+                    c.$container.style.visibility = prevVisibility;
+                }
             }
         }
 

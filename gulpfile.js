@@ -11,37 +11,40 @@ var jshint    = require('gulp-jshint'),
     zip       = require('gulp-zip');
 
 var zebkitFiles = [
-    'src/easyoop.js',
-    'src/layout.js',
-    'src/util.js',
-    'src/io.js',
-    'src/data.js',
-    'src/web.js',
-    'src/ui.webstuff.js',
-    'src/ui.webpointer.js',
-    'src/ui.webkey.js',
-    'src/ui.views.js',
-    'src/ui.core.js',
-    'src/ui.html.js',
-    'src/ui.js',
-    'src/ui.field.js',
-    'src/ui.list.js',
-    'src/ui.window.js',
-    'src/ui.grid.js',
-    'src/ui.tree.js',
-    'src/ui.designer.js',
-    'src/ui.bootstrap.js'
+    'src/js/easyoop.js',
+    'src/js/layout.js',
+    'src/js/util.js',
+    'src/js/io.js',
+    'src/js/data.js',
+    'src/js/web.js',
+    'src/js/ui.webstuff.js',
+    'src/js/ui.webpointer.js',
+    'src/js/ui.webkey.js',
+    'src/js/ui.views.js',
+    'src/js/ui.core.js',
+    'src/js/ui.html.js',
+    'src/js/ui.js',
+    'src/js/ui.field.js',
+    'src/js/ui.list.js',
+    'src/js/ui.window.js',
+    'src/js/ui.grid.js',
+    'src/js/ui.tree.js',
+    'src/js/ui.designer.js',
+    'src/js/ui.bootstrap.js'
 ];
 
-var runtimeFiles =[ 'zebkit.min.js',
-                    'zebkit.js',
-                    'zebkit.png',
-                    'zebkit.json',
-                    'ui.vk.min.js',
-                    'ui.vk.json',
-                    'ui.vk.hindi.json',
-                    'ui.date.min.js',
-                    'ui.date.json'   ];
+var demoFiles = [
+    "samples/demo/ui.demo.js",
+    "samples/demo/ui.demo.layout.js",
+    "samples/demo/ui.demo.basicui.js",
+    "samples/demo/ui.demo.panels.js",
+    "samples/demo/ui.demo.tree.js",
+    "samples/demo/ui.demo.popup.js",
+    "samples/demo/ui.demo.win.js",
+    "samples/demo/ui.demo.grid.js",
+    "samples/demo/ui.demo.designer.js"
+];
+
 
 gulp.task('http', function() {
     gulp.src('.')
@@ -60,66 +63,85 @@ gulp.task('lint', function() {
           .pipe(jshint.reporter('default'));
 });
 
-gulp.task('copy', function() {
-    return gulp.src([ "src/zebkit.json",
-                      "src/zebkit.png",
-                      "src/ui.date.json",
-                      "src/ui.vk.json",
-                      "src/ui.vk.hindi.json"])
-          .pipe(gulp.dest("."));
+gulp.task('theme', function() {
+    return gulp.src([
+                        "src/js/theme/**/zebkit.json",
+                        "src/js/theme/**/zebkit.png"
+                    ])
+          .pipe(gulp.dest("build/theme"));
 });
 
-gulp.task('easyoopscript', function() {
-    return gulp.src("src/easyoop.js")
+gulp.task('easyoop', function() {
+    return gulp.src("src/js/easyoop.js")
           .pipe(rename('easyoop.min.js'))
           .pipe(uglify({ compress: false, mangle: false }))
-          .pipe(gulp.dest("."));
+          .pipe(gulp.dest("build"));
 });
 
-gulp.task('datescript', function() {
-    return gulp.src("src/ui.date.js")
+gulp.task('calendar', function() {
+    return gulp.src("src/js/component/ui.date.js")
           .pipe(rename('ui.date.min.js'))
           .pipe(uglify({ compress: false, mangle: false }))
-          .pipe(gulp.dest("."));
+          .pipe(gulp.dest("build"));
 });
 
-gulp.task('vkscript', function() {
-    return gulp.src("src/ui.vk.js")
+gulp.task('vk', function() {
+    return gulp.src("src/js/component/ui.vk.js")
           .pipe(rename('ui.vk.min.js'))
           .pipe(uglify({ compress: false, mangle: false }))
-          .pipe(gulp.dest("."));
+          .pipe(gulp.dest("build"));
 });
 
-gulp.task('zebkitscript', function() {
+gulp.task('zebkit', function() {
     return gulp.src(zebkitFiles)
           .pipe(expect(zebkitFiles))
-          .pipe(concat('zebkit.js'))
+          .pipe(concat('build/zebkit.js'))
           .pipe(gulp.dest("."))
           .pipe(rename('zebkit.min.js'))
           .pipe(uglify({ compress: false, mangle: false }))
-          .pipe(gulp.dest("."))
+          .pipe(gulp.dest("build"))
 });
 
+gulp.task('build', [ "zebkit", "theme", "calendar", "vk", "easyoop" ]);
 
-gulp.task('runtime', [ "scripts" ], function () {
-    return gulp.src(runtimeFiles)
-           .pipe(expect(runtimeFiles))
+gulp.task('runtime', [ "build" ], function () {
+    return  gulp.src([
+                "build/**/*"
+            ])
            .pipe(zip('zebkit.runtime.zip'))
-           .pipe(gulp.dest("."))
+           .pipe(gulp.dest("build"))
 });
 
-gulp.task('removejs', ["runtime"], function() {
-    return gulp.src([ 'ui.vk.min.js',
-                      'ui.vk.json',
-                      'ui.vk.hindi.json',
-                      'ui.date.min.js',
-                      'ui.date.json' ], { read: false })
+gulp.task('samplescript', function() {
+    return gulp.src("samples/js/uiengine.samples.js")
+          .pipe(expect("samples/js/uiengine.samples.js"))
+          .pipe(rename('uiengine.samples.min.js'))
+          .pipe(uglify({ compress: false, mangle: false }))
+          .pipe(gulp.dest('samples/js'));
+});
+
+gulp.task('demoscript', function() {
+    return gulp.src(demoFiles)
+        .pipe(expect(demoFiles))
+        .pipe(concat('demo.all.js'))
+        .pipe(gulp.dest('samples/demo'))
+        .pipe(rename('demo.all.min.js'))
+        .pipe(uglify({ compress: false, mangle: false }))
+        .pipe(gulp.dest('samples/demo'));
+});
+
+gulp.task('clean', function() {
+    return gulp.src([ 'build/**/*' ], { read: false })
            .pipe(rm());
 });
 
+gulp.task('default', ['zebkit', 'demoscript', 'samplescript', 'runtime']);
+
 gulp.task('watch', function() {
-    gulp.watch(zebkitFiles, ['zebkitscript']);
+    gulp.watch(zebkitFiles, ['zebkit']);
+    gulp.watch(demoFiles,   ['demoscript']);
+    gulp.watch("samples/js/uiengine.samples.js", ['samplescript']);
 });
 
-gulp.task('scripts', [ "zebkitscript", 'datescript', 'vkscript', 'copy']);
-gulp.task('default', [ 'removejs' ]);
+//gulp.task('scripts', [ "demoscript", "samplescript", "zebkit", 'datescript', 'vkscript', 'copy']);
+

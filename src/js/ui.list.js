@@ -30,7 +30,6 @@ pkg.BaseList = Class(pkg.Panel, zebkit.util.Position.Metric, pkg.$ViewsSetterMix
 
     function $prototype() {
         this.canHaveFocus = true;
-
         /**
          * List model the component visualizes
          * @attribute model

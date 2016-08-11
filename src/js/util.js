@@ -5,7 +5,6 @@
  */
 (function(pkg, Class, Interface) {
 
-
 pkg.$validateValue = function(value) {
     if (arguments.length < 2) {
         throw new Error("Invalid arguments list. List of valid values is expected");

@@ -1158,7 +1158,7 @@ zebkit.package("ui.date", function(pkg, Class) {
         }
     ]);
 
-    ui.load(pkg.$url + "ui.date.json", function(e) {
+    ui.$loadThemeResource(pkg, "ui.date.json", function(e) {
         if (e != null) {
             console.log("" + (e.stack ? e.stack : e));
         }
