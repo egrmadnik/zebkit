@@ -1,0 +1,56 @@
+<div class="sidebar" style="padding: 0px;  background-color: #151515; border-right: 1px solid orange" >
+    <div class="container sidebar-sticky" style="padding: 0px; margin: 0px;">
+        <table style="height:100%;background-color: #151515;border-width: 0px; border-color: #151515;">
+            <tr>
+                <td colspan="2" align="center" style="background-color: #151515; border-width: 0px; margin: 0px; padding: 0px;">
+                    <img style="margin: 0px; padding: 0px;" src="{{site.baseurl}}public/images/zebkit.logo.png" width="80%">
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="border-width: 0px; background-color: #151515;">
+                    <p style="margin:0px; font-style: italic;">{{ site.description }}</p>
+                </td>
+            </tr>
+
+            <tr style="height:100%;" valign="top" align="right">
+                <td colspan="2" style="border-width: 0px;background-color: #151515;">
+                    {% assign pages_list = site.pages %}
+                    {% for node in pages_list %}
+                      {% if node.title != null %}
+                        {% if node.layout == "page" %}
+                          <a class="sidebar-nav-item{% if page.url == node.url %} active{% endif %}" href="{{ site.baseurl|append:node.url|replace:'//','/'|append:'.html' }}">
+                            {{ node.title }}
+                          </a>
+                        {% endif %}
+                      {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+
+            <tr>
+
+                <td style="height:100px; border-width: 0px;"> </td>
+<!--
+                <td colspan="2" style="border-width: 0px;background-color: #151515;">
+                    <img src="{{ site.basurl }}/public/images/stamp.png" width="60%">
+                </td>
+ -->
+            </tr>
+
+            <tr>
+                <td align="right" colspan="2" style="border-width: 0px;background-color: #151515; border-top: 1px solid orange;">
+                    <small><a href="mailto:ask@zebkit.org">Andrei Vishneuski (c), 2016</a></small>
+                </td>
+            </tr>
+        </table>
+
+    <nav class="sidebar-nav">
+
+<!--
+      <a class="sidebar-nav-item{% if page.url == site.baseurl %} active{% endif %}" href="{{ site.baseurl }}">Home</a>
+ -->
+
+    </nav>
+
+  </div>
+</div>
