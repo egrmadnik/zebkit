@@ -135,7 +135,7 @@ gulp.task('clean', function() {
            .pipe(rm());
 });
 
-gulp.task('default', ['zebkit', 'demoscript', 'samplescript', 'runtime']);
+gulp.task('default', ['zebkit', 'demoscript', 'runtime']);
 
 gulp.task('watch', function() {
     gulp.watch(zebkitFiles, ['zebkit']);
