@@ -597,7 +597,7 @@ zebkit.ready(function() {
            [   "Item 1.1", 
                "Item 1.2",
                new ImagePan("public/images/bmw_small.png", [
-                   function imageLoaded() { grid.vrp(); }
+                   function imageLoaded() { if (grid != null) grid.vrp(); }
                ]).setPreferredSize(32, 32)
            ],
            [   "Item 2.1", 
