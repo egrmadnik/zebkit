@@ -1,12 +1,11 @@
 /**
- * The module provides number of classes to help to communicate
- * with remote services and servers by HTTP, JSON-RPC, XML-RPC
- * protocols
- * @module io
- * @requires zebkit
+ * The module provides number of classes to help to communicate with remote services and servers by HTTP,
+ * JSON-RPC, XML-RPC protocols
+ * @class zebkit.io
+ * @access package
  */
 
-(function(pkg, Class) {
+zebkit.package("io", function(pkg, Class) {
 
 var HEX = "0123456789ABCDEF";
 
@@ -15,7 +14,7 @@ var HEX = "0123456789ABCDEF";
  * @param {Integer} [size] the generated UUID length. The default size is 16 characters.
  * @return {String} an UUID
  * @method  ID
- * @api  zebkit.io.ID()
+ * @for  zebkit.io
  */
 pkg.ID = function UUID(size) {
     if (size == null) size = 16;
@@ -41,7 +40,7 @@ var b64str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
  * Encode the given string into base64
  * @param  {String} input a string to be encoded
  * @method  b64encode
- * @api  zebkit.io.b64encode()
+ * @for zebkit.io
  */
 pkg.b64encode = function(input) {
     var out = [], i = 0, len = input.length, c1, c2, c3;
@@ -77,7 +76,7 @@ pkg.b64encode = function(input) {
  * Decode the base64 encoded string
  * @param {String} input base64 encoded string
  * @return {String} a string
- * @api zebkit.io.b64decode()
+ * @for zebkit.io
  * @method b64decode
  */
 pkg.b64decode = function(input) {
@@ -146,8 +145,7 @@ pkg.parseXML = function(s) {
 
     if (typeof DOMParser !== "undefined") {
         return rmws((new DOMParser()).parseFromString(s, "text/xml"));
-    }
-    else {
+    } else {
         for (var n in { "Microsoft.XMLDOM":0, "MSXML2.DOMDocument":1, "MSXML.DOMDocument":2 }) {
             var p = null;
             try {
@@ -166,8 +164,8 @@ pkg.parseXML = function(s) {
  * Query string parser class. The class provides number of
  * useful static methods to manipulate with a query string
  * of an URL
+ * @constructor
  * @class zebkit.io.QS
- * @static
  */
 pkg.QS = Class([
     function $clazz() {
@@ -373,11 +371,9 @@ pkg.getRequest = function() {
                 }
             };
         }
-
         return ("withCredentials" in r) ? r  // CORS is supported out of box
                                         : new $Request(); // IE
     }
-
     throw new Error("Archaic browser detected");
 };
 
@@ -401,6 +397,7 @@ pkg.HTTP = Class([
      * @param {Function} [f] a callback function that is called when the HTTP GET
      * request is done. The method gets a request object as its only argument
      * and is called in context of the HTTP class instance.
+     * @example
 
         // synchronous HTTP GET request with the number of
         // query parameters
@@ -423,7 +420,6 @@ pkg.HTTP = Class([
             ...
         });
 
-
      * @method GET
      */
     function GET(q, f) {
@@ -443,6 +439,7 @@ pkg.HTTP = Class([
      * request is done. The method gets a request as its only  argument
      * and called in context of appropriate HTTP class instance. If the argument
      * is null the POST request will be done synchronously.
+     * @example
 
        // asynchronously send POST
        zebkit.io.HTTP("google.com").POST(function(request) {
@@ -578,8 +575,8 @@ pkg.HTTP = Class([
  * @param {Funcion} [callback] a callback function that is called
  * when the GET request is completed. Pass it  to perform request
  * asynchronously
- * @api  zebkit.io.GET()
  * @method GET
+ * @for zebkit.io
  */
 pkg.GET = function(url) {
     if (zebkit.isString(url)) {
@@ -645,7 +642,7 @@ pkg.GET = function(url) {
  * when the GET request is completed. Pass it if to perform request
  * asynchronously
  * @method  POST
- * @api  zebkit.io.POST()
+ * @for zebkit.io
  */
 pkg.POST = function(url) {
     var http = new pkg.HTTP(url);
@@ -688,7 +685,7 @@ pkg.POST = function(url) {
     - **decode** to say how the specific service response has to be converted into
     JavaScript object
 
- * @class  zebkit.io.Service
+ * @class zebkit.io.Service
  * @constructor
  * @param {String} url an URL of remote service
  * @param {Array} methods a list of methods names the remote service provides
@@ -780,6 +777,16 @@ pkg.Service = Class([
     }
 ]);
 
+/**
+ * Build invoke method that calls a service method.
+ * @param  {zebkit.Class} clazz a class
+ * @param  {String} url an URL
+ * @param  {String} a service method name
+ * @return {Function} a wrapped method to call RPC method with
+ * @private
+ * @method  invoke
+ * @static
+ */
 pkg.Service.invoke = function(clazz, url, method) {
     var rpc = new clazz(url, method);
     return function() { return rpc[method].apply(rpc, arguments); };
@@ -835,6 +842,19 @@ pkg.JRPC = Class(pkg.Service, [
         return r.result;
     }
 ]);
+
+/**
+ * Shortcut to call the specified method of a JSON-RPC service.
+ * @param  {String} url an URL
+ * @param  {String} method a method name
+ * @for zebkit.io.JRPC
+ * @static
+ * @method invoke
+ */
+pkg.JRPC.invoke = function(url, method) {
+    return pkg.Service.invoke(pkg.JRPC, url, method);
+};
+
 
 pkg.Base64 = function(s) { if (arguments.length > 0) this.encoded = pkg.b64encode(s); };
 pkg.Base64.prototype.toString = function() { return this.encoded; };
@@ -990,26 +1010,14 @@ pkg.XRPC = Class(pkg.Service, [
  * Shortcut to call the specified method of a XML-RPC service.
  * @param  {String} url an URL
  * @param  {String} method a method name
- * @api zebkit.io.XRPC.invoke()
+ * @for zebkit.io.XRPC
  * @method invoke
+ * @static
  */
 pkg.XRPC.invoke = function(url, method) {
     return pkg.Service.invoke(pkg.XRPC, url, method);
 };
 
-/**
- * Shortcut to call the specified method of a JSON-RPC service.
- * @param  {String} url an URL
- * @param  {String} method a method name
- * @api zebkit.io.JRPC.invoke()
- * @method invoke
- */
-pkg.JRPC.invoke = function(url, method) {
-    return pkg.Service.invoke(pkg.JRPC, url, method);
-};
+return pkg;
 
-/**
- * @for
- */
-
-})(zebkit("io"), zebkit.Class);
+});

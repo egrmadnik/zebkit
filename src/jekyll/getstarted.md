@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Get started
-tags: demo
+tags: menu
 ---
 
 <script type="text/javascript" src="{{site.zebkitBase}}/zebkit.js">  
@@ -21,6 +21,16 @@ In general you should just work with zebkit JS code. No HTML neither CSS manipul
 </html>
 ```
 
+   * **Add meta to HTML head tag for single page / mobile applications**  
+
+```html
+...
+<meta name="viewport" 
+   content="user-scalable=no,width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="msapplication-tap-highlight" content="no">
+...
+```
+
    * **Include zebkit JS in script section:**
 
 ```html
@@ -37,12 +47,12 @@ In general you should just work with zebkit JS code. No HTML neither CSS manipul
 ```js
 // wrap zebkit code with ready method to make sure everything
 // has been initialized 
-zebra.ready(function() {
-    var root = new zebra.ui.zCanvas("sample", 300, 300).root;
+zebkit.ready(function() {
+    var root = new zebkit.ui.zCanvas("sample", 300, 300).root;
     root.properties({
         border:  "plain", 
         padding: 8,
-        layout:  new zebra.layout.BorderLayout(6),
+        layout:  new zebkit.layout.BorderLayout(6),
         kids  : {
             "center": new zebkit.ui.TextArea("A text ... "),
             "bottom": new zebkit.ui.Button("test") 
@@ -56,12 +66,12 @@ zebra.ready(function() {
 {% include zsample.html canvas_id='sample' title="Get started zebkit application" %}
 
 <script>
-zebra.ready(function() {
-    var root = new zebra.ui.zCanvas("sample", 400, 300).root;
+zebkit.ready(function() {
+    var root = new zebkit.ui.zCanvas("sample", 400, 300).root;
     root.properties({
         border:  "plain", 
         padding: 8,
-        layout:  new zebra.layout.BorderLayout(6),
+        layout:  new zebkit.layout.BorderLayout(6),
         kids  : {
             "center" : new zebkit.ui.TextArea("A text ... "),
             "bottom" : new zebkit.ui.Button("test") 
@@ -73,13 +83,13 @@ zebra.ready(function() {
 ### Add events handling
 
 ```js
-zebra.ready(function() {
+zebkit.ready(function() {
     ...
     // find first component whose class is zebkit.ui.Button
-    root.find(".zebkit.ui.Button").bind(function() {
+    root.find("zebkit.ui.Button").bind(function() {
         // find first component whose class is zebkit.ui.TextArea
         // and clear it
-        root.find(".zebkit.ui.TextArea").setValue("");
+        root.find("zebkit.ui.TextArea").setValue("");
     })
 });
 ```
@@ -88,22 +98,22 @@ zebra.ready(function() {
 {% include zsample.html canvas_id='sample2' title="Get started zebkit application" %}
 
 <script>
-zebra()["zebkit.theme"] = "dark"; 
+zebkit.config["zebkit.theme"] = "dark";
 
-zebra.ready(function() {
-    var root = new zebra.ui.zCanvas("sample2", 400, 300).root;
+zebkit.ready(function() {
+    var root = new zebkit.ui.zCanvas("sample2", 400, 300).root;
     root.properties({
         border:  "plain", 
         padding: 8,
-        layout:  new zebra.layout.BorderLayout(6),
+        layout:  new zebkit.layout.BorderLayout(6),
         kids  : {
             "center" : new zebkit.ui.TextArea("A text ... "),
             "bottom" : new zebkit.ui.Button("test") 
         }
     });
 
-    root.find(".zebkit.ui.Button").bind(function() {
-        root.find(".zebkit.ui.TextArea").setValue("");
+    root.find("zebkit.ui.Button").bind(function() {
+        root.find("zebkit.ui.TextArea").setValue("");
     })
 });
 </script>

@@ -10,7 +10,7 @@ title:            Zebkit - UI platform
 tagline:          JS Canvas UI Platform
 description:      "<b style='color:orange; font-size:1.5rem;' >Zebkit</b> is HTML5 Canvas based UI platform developed with unique EasyOOP JavaScript concept and rich expendable components set"
 url:              https://github.com/barmalei/zebkit
-baseurl:          /web/
+baseurl:          /build/website/
 
 zebkitBase:       http://localhost:8090/build
 
@@ -26,7 +26,7 @@ paginate:         7
 version:          1.0.0
 
 
-destination: ../../web
+destination:      build/website
 
 github:
   repo:           https://github.com/barmalei/zebkit

@@ -1,4 +1,16 @@
-(function(pkg, Class) {
+/**
+ * Web specific stuff to provide abstracted method to work in WEB context.
+ * @class zebkit.web
+ * @access package
+ */
+zebkit.package("web", function(pkg, Class) {
+    /**
+     * Device ratio.
+     * @attribute $deviceRatio
+     * @readOnly
+     * @private
+     * @type {Number}
+     */
     pkg.$deviceRatio = typeof window.devicePixelRatio !== "undefined"
                         ? window.devicePixelRatio
                         : (typeof window.screen.deviceXDPI !== "undefined"
@@ -6,13 +18,19 @@
                             : 1);
 
 
-    pkg.$taskMethod = window.requestAnimationFrame       ||
+    var $taskMethod = window.requestAnimationFrame       ||
                       window.webkitRequestAnimationFrame ||
                       window.mozRequestAnimationFrame    ||
                       function(callback) { return window.setTimeout(callback, 35); };
 
+    /**
+     * Request to run a method as an animation task.
+     * @param  {Function} f the task body method
+     * @method  $task
+     * @for  zebkit.web
+     */
     pkg.$task = function(f){
-        return pkg.$taskMethod.call(window, f);
+        return $taskMethod.call(window, f);
     };
 
     pkg.$windowSize = function() {
@@ -26,6 +44,21 @@
                 };
     };
 
+    /**
+     * Calculates view port of a browser window
+     * @return {Object} a browser window view port size.
+     *
+     *    ```json
+     *    {
+     *      width : {Integer},
+     *      height: {Integer}
+     *    }
+     *    ```
+     *
+     * @method $viewPortSize
+     * @for  zebkit.web
+     * @private
+     */
     pkg.$viewPortSize = function() {
         var ws   = pkg.$windowSize(),
             body = document.body,
@@ -47,12 +80,29 @@
     };
 
 
+    /**
+     * Tests if the given DOM element is in document
+     * @private
+     * @param  {Element} element a DOM element
+     * @return {Boolean} true if the given DOM element is in document
+     * @method $contains
+     * @for  zebkit.web
+     */
     pkg.$contains = function(element) {
-        // TODO: not sure it is required, probabbly it can be replaced with document.body.contains(e);
+        // TODO: not sure it is required, probably it can be replaced with document.body.contains(e);
         return (document.contains != null && document.contains(element)) ||
                (document.body.contains != null && document.body.contains(element)); // !!! use body for IE
     };
 
+    /**
+     * Test if the given page coordinates is inside the given element
+     * @private
+     * @param  {Element} element a DOM element
+     * @param  {Number} pageX an x page coordinate
+     * @param  {Number} pageY an y page coordinate
+     * @return {Boolean} true if the given point is inside the specified DOM element
+     * @method $isInsideElement
+     */
     pkg.$isInsideElement = function(element, pageX, pageY) {
         var r = element.getBoundingClientRect();
         return r != null             &&
@@ -87,8 +137,8 @@
 
 
     /**
-     * Load an image by the given URL.
-     * @param  {String|Image} img an image URL or image object
+     * Loads an image by the given URL.
+     * @param  {String|HTMLImageElement} img an image URL or image object
      * @param  {Function} ready a call back method to be notified when the
      * image has been completely loaded or failed. The method gets three parameters
 
@@ -96,17 +146,17 @@
         - boolean loading result. true means success
         - an image that has been loaded
 
-                // load image
-                zebkit.web.$loadImage("test.png", function(path, result, image) {
-                    if (result === false) {
-                        // handle error
-                        ...
-                    }
-                });
-
-     * @return {Image}  an image
-     * @api  zebkit.web.$loadImage()
-     * @method  loadImage
+    * @example
+        // load image
+        zebkit.web.$loadImage("test.png", function(path, result, image) {
+            if (result === false) {
+                // handle error
+                ...
+            }
+        });
+     * @return {HTMLImageElement}  an image
+     * @for  zebkit.web
+     * @method  $loadImage
      */
     pkg.$loadImage = function(img, ready) {
         var i = null;
@@ -160,6 +210,14 @@
         e.stopPropagation();
     };
 
+    /**
+     * Creates HTML element that "eats" (doesn't propagate and prevents default) all input (touch, mouse, key)
+     * events that it gets.
+     * @return {HTMLElement} a created HTML element.
+     * @method  $createBlockedElement
+     * @protected
+     * @for  zebkit.web
+     */
     pkg.$createBlockedElement = function() {
         var be = document.createElement("div");
         be.style.height = be.style.width  = "100%";
@@ -183,7 +241,24 @@
         return be;
     };
 
-    pkg.$ContextMethods = {
+    /**
+     * Dictionary of useful methods an HTML Canvas 2D context can be extended. The following methods are
+     * included:
+     *
+     *   - **setFont(f)**   set font
+     *   - **setColor(c)**  set background and foreground colors
+     *   - **drawLine(x1, y1, x2, y2, [w])**  draw line of the given width
+     *   - **ovalPath(x,y,w,h)**  build oval path
+     *   - **polylinePath(xPoints, yPoints, nPoints)**  build path by the given points
+     *   - **drawDottedRect(x,y,w,h)**  draw dotted rectangle
+     *   - **drawDashLine(x,y,x2,y2)** draw dashed line
+     *
+     * @attribute $2DContextMethods
+     * @type {Object}
+     * @protected
+     * @readOnly
+     */
+    pkg.$2DContextMethods = {
         setFont : function(f) {
             f = (f.s != null ? f.s : f.toString());
             if (f !== this.font) {
@@ -246,7 +321,7 @@
         polylinePath : function(xPoints, yPoints, nPoints){
             this.beginPath();
             this.moveTo(xPoints[0], yPoints[0]);
-            for(var i=1; i < nPoints; i++) this.lineTo(xPoints[i], yPoints[i]);
+            for(var i = 1; i < nPoints; i++) this.lineTo(xPoints[i], yPoints[i]);
         },
 
         drawDottedRect : function(x,y,w,h) {
@@ -299,7 +374,16 @@
         }
     };
 
-    pkg.$extendContext = function(ctx, methods){
+    /**
+     * Extend standard 2D HTML Canvas context instance with the given set of methods.
+     * If new methods clash with already existent 2D context method the old one is overwritten
+     * with new one and old method is saved using its name prefixed with "$" character
+     * @param  {CanvasRenderingContext2D} ctx  a 2D HTML Canvas context instance
+     * @param  {Array} methods list of methods to be added to the context
+     * @method $extendContext
+     * @private
+     */
+    pkg.$extendContext = function(ctx, methods) {
         for(var k in methods) {
             if (k === "$init") {
                 methods[k].call(ctx);
@@ -316,6 +400,20 @@
         }
     };
 
+    /**
+     * Adjusts the given HTML Canvas element to the required size that takes in account device DPI.
+     * Extend the canvas 2D context with extra methods and variables that are used with zebkit UI
+     * engine.
+     * @param  {HTMLCanvasElement} c a HTML canvas element
+     * @param  {Integer} w  a required width of the given canvas
+     * @param  {Integer} h  a required height of the given canvas
+     * @param  {Boolean} [forceResize] flag to force canvas resizing even if the canvas has identical width and height.
+     * It is required to re-create canvas 2D context to work properly.
+     * @return {CanvasRenderingContext2D} a 2D context of the canvas element
+     * @method $canvas
+     * @protected
+     * @for  zebkit.web
+     */
     pkg.$canvas = function(c, w, h, forceResize) {
         // fetch current CSS size of canvas
         var cs = window.getComputedStyle(c, null),
@@ -371,7 +469,7 @@
             }
 
             // populate extra method to 2d context
-            pkg.$extendContext(ctx, pkg.$ContextMethods);
+            pkg.$extendContext(ctx, pkg.$2DContextMethods);
         }
 
         // take in account that canvas can be visualized on
@@ -410,4 +508,4 @@
 
         return ctx;
     };
-})(zebkit("web"), zebkit.Class);
+});

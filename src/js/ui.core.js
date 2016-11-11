@@ -1,34 +1,29 @@
 zebkit.package("ui", function(pkg, Class) {
 
 /**
- * Zebkit UI. The UI is powerful way to create any imaginable
- * user interface for WEB. The idea is based on developing
- * hierarchy of UI components that sits and renders on HTML5
- * Canvas element.
+ * Zebkit UI. The UI is powerful way to create any imaginable user interface for WEB. The idea is
+ * based on developing hierarchy of UI components that sits and renders on HTML5 Canvas element.
  *
- * Write zebkit UI code in safe place where you can be sure all
- * necessary structure, configurations, etc are ready. The safe
- * place is "zebkit.ready(...)" method. Development of zebkit UI
- * application begins from creation "zebkit.ui.zCanvas" class,
- * that is starting point and root element of your UI components
- * hierarchy. "zCanvas" is actually wrapper around HTML5 Canvas
- * element where zebkit UI sits on. The typical zebkit UI coding
- * template is shown below:
+ * Write zebkit UI code in safe place where you can be sure all necessary structure, configurations,
+ * etc are ready. The safe place is "zebkit.ready(...)" method. Development of zebkit UI
+ * application begins from creation "zebkit.ui.zCanvas" class, that is starting point and root element
+ * of your UI components hierarchy. "zCanvas" is actually wrapper around HTML5 Canvas element where zebkit
+ * UI sits on. The typical zebkit UI coding template is shown below:
 
      // build UI in safe place
-     zebkit.ready(function() {
+     zebkit.require("ui", "layout", function(ui, layout) {
         // create canvas element
-        var c = new zebkit.ui.zCanvas(400, 400);
+        var c = new ui.zCanvas(400, 400);
 
         // start placing UI component on c.root panel
         //set layout manager
-        c.root.setLayout(new zebkit.layout.BorderLayout());
+        c.root.setLayout(new layout.BorderLayout());
         //add label to top
-        c.root.add("top",new zebkit.ui.Label("Top label"));
+        c.root.add("top",new ui.Label("Top label"));
         //add text area to center
-        c.root.add("center",new zebkit.ui.TextArea(""));
+        c.root.add("center",new ui.TextArea(""));
         //add button area to bottom
-        c.root.add("bottom",new zebkit.ui.Button("Button"));
+        c.root.add("bottom",new ui.Button("Button"));
         ...
      });
 
@@ -37,38 +32,122 @@ zebkit.package("ui", function(pkg, Class) {
         <script src='http://repo.zebkit.org/latest/zebkit.min.js'
                 type='text/javascript'></script>
 
- * @module ui
- * @main ui
- * @requires zebkit, util, io, data
+ * @class zebkit.ui
+ * @access package
  */
 
-var temporary = { x:0, y:0, width:0, height:0 }, COMP_EVENT, FOCUS_EVENT;
+var temporary = { x:0, y:0, width:0, height:0 }, COMP_EVENT, FOCUS_EVENT, SHORTCUT_EVENT;
 
 // keep pointer owners (the component where cursor/finger placed in)
 pkg.$pointerOwner = {};
 pkg.$pointerPressedOwner = {};
 
+/**
+ * Focus event class.
+ * @class zebkit.ui.FocusEvent
+ * @constructor
+ * @extends zebkit.util.Event
+ */
 pkg.FocusEvent = Class(zebkit.util.Event, [
     function $prototype() {
+        /**
+         * Related to the event component. For focus gained event it should be a component
+         * that lost focus. For focus lost event it should be a component that is going to
+         * get a focus.
+         * @attribute related
+         * @readOnly
+         * @default null
+         * @type {zebkit.ui.Panel}
+         */
         this.related = null;
     }
 ]);
 
+/**
+ * Component event class. Component event is fired when:
+ *
+ *   - the component is re-located ("compMoved" event)
+ *   - the component is re-sized ("compResized" event)
+ *   - the component visibility is updated ("compShown" event)
+ *   - the component is enabled ("compEnabled" event)
+ *   - a component has been inserted into the given component ("compAdded" event)
+ *   - a component has been removed from the given component ("compRemoved" event)
+ *
+ * Appropriate event type is set in the event id property.
+ * @constructor
+ * @class   zebkit.ui.CompEvent
+ * @extends zebkit.util.Event
+ */
 pkg.CompEvent = Class(zebkit.util.Event, [
     function $prototype() {
+        /**
+         * A kid component that has been added or removed (depending on event type).
+         * @attribute kid
+         * @readOnly
+         * @default null
+         * @type {zebkit.ui.Panel}
+         */
         this.kid = this.constraints = null;
+
+        /**
+         * A constraints with that a kid component has been added or removed (depending on event type).
+         * @attribute constraints
+         * @readOnly
+         * @default null
+         * @type {Object}
+         */
+
+        /**
+         * A previous x location the component has had.
+         * @readOnly
+         * @attribute prevX
+         * @type {Integer}
+         * @default -1
+         */
+
+        /**
+         * A previous y location the component has had.
+         * @readOnly
+         * @attribute prevY
+         * @type {Integer}
+         * @default -1
+         */
+
+        /**
+         * An index at which a component has been added or removed.
+         * @readOnly
+         * @attribute index
+         * @type {Integer}
+         * @default -1
+         */
+
+        /**
+         * A previous width the component has had.
+         * @readOnly
+         * @attribute prevWidth
+         * @type {Integer}
+         * @default -1
+         */
+
+        /**
+         * A previous height the component has had.
+         * @readOnly
+         * @attribute height
+         * @type {Integer}
+         * @default -1
+         */
         this.prevX = this.prevY = this.index = -1;
         this.prevWidth = this.prevHeight = -1;
     }
 ]);
 
-COMP_EVENT     = new pkg.CompEvent();
-FOCUS_EVENT    = new pkg.FocusEvent();
-SHORTCUT_EVENT = new zebkit.util.Event();
+COMP_EVENT  = new pkg.CompEvent();
+FOCUS_EVENT = new pkg.FocusEvent();
 
-//
-// Extend Pointer event with zebkit specific fields and methods
-//
+/**
+ *  @class zebkit.ui.PointerEvent
+ *  @constructor
+ */
 pkg.PointerEvent.extend([
     function $prototype() {
         /**
@@ -151,18 +230,20 @@ pkg.PointerEvent.extend([
     }
 ]);
 
-pkg.load = function(path, callback) {
-    return new pkg.Bag(pkg).load(path, callback);
+pkg.load = function(path) {
+    return new pkg.Bag(pkg).load(path);
 };
 
-pkg.$loadThemeResource = function(pkg, path, callback) {
+// TODO: not stable API
+pkg.$loadThemeResource = function(pkg, path) {
     var url = pkg.$url.join(zebkit.ui.$theme, path);
-    return new pkg.Bag(pkg).load(url, callback);
+    return new pkg.Bag(pkg).load(url);
 };
 
-pkg.$loadCommonResource = function(pkg, path, callback) {
+// TODO: not stable API
+pkg.$loadCommonResource = function(pkg, path) {
     var url = pkg.$url.join(zebkit.ui.$theme, "common", path);
-    return new pkg.Bag(pkg).load(url, callback);
+    return new pkg.Bag(pkg).load(url);
 };
 
 
@@ -179,29 +260,15 @@ pkg.Bag = Class(zebkit.util.Bag, [
         };
     },
 
-    function load(s, cb) {
-        if (cb != null) {
-            zebkit.busy();
-            try {
-                return this.$super(s, function(e) {
-                    // if an error during loading has happened callback method
-                    // gets the error as a single argument. The problem callback itself
-                    // can triggers the error and than be called second time but
-                    // with the error as argument. So we have to recognize the situation
-                    // by analyzing if the callback gets an error as
-                    if (e == null) {
-                        zebkit.ready();
-                    }
-                    cb.call(this, e);
-                });
-            }
-            catch(e) {
-                zebkit.ready();
-                throw e;
-            }
-        }
-
-        return this.$super(s, null);
+    function load(s) {
+        zebkit.busy();
+        return this.$super(s).than(function(r) {
+            zebkit.ready();
+            return r;
+        }).catch(function(e) {
+            zebkit.ready();
+            throw e;
+        });
     }
 ]);
 
@@ -210,6 +277,18 @@ pkg.$getPS = function(l) {
                                              : { width:0, height:0 };
 };
 
+/**
+ * Calculate visible area of the given components taking in account
+ * intersections with parent hierarchy.
+ * @private
+ * @param  {zebkit.ui.Panel} c  a component
+ * @param  {Object} r a variable to store visible area
+
+        { x: {Integer}, y: {Integer}, width: {integer}, height: {Integer} }
+
+ * @method $cvp
+ * @for zebkit.ui
+ */
 pkg.$cvp = function(c, r) {
     if (c.width > 0 && c.height > 0 && c.isVisible === true){
         var p = c.parent, px = -c.x, py = -c.y;
@@ -220,7 +299,6 @@ pkg.$cvp = function(c, r) {
             r.width  = c.width;
             r.height = c.height;
         }
-
 
         while (p != null && r.width > 0 && r.height > 0) {
             var xx = r.x > px ? r.x : px,
@@ -245,7 +323,17 @@ pkg.$cvp = function(c, r) {
     return null;
 };
 
+/**
+ * Class that holds mouse cursor constant.
+ * @constructor
+ * @class zebkit.ui.Cursor
+ */
 pkg.Cursor = {
+    /**
+     * "default"
+     * @const DEFAULT
+     * @type {String}
+     */
     DEFAULT     : "default",
     MOVE        : "move",
     WAIT        : "wait",
@@ -263,7 +351,15 @@ pkg.Cursor = {
     HELP        : "help"
 };
 
-pkg.makeFullyVisible = function(d,c){
+/**
+ * Relocate the given component to make them fully visible.
+ * @param  {zebkit.ui.Panel} [d] a parent component where the given component has to be re-located
+ * @param  {zebkit.ui.Panel} c  a component to re-locate to make it fully visible in the parent
+ * component
+ * @method makeFullyVisible
+ * @for  zebkit.ui
+ */
+pkg.makeFullyVisible = function(d, c){
     if (arguments.length === 1) {
         c = d;
         d = c.parent;
@@ -314,391 +410,16 @@ pkg.calcOrigin = function(x,y,w,h,px,py,t,tt,ll,bb,rr){
     return [0, 0];
 };
 
+
+var $paintTask = null,
+    $paintTasks = [];
+
 /**
- *  This the core UI component class. All other UI components has to be
- *  successor of panel class.
-
-      // instantiate panel with no arguments
-      var p = new zebkit.ui.Panel();
-
-      // instantiate panel with border layout set as its layout manager
-      var p = new zebkit.ui.Panel(new zebkit.layout.BorderLayout());
-
-      // instantiate panel with the given properties (border
-      // layout manager, blue background and plain border)
-      var p = new zebkit.ui.Panel({
-         layout: new zebkit.ui.BorderLayout(),
-         background : "blue",
-         border     : "plain"
-      });
-
- * **Container. **
- * Panel can contains number of other UI components as its children where
- * the children components are placed with a defined by the panel layout
- * manager:
-
-      // add few children component to panel top, center and bottom parts
-      // with help of border layout manager
-      var p = new zebkit.ui.Panel();
-      p.setLayout(new zebkit.layout.BorderLayout(4)); // set layout manager to
-                                                     // order children components
-
-      p.add("top", new zebkit.ui.Label("Top label"));
-      p.add("center", new zebkit.ui.TextArea("Text area"));
-      p.add("bottom", new zebkit.ui.Button("Button"));
-
- * **Events. **
- * The class provides possibility to catch various component and input
- * events by declaring an appropriate event method handler. The most
- * simple case you just define a method:
-
-      var p = new zebkit.ui.Panel();
-      p.pointerPressed = function(e) {
-          // handle event here
-      };
-
-* If you prefer to create an anonymous class instance you can do it as
-* follow:
-
-      var p = new zebkit.ui.Panel([
-          function pointerPressed(e) {
-              // handle event here
-          }
-      ]);
-
-* One more way to add the event handler is dynamic extending of an instance
-* class demonstrated below:
-
-      var p = new zebkit.ui.Panel("Test");
-      p.extend([
-          function pointerPressed(e) {
-              // handle event here
-          }
-      ]);
-
- * Pay attention Zebkit UI components often declare own event handlers and
- * in this case you can overwrite the default event handler with a new one.
- * Preventing the basic event handler execution can cause the component will
- * work improperly. You should care about the base event handler execution
- * as follow:
-
-      // button component declares own pointer pressed event handler
-      // we have to call the original handler to keep the button component
-      // properly working
-      var p = new zebkit.ui.Button("Test");
-      p.extend([
-          function pointerPressed(e) {
-              this.$super(e); // call parent class event handler implementation
-              // handle event here
-          }
-      ]);
-
- *  @class zebkit.ui.Panel
- *  @param {Object|zebkit.layout.Layout} [l] pass a layout manager or
- *  number of properties that have to be applied to the instance of
- *  the panel class.
- *  @constructor
- *  @extends zebkit.layout.Layoutable
+ * Trigger painting for all collected paint tasks
+ * @protected
+ * @method $doPaint
+ * @for zebkit.ui
  */
-
-
-
-/**
- * Implement the event handler method to catch pointer pressed event.
- * The event is triggered every time a pointer button has been pressed or
- * a finger has touched a touch screen.
-
-     var p = new zebkit.ui.Panel();
-     p.pointerPressed = function(e) { ... }; // add event handler
-
- * @event pointerPressed
- * @param {zebkit.ui.PointerEvent} e a pointer event
-*/
-
-/**
- * Implement the event handler method to catch pointer released event.
- * The event is triggered every time a pointer button has been released or
- * a finger has untouched a touch screen.
-
-     var p = new zebkit.ui.Panel();
-     p.pointerReleased = function(e) { ... }; // add event handler
-
- * @event pointerReleased
- * @param {zebkit.ui.PointerEvent} e a pointer event
- */
-
-/**
- * Implement the event handler method  to catch pointer moved event.
- * The event is triggered every time a pointer cursor has been moved with
- * no a pointer button pressed.
-
-     var p = new zebkit.ui.Panel();
-     p.pointerMoved = function(e) { ... }; // add event handler
-
- * @param {zebkit.ui.PointerEvent} e a pointer event
- * @event  pointerMoved
- */
-
-/**
- * Implement the event handler method to catch pointer entered event.
- * The event is triggered every time a pointer cursor entered the
- * given component.
-
-     var p = new zebkit.ui.Panel();
-     p.pointerEntered = function(e) { ... }; // add event handler
-
- * @param {zebkit.ui.PointerEvent} e a pointer event
- * @event  pointerEntered
- */
-
-/**
- * Implement the event handler method to catch pointer exited event.
- * The event is triggered every time a pointer cursor exited the given
- * component.
-
-     var p = new zebkit.ui.Panel();
-     p.pointerExited = function(e) { ... }; // add event handler
-
- * @param {zebkit.ui.PointerEvent} e a pointer event
- * @event  pointerExited
- */
-
-/**
- * Implement the event handler method to catch pointer clicked event.
- * The event is triggered every time a pointer button has been clicked. Click events
- * are generated only if no one pointer moved or drag events has been generated
- * in between pointer pressed -> pointer released events sequence.
-
-     var p = new zebkit.ui.Panel();
-     p.pointerClicked = function(e) { ... }; // add event handler
-
- * @param {zebkit.ui.PointerEvent} e a pointer event
- * @event  pointerClicked
- */
-
-/**
- * Implement the event handler method to catch pointer dragged event.
- * The event is triggered every time a pointer cursor has been moved when a pointer button
- * has been pressed. Or when a finger has been moved over a touch screen.
-
-     var p = new zebkit.ui.Panel();
-     p.pointerDragged = function(e) { ... }; // add event handler
-
- * @param {zebkit.ui.PointerEvent} e a pointer event
- * @event  pointerDragged
- */
-
-/**
- * Implement the event handler method to catch pointer drag started event.
- * The event is triggered every time a pointer cursor has been moved first time when a pointer button
- * has been pressed. Or when a finger has been moved first time over a touch screen.
-
-     var p = new zebkit.ui.Panel();
-     p.pointerDragStarted = function(e) { ... }; // add event handler
-
- * @param {zebkit.ui.PointerEvent} e a pointer event
- * @event  pointerDragStarted
-*/
-
-/**
- * Implement the event handler method to catch pointer drag ended event.
- * The event is triggered every time a pointer cursor has been moved last time when a pointer button
- * has been pressed. Or when a finger has been moved last time over a touch screen.
-
-     var p = new zebkit.ui.Panel();
-     p.pointerDragEnded = function(e) { ... }; // add event handler
-
- * @param {zebkit.ui.PointerEvent} e a pointer event
- * @event  pointerDragEnded
-*/
-
-/**
- * Implement the event handler method to catch key pressed event
- * The event is triggered every time a key has been pressed.
-
-     var p = new zebkit.ui.Panel();
-     p.keyPressed = function(e) { ... }; // add event handler
-
- * @param {zebkit.ui.KeyEvent} e a key event
- * @event  keyPressed
- */
-
-/**
- * Implement the event handler method to catch key types event
- * The event is triggered every time a key has been typed.
-
-     var p = new zebkit.ui.Panel();
-     p.keyTyped = function(e) { ... }; // add event handler
-
- * @param {zebkit.ui.KeyEvent} e a key event
- * @event  keyTyped
- */
-
-/**
- * Implement the event handler method to catch key released event
- * The event is triggered every time a key has been released.
-
-     var p = new zebkit.ui.Panel();
-     p.keyReleased = function(e) { ... }; // add event handler
-
- * @param {zebkit.ui.KeyEvent} e a key event
- * @event  keyReleased
- */
-
-/**
- * Implement the event handler method to catch the component sized event
- * The event is triggered every time the component has been re-sized.
-
-     var p = new zebkit.ui.Panel();
-     p.compSized = function(c, pw, ph) { ... }; // add event handler
-
- * @param {zebkit.ui.Panel} c a component that has been sized
- * @param {Integer} pw a previous width the sized component had
- * @param {Integer} ph a previous height the sized component had
- * @event compSized
- */
-
-/**
- * Implement the event handler method to catch component moved event
- * The event is triggered every time the component location has been
- * updated.
-
-     var p = new zebkit.ui.Panel();
-     p.compMoved = function(c, px, py) { ... }; // add event handler
-
- * @param {zebkit.ui.Panel} c a component that has been moved
- * @param {Integer} px a previous x coordinate the moved component had
- * @param {Integer} py a previous y coordinate the moved component had
- * @event compMoved
- */
-
-/**
- * Implement the event handler method to catch component enabled event
- * The event is triggered every time a component enabled state has been
- * updated.
-
-     var p = new zebkit.ui.Panel();
-     p.compEnabled = function(c) { ... }; // add event handler
-
- * @param {zebkit.ui.Panel} c a component whose enabled state has been updated
- * @event compEnabled
- */
-
-/**
- * Implement the event handler method to catch component shown event
- * The event is triggered every time a component visibility state has
- * been updated.
-
-     var p = new zebkit.ui.Panel();
-     p.compShown = function(c) { ... }; // add event handler
-
- * @param {zebkit.ui.Panel} c a component whose visibility state has been updated
- * @event compShown
- */
-
-/**
- * Implement the event handler method to catch component added event
- * The event is triggered every time the component has been inserted into
- * another one.
-
-     var p = new zebkit.ui.Panel();
-     p.compAdded = function(p, constr, c) { ... }; // add event handler
-
- * @param {zebkit.ui.Panel} p a parent component of the component has been added
- * @param {Object} constr a layout constraints
- * @param {zebkit.ui.Panel} c a component that has been added
- * @event compAdded
- */
-
-/**
- * Implement the event handler method to catch component removed event
- * The event is triggered every time the component has been removed from
- * its parent UI component.
-
-     var p = new zebkit.ui.Panel();
-     p.compRemoved = function(p, i, c) { ... }; // add event handler
-
- * @param {zebkit.ui.Panel} p a parent component of the component that has been removed
- * @param {Integer} i an index of removed component
- * @param {zebkit.ui.Panel} c a component that has been removed
- * @event compRemoved
- */
-
-/**
- * Implement the event handler method to catch component focus gained event
- * The event is triggered every time a component has gained focus.
-
-     var p = new zebkit.ui.Panel();
-     p.focusGained = function(e) { ... }; // add event handler
-
- * @param {zebkit.ui.FocusEvent} e an input event
- * @event  focusGained
- */
-
-/**
- * Implement the event handler method to catch component focus lost event
- * The event is triggered every time a component has lost focus
-
-     var p = new zebkit.ui.Panel();
-     p.focusLost = function(e) { ... }; // add event handler
-
- * @param {zebkit.ui.FocusEvent} e an input event
- * @event  focusLost
- */
-
-/**
- * Implement the event handler method to catch children components component events
- *
-     var p = new zebkit.ui.Panel();
-     p.childCompEvent = function(id, src, p1, p2) { ... }; // add event handler
-
- * @param {Integer} id a component event ID. The id can have one of the following value:
-
-
- * @param {zebkit.ui.Panel} src a component that triggers the event
- * @param {zebkit.ui.Panel|Integer|Object} p1 an event first parameter that depends
- * on an component event that has happened:
-
-
-   - if id is **zebkit.ui.Panel.SIZED** the parameter is previous component width
-   - if id is **zebkit.ui.Panel.MOVED** the parameter is previous component x location
-   - if id is **zebkit.ui.Panel.ADDED** the parameter is constraints a new component has been added
-   - if id is **zebkit.ui.Panel.REMOVED** the parameter is null
-
- * @param {zebkit.ui.Panel|Integer|Object} p2 an event second parameter depends
- * on an component event that has happened:
-
-
-    - if id is **zebkit.ui.Panel.SIZED** the parameter is previous component height
-    - if id is **zebkit.ui.Panel.MOVED** the parameter is previous component y location
-    - if id is **zebkit.ui.Panel.ADDED** the parameter is reference to the added children component
-    - if id is **zebkit.ui.Panel.REMOVED** the parameter is reference to the removed children component
-
- * @event  childCompEvent
- */
-
- /**
-  * The method is called for focusable UI components (components that can hold input focus) to ask
-  * a string to be saved in native clipboard
-  *
-  * @return {String} a string to be copied in native clipboard
-  *
-  * @event clipCopy
-  */
-
- /**
-  * The method is called to pass string from clipboard to a focusable (a component that can hold
-  * input focus) UI component
-  *
-  * @param {String} s a string from native clipboard
-  *
-  * @event clipPaste
-  */
-
-
-var $paintTask = null, $paintTasks = [];
-
-
 pkg.$doPaint = function() {
     for (var i = $paintTasks.length - 1; i >= 0; i--) {
         var canvas = $paintTasks.shift();
@@ -744,7 +465,6 @@ pkg.$doPaint = function() {
                 canvas.$waitingForPaint = false;
             }
         } catch(ex) {
-
             // catch error and clean task list if any to avoid memory leaks
             try {
                 if (canvas != null) {
@@ -773,6 +493,362 @@ pkg.$doPaint = function() {
         $paintTask = zebkit.web.$task(pkg.$doPaint);
     }
 };
+
+/**
+ *  This the core UI component class. All other UI components has to be successor of panel class.
+
+      // instantiate panel with no arguments
+      var p = new zebkit.ui.Panel();
+
+      // instantiate panel with border layout set as its layout manager
+      var p = new zebkit.ui.Panel(new zebkit.layout.BorderLayout());
+
+      // instantiate panel with the given properties (border
+      // layout manager, blue background and plain border)
+      var p = new zebkit.ui.Panel({
+         layout: new zebkit.ui.BorderLayout(),
+         background : "blue",
+         border     : "plain"
+      });
+
+ *  **Container**
+ * Panel can contains number of other UI components as its children where the children components
+ * are placed with a defined by the panel layout manager:
+
+      // add few children component to panel top, center and bottom parts
+      // with help of border layout manager
+      var p = new zebkit.ui.Panel();
+      p.setLayout(new zebkit.layout.BorderLayout(4)); // set layout manager to
+                                                     // order children components
+
+      p.add("top", new zebkit.ui.Label("Top label"));
+      p.add("center", new zebkit.ui.TextArea("Text area"));
+      p.add("bottom", new zebkit.ui.Button("Button"));
+
+ * **Events**
+ * The class provides possibility to catch various component and input events by declaring an
+ * appropriate event method handler. The most simple case you just define a method:
+
+      var p = new zebkit.ui.Panel();
+      p.pointerPressed = function(e) {
+          // handle event here
+      };
+
+* If you prefer to create an anonymous class instance you can do it as follow:
+
+      var p = new zebkit.ui.Panel([
+          function pointerPressed(e) {
+              // handle event here
+          }
+      ]);
+
+* One more way to add the event handler is dynamic extending of an instance class demonstrated
+* below:
+
+      var p = new zebkit.ui.Panel("Test");
+      p.extend([
+          function pointerPressed(e) {
+              // handle event here
+          }
+      ]);
+
+ * Pay attention Zebkit UI components often declare own event handlers and in this case you can
+ * overwrite the default event handler with a new one. Preventing the basic event handler execution
+ * can cause the component will work improperly. You should care about the base event handler
+ * execution as follow:
+
+      // button component declares own pointer pressed event handler
+      // we have to call the original handler to keep the button component
+      // properly working
+      var p = new zebkit.ui.Button("Test");
+      p.extend([
+          function pointerPressed(e) {
+              this.$super(e); // call parent class event handler implementation
+              // handle event here
+          }
+      ]);
+
+ *  @class zebkit.ui.Panel
+ *  @param {Object|zebkit.layout.Layout} [l] pass a layout manager or number of properties that have
+ *  to be applied to the instance of the panel class.
+ *  @constructor
+ *  @extends zebkit.layout.Layoutable
+ */
+
+/**
+ * Implement the event handler method to catch pointer pressed event. The event is triggered every time
+ * a pointer button has been pressed or a finger has touched a touch screen.
+
+     var p = new zebkit.ui.Panel();
+     p.pointerPressed = function(e) { ... }; // add event handler
+
+ * @event pointerPressed
+ * @param {zebkit.ui.PointerEvent} e a pointer event
+*/
+
+/**
+ * Implement the event handler method to catch pointer released event. The event is triggered every time
+ * a pointer button has been released or a finger has untouched a touch screen.
+
+     var p = new zebkit.ui.Panel();
+     p.pointerReleased = function(e) { ... }; // add event handler
+
+ * @event pointerReleased
+ * @param {zebkit.ui.PointerEvent} e a pointer event
+ */
+
+/**
+ * Implement the event handler method  to catch pointer moved event. The event is triggered every time
+ * a pointer cursor has been moved with no a pointer button pressed.
+
+     var p = new zebkit.ui.Panel();
+     p.pointerMoved = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.PointerEvent} e a pointer event
+ * @event  pointerMoved
+ */
+
+/**
+ * Implement the event handler method to catch pointer entered event. The event is triggered every
+ * time a pointer cursor entered the given component.
+
+     var p = new zebkit.ui.Panel();
+     p.pointerEntered = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.PointerEvent} e a pointer event
+ * @event  pointerEntered
+ */
+
+/**
+ * Implement the event handler method to catch pointer exited event. The event is triggered every
+ * time a pointer cursor exited the given component.
+
+     var p = new zebkit.ui.Panel();
+     p.pointerExited = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.PointerEvent} e a pointer event
+ * @event  pointerExited
+ */
+
+/**
+ * Implement the event handler method to catch pointer clicked event. The event is triggered every
+ * time a pointer button has been clicked. Click events are generated only if no one pointer moved
+ * or drag events has been generated in between pointer pressed -> pointer released events sequence.
+
+     var p = new zebkit.ui.Panel();
+     p.pointerClicked = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.PointerEvent} e a pointer event
+ * @event  pointerClicked
+ */
+
+/**
+ * Implement the event handler method to catch pointer dragged event. The event is triggered every
+ * time a pointer cursor has been moved when a pointer button has been pressed. Or when a finger
+ * has been moved over a touch screen.
+
+     var p = new zebkit.ui.Panel();
+     p.pointerDragged = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.PointerEvent} e a pointer event
+ * @event  pointerDragged
+ */
+
+/**
+ * Implement the event handler method to catch pointer drag started event. The event is triggered
+ * every time a pointer cursor has been moved first time when a pointer button has been pressed.
+ * Or when a finger has been moved first time over a touch screen.
+
+     var p = new zebkit.ui.Panel();
+     p.pointerDragStarted = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.PointerEvent} e a pointer event
+ * @event  pointerDragStarted
+*/
+
+/**
+ * Implement the event handler method to catch pointer drag ended event. The event is triggered
+ * every time a pointer cursor has been moved last time when a pointer button has been pressed.
+ * Or when a finger has been moved last time over a touch screen.
+
+     var p = new zebkit.ui.Panel();
+     p.pointerDragEnded = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.PointerEvent} e a pointer event
+ * @event  pointerDragEnded
+*/
+
+/**
+ * Implement the event handler method to catch key pressed event The event is triggered every
+ * time a key has been pressed.
+
+     var p = new zebkit.ui.Panel();
+     p.keyPressed = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.KeyEvent} e a key event
+ * @event  keyPressed
+ */
+
+/**
+ * Implement the event handler method to catch key types event The event is triggered every
+ *     time a key has been typed.
+
+     var p = new zebkit.ui.Panel();
+     p.keyTyped = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.KeyEvent} e a key event
+ * @event  keyTyped
+ */
+
+/**
+ * Implement the event handler method to catch key released event
+ * The event is triggered every time a key has been released.
+
+     var p = new zebkit.ui.Panel();
+     p.keyReleased = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.KeyEvent} e a key event
+ * @event  keyReleased
+ */
+
+/**
+ * Implement the event handler method to catch the component sized event
+ * The event is triggered every time the component has been re-sized.
+
+     var p = new zebkit.ui.Panel();
+     p.compSized = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.CompEvent} e a component event. Source of the event
+ * is a component that has been sized, "prevWidth" and "prevHeight" fields
+ * keep a previous size the component had.
+ * @event compSized
+ */
+
+/**
+ * Implement the event handler method to catch component moved event
+ * The event is triggered every time the component location has been
+ * updated.
+
+     var p = new zebkit.ui.Panel();
+     p.compMoved = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.Panel} c a component that has been moved
+ * @param {Integer} px a previous x coordinate the moved component had
+ * @param {Integer} py a previous y coordinate the moved component had
+ * @param {zebkit.ui.CompEvent} e a component event. Source of the event
+ * is a component that has been moved. "prevX" and "prevY" fields hold
+ * a previous location the component had.
+ * @event compMoved
+ */
+
+/**
+ * Implement the event handler method to catch component enabled event
+ * The event is triggered every time a component enabled state has been
+ * updated.
+
+     var p = new zebkit.ui.Panel();
+     p.compEnabled = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.CompEvent} e a component event.
+ * @event compEnabled
+ */
+
+/**
+ * Implement the event handler method to catch component shown event
+ * The event is triggered every time a component visibility state has
+ * been updated.
+
+     var p = new zebkit.ui.Panel();
+     p.compShown = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.CompEvent} e a component event.
+ * @event compShown
+ */
+
+/**
+ * Implement the event handler method to catch component added event
+ * The event is triggered every time the component has been inserted into
+ * another one.
+
+     var p = new zebkit.ui.Panel();
+     p.compAdded = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.CompEvent} e a component event. The source of the passed event
+ * is set to a container component, "kid" field is set to a component that has been
+ * added to the container, "constraints" holds a constraints the child component has been
+ * added.
+ * @event compAdded
+ */
+
+/**
+ * Implement the event handler method to catch component removed event
+ * The event is triggered every time the component has been removed from
+ * its parent UI component.
+
+     var p = new zebkit.ui.Panel();
+     p.compRemoved = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.CompEvent} e a component event. The source of the passed event
+ * is set to the container component. "kid" field is set to a child component that has
+ * been removed from the container and "index" field is set to the index the kid component
+ * was added before it had been removed from the container.
+ * @event compRemoved
+ */
+
+/**
+ * Implement the event handler method to catch component focus gained event
+ * The event is triggered every time a component has gained focus.
+
+     var p = new zebkit.ui.Panel();
+     p.focusGained = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.FocusEvent} e an input event
+ * @event  focusGained
+ */
+
+/**
+ * Implement the event handler method to catch component focus lost event
+ * The event is triggered every time a component has lost focus
+
+     var p = new zebkit.ui.Panel();
+     p.focusLost = function(e) { ... }; // add event handler
+
+ * @param {zebkit.ui.FocusEvent} e an input event
+ * @event  focusLost
+ */
+
+/**
+ * It is also possible to listen all the listed above event for children component. To handle
+ * the event register listener method following the pattern below:
+ *
+     var p = new zebkit.ui.Panel();
+     p.child<EventName> = function(e) { ... }; // add event handler
+
+ * @param {Integer} id a component event ID. The id can have one of the following value:
+
+
+ * @param {zebkit.ui.Panel} src a component that triggers the event
+ * @param {zebkit.ui.KeyEvent | zebkit.ui.PointerEvent | zebkit.ui.CompEvent| zebkit.ui.FocusEvent} e an UI event fired by a child component.
+ * @event  child<EventName>
+ */
+
+ /**
+  * The method is called for focusable UI components (components that can hold input focus) to ask
+  * a string to be saved in native clipboard
+  *
+  * @return {String} a string to be copied in native clipboard
+  *
+  * @event clipCopy
+  */
+
+ /**
+  * The method is called to pass string from clipboard to a focusable (a component that can hold
+  * input focus) UI component
+  *
+  * @param {String} s a string from native clipboard
+  *
+  * @event clipPaste
+  */
 
 pkg.Panel = Class(zebkit.layout.Layoutable, [
     function $prototype() {
@@ -908,58 +984,6 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
                         $paintTask = zebkit.web.$task(pkg.$doPaint);
                     }
                 }
-
-                // step III: initiate repainting thread
-                // if (canvas.$paintTask === null && (canvas.isValid === false || canvas.$da.width > 0 || canvas.isLayoutValid === false)) {
-
-                //     var $this = this;
-                //     canvas.$paintTask = zebkit.web.$task(function() {
-                //         var g = null;
-                //         try {
-                //             // do validation before timer will be set to null to avoid
-                //             // unnecessary timer initiating what can be caused by validation
-                //             // procedure by calling repaint method
-                //             if (canvas.isValid === false || canvas.isLayoutValid === false) {
-                //                 canvas.validate();
-                //             }
-
-                //             if (canvas.$da.width > 0) {
-                //                 g = canvas.$context;
-                //                 g.save();
-
-                //                 // check if the given canvas has transparent background
-                //                 // if it is true call clearRect method to clear dirty area
-                //                 // with transparent background, otherwise it will be cleaned
-                //                 // by filling the canvas with background later
-                //                 if (canvas.bg == null || canvas.bg.isOpaque !== true) {
-                //                     g.clearRect(canvas.$da.x, canvas.$da.y,
-                //                                 canvas.$da.width, canvas.$da.height);
-                //                 }
-                //                 // !!!
-                //                 // call clipping area later than possible
-                //                 // clearRect since it can bring to error in IE
-                //                 g.clipRect(canvas.$da.x,
-                //                            canvas.$da.y,
-                //                            canvas.$da.width,
-                //                            canvas.$da.height);
-
-                //                 canvas.paintComponent(g);
-                //             }
-
-                //             canvas.$paintTask = null;
-                //             // no dirty area anymore
-                //             canvas.$da.width = -1;
-                //             if (g !== null) g.restore();
-                //         } catch(ee) {
-                //             canvas.$paintTask = null;
-                //             canvas.$da.width = -1;
-                //             if (g !== null) {
-                //                 g.restoreAll();
-                //             }
-                //             throw ee;
-                //         }
-                //     });
-                // }
             }
         };
 
@@ -981,6 +1005,11 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
             return c;
         };
 
+        /**
+         * Paint the component and all its child components using the given 2D HTML Canvas context
+         * @param  {CanvasRenderingContext2D} g a canvas 2D context
+         * @method paintComponent
+         */
         this.paintComponent = function(g) {
             var ts = g.$states[g.$curState];
             if (ts.width  > 0  &&
@@ -1124,7 +1153,7 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
             return c;
         };
 
-        this.notifyRender = function(o,n){
+        this.notifyRender = function(o, n){
             if (o != null && o.ownerChanged != null) o.ownerChanged(null);
             if (n != null && n.ownerChanged != null) n.ownerChanged(this);
         };
@@ -1155,24 +1184,31 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
 
         /**
          * Load content of the panel UI components from the specified JSON file.
-         * @param  {String} jsonPath an URL to a JSON file that describes UI
+         * @param  {String|Object} JSON URL, JSON string or JS object tthat describes UI
          * to be loaded into the panel
-         * @chainable
+         * @return {zebkit.util.Runner} a runner to track JSON loading
          * @method load
          */
-        this.load = function(jsonPath, cb) {
-            new pkg.Bag(this).load(jsonPath, cb);
-            return this;
+        this.load = function(jsonPath) {
+            return new pkg.Bag(this).load(jsonPath);
         };
 
         /**
-         * Get a children UI component that embeds the given point.
+         * Get a children UI component that embeds the given point. The method
+         * calculates the component visible area first and than looks for a
+         * children component only in this calculated visible area. If no one
+         * children component has been found than component return itself as
+         * a holder of the given point if one of the following condition is true:
+         *
+         *   - The component doesn't implement custom "contains(x, y)" method
+         *   - The component implements "contains(x, y)" method and for the given point the method return true
+         *
          * @param  {Integer} x x coordinate
          * @param  {Integer} y y coordinate
          * @return {zebkit.ui.Panel} a children UI component
          * @method getComponentAt
          */
-        this.getComponentAt = function(x,y){
+        this.getComponentAt = function(x, y){
             var r = pkg.$cvp(this, temporary);
 
             if (r === null ||
@@ -1193,8 +1229,7 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
         };
 
         /**
-         * Shortcut method to invalidating the component
-         * and initiating the component repainting
+         * Shortcut method to invalidating the component and initiating the component repainting
          * @method vrp
          */
         this.vrp = function(){
@@ -1232,15 +1267,14 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
         };
 
         /**
-         * The method is implemented to be aware about a children component
-         * insertion.
+         * The method is implemented to be aware about a children component insertion.
          * @param  {Integer} index an index at that a new children component
          * has been added
          * @param  {Object} constr a layout constraints of an inserted component
          * @param  {zebkit.ui.Panel} l a children component that has been inserted
          * @method kidAdded
          */
-        this.kidAdded = function (index,constr,l){
+        this.kidAdded = function(index, constr, l) {
             COMP_EVENT.source = this;
             COMP_EVENT.constraints = constr;
             COMP_EVENT.kid = l;
@@ -1256,8 +1290,9 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
 
         /**
          * Set the component layout constraints.
-         * @param {Object} ctr a constraints
+         * @param {Object} ctr a constraints whose value depends on layout manager that has been set
          * @method setConstraints
+         * @chainable
          */
         this.setConstraints = function(ctr) {
             if (this.constraints != ctr) {
@@ -1268,8 +1303,7 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
         };
 
         /**
-         * The method is implemented to be aware about a children component
-         * removal.
+         * The method is implemented to be aware about a children component removal.
          * @param  {Integer} i an index of a removed component
          * @param  {zebkit.ui.Panel} l a removed children component
          * @method kidRemoved
@@ -1285,8 +1319,7 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
         };
 
         /**
-         * The method is implemented to be aware the
-         * component location updating
+         * The method is implemented to be aware the component location updating
          * @param  {Integer} px a previous x coordinate of the component
          * @param  {Integer} py a previous y coordinate of the component
          * @method relocated
@@ -1328,8 +1361,7 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
         };
 
         /**
-         * The method is implemented to be aware the
-         * component size updating
+         * The method is implemented to be aware the component size updating
          * @param  {Integer} pw a previous width of the component
          * @param  {Integer} ph a previous height of the component
          * @method resized
@@ -1386,7 +1418,7 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
          * @method setVisible
          * @chainable
          */
-        this.setVisible = function (b){
+        this.setVisible = function (b) {
             if (this.isVisible != b) {
                 this.isVisible = b;
                 this.invalidate();
@@ -1462,6 +1494,12 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
             return this;
         };
 
+        /**
+         * Set top padding
+         * @param {Integer} top a top padding
+         * @method  setTopPadding
+         * @chainable
+         */
         this.setTopPadding = function(top) {
             if (this.top !== top) {
                 this.top = top;
@@ -1470,6 +1508,12 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
             return this;
         };
 
+        /**
+         * Set left padding
+         * @param {Integer} left a left padding
+         * @method  setLeftPadding
+         * @chainable
+         */
         this.setLeftPadding = function(left) {
             if (this.left !== left) {
                 this.left = left;
@@ -1478,6 +1522,12 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
             return this;
         };
 
+        /**
+         * Set bottom padding
+         * @param {Integer} bottom a bottom padding
+         * @method  setBottomPadding
+         * @chainable
+         */
         this.setBottomPadding = function(bottom) {
             if (this.bottom !== bottom) {
                 this.bottom = bottom;
@@ -1486,6 +1536,12 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
             return this;
         };
 
+        /**
+         * Set right padding
+         * @param {Integer} right a right padding
+         * @method  setRightPadding
+         * @chainable
+         */
         this.setRightPadding = function(right) {
             if (this.right !== right) {
                 this.right = right;
@@ -1497,8 +1553,19 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
         /**
          * Set the border view
          * @param  {zebkit.ui.View|Function|String} v a border view or border "paint(g,x,y,w,h,c)"
-         * rendering function or border type: "plain", "sunken", "raised", "etched"
+         * rendering function or one of predefined border name: "plain", "sunken", "raised", "etched"
          * @method setBorder
+         * @example
+         *
+         *      var pan = new zebkit.ui.Panel();
+         *
+         *      // set round border
+         *      pan.setBorder(zebkit.ui.RoundBorder("red"));
+         *
+         *      ...
+         *      // set one of predefined border
+         *      pan.setBorder("plain");
+         *
          * @chainable
          */
         this.setBorder = function (v) {
@@ -1529,23 +1596,23 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
         /**
          * Set the background. Background can be a color string or a zebkit.ui.View class
          * instance, or a function(g,x,y,w,h,c) that paints the background:
-
-            // set background color
-            comp.setBackground("red");
-
-            // set a picture as a component background
-            comp.setBackground(new zebkit.ui.Picture(...));
-
-            // set a custom rendered background
-            comp.setBackground(function (g,x,y,w,h,target) {
-                // paint a component background here
-                g.setColor("blue");
-                g.fillRect(x,y,w,h);
-                g.drawLine(...);
-                ...
-            });
-
-
+         *
+         *     // set background color
+         *     comp.setBackground("red");
+         *
+         *     // set a picture as a component background
+         *     comp.setBackground(new zebkit.ui.Picture(...));
+         *
+         *     // set a custom rendered background
+         *     comp.setBackground(function(g,x,y,w,h,target) {
+         *         // paint a component background here
+         *         g.setColor("blue");
+         *         g.fillRect(x,y,w,h);
+         *         g.drawLine(...);
+         *         ...
+         *     });
+         *
+         *
          * @param  {String|zebkit.ui.View|Function} v a background view, color or
          * background "paint(g,x,y,w,h,c)" rendering function.
          * @method setBackground
@@ -1567,12 +1634,12 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
          * @protected
          * @param {zebkit.ui.Panel|Array|Object} a children component of number of
          * components to be added. The parameter can be:
-
-    - Component
-    - Array of components
-    - Dictionary object where every element is a component to be added and the key of
-    the component is stored in the dictionary is considered as the component constraints
-
+         *
+         *   - Component
+         *   - Array of components
+         *   - Dictionary object where every element is a component to be added and the key of
+         *     the component is stored in the dictionary is considered as the component constraints
+         *
          * @method setKids
          */
         this.setKids = function(a) {
@@ -1609,6 +1676,7 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
         /**
          * Called whenever the UI component gets or looses focus
          * @method focused
+         * @protected
          */
         this.focused = function() {
             // extents of activate method indicates it is
@@ -1631,8 +1699,9 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
         };
 
         /**
-         * Remove all children UI components
+         * Remove all children components
          * @method removeAll
+         * @chainable
          */
         this.removeAll = function (){
             if (this.kids.length > 0){
@@ -1650,11 +1719,13 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
                 }
                 this.repaint(mx1, my1, mx2 - mx1, my2 - my1);
             }
+            return this;
         };
 
         /**
          * Bring the UI component to front
          * @method toFront
+         * @chainable
          */
         this.toFront = function(){
             if (this.parent != null && this.parent.kids[this.parent.kids.length-1] !== this){
@@ -1669,6 +1740,7 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
         /**
          * Send the UI component to back
          * @method toBack
+         * @chainable
          */
         this.toBack = function(){
             if (this.parent != null && this.parent.kids[0] !== this){
@@ -1696,9 +1768,9 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
         };
 
         /**
-         * Build view by this component
+         * Build zebkit.ui.View that represents the UI component
          * @return {zebkit.ui.View} a view of the component
-         * @param [{target}]
+         * @param {zebkit.ui.Panel} target a target component
          * @method toView
          */
         this.toView = function(target) {
@@ -1769,16 +1841,14 @@ pkg.Panel = Class(zebkit.layout.Layoutable, [
 ]);
 
 /**
- * HTML element UI component wrapper class. The class represents
- * an HTML element as if it is standard UI component. It helps to use
- * some standard HTML element as zebkit UI components and embeds it
+ * HTML element UI component wrapper class. The class represents an HTML element as if it is standard
+ * UI component. It helps to use some standard HTML element as zebkit UI components and embeds it
  * in zebkit UI application layout.
  * @class zebkit.ui.HtmlElement
  * @constructor
- * @param {String|HTMLElement} [element] an HTML element to be represented
- * as a standard zebkit UI component. If the passed parameter is string
- * it denotes a name of an HTML element. In this case a new HTML element
- * will be created.
+ * @param {String|HTMLElement} [element] an HTML element to be represented as a standard zebkit UI
+ * component. If the passed parameter is string it denotes a name of an HTML element. In this case
+ * a new HTML element will be created.
  * @extends {zebkit.ui.Panel}
  */
 pkg.HtmlElement = Class(pkg.Panel, [
@@ -1790,6 +1860,14 @@ pkg.HtmlElement = Class(pkg.Panel, [
     function $prototype() {
         this.$container = this.$canvas = null;
         this.ePsW = this.ePsH = 0;
+
+        /**
+         * Indicates that this component is a DOM element wrapper
+         * @attribute isDOMElement
+         * @type {Boolean}
+         * @private
+         * @readOnly
+         */
         this.isDOMElement = true;   // indication of the DOM element that is used by DOM element manager to track
                                     // and manage its visibility
 
@@ -1858,7 +1936,7 @@ pkg.HtmlElement = Class(pkg.Panel, [
         };
 
         /**
-         * Set the specified attribute of the wrapped HTML element
+         * Set the specified attribute to the wrapped HTML element
          * @param {String} name  a name of attribute
          * @param {String} value a value of the attribute
          * @chainable
@@ -1869,6 +1947,13 @@ pkg.HtmlElement = Class(pkg.Panel, [
             return this;
         };
 
+        /**
+         * Set the specified attributes set to the wrapped HTML element
+         * @param {Object} attrs the dictionary of attributes where name of an attribute is a key
+         * of the dictionary and
+         * @method  setAttributes
+         * @chainable
+         */
         this.setAttributes = function(attrs) {
             for(var name in attrs) {
                 this.element.setAttribute(name, attrs[name]);
@@ -1876,6 +1961,12 @@ pkg.HtmlElement = Class(pkg.Panel, [
             return this;
         };
 
+        /**
+         * Implements "paint" method to be aware when the component is visible.
+         * It is used to adjust wrapped HTML element visibility and size.
+         * @param  {CanvasRenderingContext2D} g a 2D canvas context
+         * @method paint
+         */
         this.paint = function(g) {
             // this method is used as an indication that the component
             // is visible and no one of his parent is invisible
@@ -2164,7 +2255,6 @@ pkg.HtmlElement = Class(pkg.Panel, [
         // this is set to make possible to use set z-index for HTML element
         this.element.style.position = "relative";
 
-
         if (e.parentNode != null && e.parentNode.getAttribute("data-zebcont") != null) {
             throw new Error("DOM element '" + e + "' already has container");
         }
@@ -2252,7 +2342,6 @@ pkg.HtmlElement = Class(pkg.Panel, [
             }, false);
 
             zebkit.web.$focusout(fe, function(e) {
-
                 // sync native focus with zebkit focus if necessary
                 if ($this.hasFocus()) {
                     pkg.focusManager.requestFocus(null);
@@ -2263,67 +2352,11 @@ pkg.HtmlElement = Class(pkg.Panel, [
 ]);
 
 /**
- *  zCanvas zebkit UI component class. This is one of the key
- *  class everybody has to use to start building an UI. The class is a wrapper
- *  for HTML Canvas element. Internally it catches all native HTML Canvas
- *  events and translates its into Zebkit UI events.
- *
- *  zCanvas instantiation triggers a new HTML Canvas will be created
- *  and added to HTML DOM tree.  It happens if developer doesn't pass
- *  an HTML Canvas element reference or an ID of existing HTML Canvas
- *  element If developers need to re-use an existent in DOM tree canvas
- *  element they have to pass id of the canvas that has to be used as basis
- *  for zebkit UI creation or reference to a HTML Canvas element:
-
-        // a new HTML canvas element is created and added into HTML DOM tree
-        var canvas = zebkit.ui.zCanvas();
-
-        // a new HTML canvas element is created into HTML DOM tree
-        var canvas = zebkit.ui.zCanvas(400,500);  // pass canvas size
-
-        // stick to existent HTML canvas element
-        var canvas = zebkit.ui.zCanvas("ExistentCanvasID");
-
- *  The zCanvas has layered structure. Every layer is responsible for
- *  showing and controlling a dedicated type of UI elements like windows
- *  pop-up menus, tool tips and so on. Developers have to build an own UI
- *  hierarchy on the canvas root layer. The layer is standard UI panel
- *  that is accessible as zCanvas component instance "root" field.
-
-        // create canvas
-        var canvas = zebkit.ui.zCanvas(400,500);
-
-        // save reference to canvas root layer where
-        // hierarchy of UI components have to be hosted
-        var root = canvas.root;
-
-        // fill root with UI components
-        var label = new zebkit.ui.Label("Label");
-        label.setBounds(10,10,100,50);
-        root.add(label);
-
- *  @class zebkit.ui.zCanvas
- *  @extends {zebkit.ui.Panel}
- *  @constructor
- *  @param {String|Canvas} [element] an ID of a HTML canvas element or
- *  reference to an HTML Canvas element.
- *  @param {Integer} [width] a width of an HTML canvas element
- *  @param {Integer} [height] a height of an HTML canvas element
- */
-
-/**
- * Implement the event handler method  to catch canvas initialized event.
- * The event is triggered once the canvas has been initiated and all properties
- * listeners of the canvas are set upped. The event can be used to load
- * saved data.
-
-     var p = new zebkit.ui.zCanvas(300, 300, [
-          function canvasInitialized() {
-              // do something
-          }
-     ]);
-
- * @event  canvasInitialized
+ * HTML Canvas native DOM element wrapper.
+ * @constructor
+ * @param  {HTMLCanvas} e HTML canvas element to be wrapped as a zebkit UI component.
+ * @class zebkit.ui.HtmlCanvas
+ * @extends {zebkit.ui.HtmlElement}
  */
 pkg.HtmlCanvas = Class(pkg.HtmlElement, [
     function $clazz() {
@@ -2340,8 +2373,8 @@ pkg.HtmlCanvas = Class(pkg.HtmlElement, [
             },
 
             $init : function() {
-                // pre-allocate canvas save $states
-                this.$states = Array(50);
+                // pre-allocate canvas save $states stack
+                this.$states = Array(70);
                 for(var i=0; i < this.$states.length; i++) {
                     var s = {};
                     s.srot = s.rotateVal = s.x = s.y = s.width = s.height = s.dx = s.dy = 0;
@@ -2414,7 +2447,7 @@ pkg.HtmlCanvas = Class(pkg.HtmlElement, [
 
             clipRect : function(x,y,w,h){
                 var c = this.$states[this.$curState];
-                if (c.x != x || y != c.y || w != c.width || h != c.height) {
+                if (c.x !== x || y !== c.y || w !== c.width || h !== c.height) {
                     var xx = c.x, yy = c.y,
                         ww = c.width,
                         hh = c.height,
@@ -2428,7 +2461,7 @@ pkg.HtmlCanvas = Class(pkg.HtmlElement, [
                     c.y      = y > yy ? y : yy;
                     c.height = (yh < yyhh ? yh : yyhh) - c.y;
 
-                    if (c.x != xx || yy != c.y || ww != c.width || hh != c.height) {
+                    if (c.x !== xx || yy !== c.y || ww !== c.width || hh !== c.height) {
                         // begin path is very important to have proper clip area
                         this.beginPath();
                         this.rect(x, y, w, h);
@@ -2444,9 +2477,6 @@ pkg.HtmlCanvas = Class(pkg.HtmlElement, [
         this.$rotateValue = 0;
         this.$scaleX = 1;
         this.$scaleY = 1;
-
-        this.$paintTask = null;
-
 
         // set border for canvas has to be set as zebkit border, since canvas
         // is DOM component designed for rendering, so setting DOM border
@@ -2548,7 +2578,7 @@ pkg.HtmlCanvas = Class(pkg.HtmlElement, [
     },
 
     function(e) {
-        if (e != null && (e.tagName == null || e.tagName != "CANVAS")) {
+        if (e != null && (e.tagName == null || e.tagName !== "CANVAS")) {
             throw new Error("Invalid element '" + e + "'");
         }
 
@@ -2575,17 +2605,16 @@ pkg.HtmlCanvas = Class(pkg.HtmlElement, [
 ]);
 
 /**
- * Base layer UI component. Layer is special type of UI
- * components that is used to decouple different logical
- * UI components types from each other. Zebkit Canvas
- * consists from number of layers where only one can be
- * active at the given point in time. Layers are stretched
- * to fill full canvas size. Every time an input event
- * happens system detects an active layer by asking all
- * layers from top to bottom. First layer that wants to
- * catch input gets control. The typical layers examples
- * are window layer, pop up menus layer and so on.
- * @param {String} id an unique id to identify the layer
+ * Canvas based layer UI component. Layer is special type of UI components that is used to
+ * decouple different logical UI components types from each other. Zebkit Canvas consists
+ * from number of layers where only one can be active at the given point in time. Layers
+ * are stretched to fill full canvas size. Every time an input event happens system detects
+ * an active layer by asking all layers from top to bottom. First layer that wants to
+ * catch input gets control. The typical layers examples are window layer, pop up menus layer
+ * and so on. Layer can indicates it is active an ready to take control using number of way
+ *
+ *   - by implementing "layerPointerPressed(e)" method that has to return true
+ *
  * @constructor
  * @class zebkit.ui.CanvasLayer
  * @extends {zebkit.ui.Panel}
@@ -2617,13 +2646,21 @@ pkg.CanvasLayer = Class(pkg.HtmlCanvas, [
 
     function() {
         this.$super();
+
+        /**
+         * Unique ID of the layer. ID is set to "ID" static variable of appropriate class
+         * that inherits CanvasLayer.
+         * @attribute id
+         * @type {String}
+         * @readOnly
+         */
         this.id = this.clazz.ID;
     }
 ]);
 
 /**
- *  Root layer implementation. This is the simplest UI layer implementation
- *  where the layer always try grabbing all input event
+ *  Root layer implementation. This is the simplest UI layer implementation where the layer always
+ *  try grabbing all input event
  *  @class zebkit.ui.RootLayer
  *  @constructor
  *  @extends {zebkit.ui.CanvasLayer}
@@ -2691,13 +2728,14 @@ pkg.ViewPan = Class(pkg.Panel, [
         };
 
         /**
-         * Override the parent method to calculate preferred size
-         * basing on a target view.
-         * @param  {zebkit.ui.Panel} t [description]
+         * Override the parent method to calculate preferred size basing on a target view.
+         * @param  {zebkit.ui.Panel} t a target container
          * @return {Object} return a target view preferred size if it is defined.
          * The returned structure is the following:
-              { width: {Integer}, height:{Integer} }
-         * @method  calcPreferredSize
+         *
+         *     { width: {Integer}, height:{Integer} }
+         *
+         *  @method  calcPreferredSize
          */
         this.calcPreferredSize = function (t) {
             return this.view !== null ? this.view.getPreferredSize() : { width:0, height:0 };
@@ -2737,15 +2775,17 @@ pkg.ImagePan = Class(pkg.ViewPan, [
                 isPic     = zebkit.instanceOf(img, pkg.Picture),
                 imgToLoad = isPic ? img.target : img ;
 
-            if (this.$runner == null) {
+            if (this.$runner === null) {
                 this.$runner = new zebkit.util.Runner();
             }
 
-            this.$runner.run(function() {
+            this.$runner
+            .
+            than(function() {
                 zebkit.web.$loadImage(imgToLoad, this.join());
             })
             .
-            run(function(p, b, i) {
+            than(function(p, b, i) {
                 $this.$runner = null;
                 if (b) {
                     $this.setView(isPic ? img : new pkg.Picture(i));
@@ -2756,23 +2796,24 @@ pkg.ImagePan = Class(pkg.ViewPan, [
                     $this.imageLoaded(p, b, i);
                 }
 
-                // TODO: should be generalized for the whole hierarchy, not only for one
-                // parent
-                if ($this.parent !== null && $this.parent.childImageLoaded != null) {
-                     $this.parent.childImageLoaded(p, b, i);
+                // fire imageLoaded event to children
+                for(var t = $this.parent; t != null; t = t.parent){
+                    if (t.childImageLoaded != null) {
+                        t.childImageLoaded(p, b, i);
+                    }
                 }
             })
             .
-            error(function() {
+            catch(function() {
                 this.$runner = null;
                 $this.setView(null);
             });
         } else {
-            if (this.$runner == null) {
+            if (this.$runner === null) {
                 this.setView(null);
             } else {
                 var $this = this;
-                this.$runner.run(function() {
+                this.$runner.than(function() {
                     $this.setView(null);
                 });
             }
@@ -2782,10 +2823,9 @@ pkg.ImagePan = Class(pkg.ViewPan, [
 ]);
 
 /**
- *  UI manager class. The class is widely used as base for building
- *  various UI managers like paint, focus, event etc. Manager is
- *  automatically registered as input and component events listener
- *  if it implements appropriate events methods handlers
+ *  UI manager class. The class is widely used as base for building various UI managers
+ *  like focus, event managers etc. Manager is automatically registered as global events listener
+ *  for events it implements handlers
  *  @class zebkit.ui.Manager
  *  @constructor
  */
@@ -2798,10 +2838,10 @@ pkg.Manager = Class([
 ]);
 
 /**
- * Focus manager class defines the strategy of focus traversing among
- * hierarchy of UI components. It keeps current focus owner component
- * and provides API to change current focus component
+ * Focus manager class defines the strategy of focus traversing among hierarchy of UI components.
+ * It keeps current focus owner component and provides API to change current focus component
  * @class zebkit.ui.FocusManager
+ * @constructor
  * @extends {zebkit.ui.Manager}
  */
 pkg.FocusManager = Class(pkg.Manager, [
@@ -2876,7 +2916,7 @@ pkg.FocusManager = Class(pkg.Manager, [
          * @method keyPressed
          */
         this.keyPressed = function(e){
-            if (pkg.KeyEvent.TAB === e.code) {
+            if ("Tab" === e.code) {
                 var cc = this.ff(e.source, e.shiftKey ?  -1 : 1);
                 if (cc != null) {
                     this.requestFocus(cc);
@@ -3005,20 +3045,29 @@ pkg.FocusManager = Class(pkg.Manager, [
                     FOCUS_EVENT.related = oldFocusOwner;
                     this.focusOwner.focused();
 
-                    // TODO: try to remove this WEb specific code
-                    // the code below bring native focus back to canvas of focus owner element
-                    // if the focus has been lost for some reason
+                    pkg.events.fireEvent("focusGained", FOCUS_EVENT);
+                }
+            }
+
+            // when a meta key is pressed a canvas can lose native focus in Window IE/Chrome
+            // to double check the focus will be properly returned the code below is required
+            // TODO: it is not clear why we need to do following the way and it is not good
+            // the WEB Specific code is here
+            if (this.focusOwner != null) {
+                if (this.focusOwner.isDOMElement !== true) {
                     var canvas = this.focusOwner.getCanvas();
                     if (canvas != null && document.activeElement !== canvas.element) {
                         canvas.element.focus();
                     }
-
-                    pkg.events.fireEvent("focusGained", FOCUS_EVENT);
                 }
-
-                return this.focusOwner;
+            } else if (c != null) {
+                if (c.isDOMElement !== true) {
+                    var canvas = c.getCanvas();
+                    if (canvas != null && document.activeElement !== canvas.element) {
+                        canvas.element.focus();
+                    }
+                }
             }
-            return null;
         };
 
         /**
@@ -3046,7 +3095,40 @@ pkg.FocusManager = Class(pkg.Manager, [
 ]);
 
 /**
- *  Command manager supports short cut keys definition and listening. The shortcuts have to be defined in
+ * Shortcut event class
+ * @constructor
+ * @param  {zebkit.ui.Panel} src a source of the event
+ * @param  {String} shortcut a shortcut name
+ * @param  {String} keys a keys combination ("Control + KeyV")
+ * @class
+ * @extends {zebkit.util.Event}
+ */
+pkg.ShortcutEvent = Class(zebkit.util.Event, [
+    function(src, shortcut, keys) {
+        this.source = src;
+
+        /**
+         * Shortcut name
+         * @attribute shortcut
+         * @readOnly
+         * @type {String}
+         */
+        this.shortcut = shortcut;
+
+        /**
+         * Shortcut keys combination
+         * @attribute keys
+         * @readOnly
+         * @type {String}
+         */
+        this.keys = keys;
+    }
+]);
+
+SHORTCUT_EVENT = new pkg.ShortcutEvent();
+
+/**
+ *  Command manager supports short cut (keys) definition and listening. The shortcuts have to be defined in
  *  zebkit JSON configuration files. There are two sections:
 
     - **osx** to keep shortcuts for Mac OS X platform
@@ -3056,39 +3138,31 @@ pkg.FocusManager = Class(pkg.Manager, [
 
 
       {
-        "common": [
-             {
-                "command"   : "undo_command",
-                "args"      : [ true, "test"],
-                "key"       : "Ctrl+z"
-             },
-             {
-                "command" : "redo_command",
-                "key"     : "Ctrl+Shift+z"
-             },
+        "common": {
+            "UNDO": "Control + KeyZ",
+            "REDO": "Control + Shift + KeyZ",
              ...
-        ],
-        "osx" : [
-             {
-                "command"   : "undo_command",
-                "args"      : [ true, "test"],
-                "key"       : "Cmd+z"
-             },
+        },
+        "osx" : {
+            "UNDO":  "MetaLeft + KeyZ",
              ...
-        ]
+        }
       }
 
- *  The configuration contains list of shortcuts. Every shortcut is bound to a key combination it is triggered.
- *  Every shortcut has a name and an optional list of arguments that have to be passed to a shortcut listener method.
+ *  The configuration contains list of shortcuts. Every shortcut is bound to a key combination that triggers it.
+ *  Shortcut has a name and an optional list of arguments that have to be passed to a shortcut listener method.
  *  The optional arguments can be used to differentiate two shortcuts that are bound to the same command.
  *
- *  On the component level shortcut commands can be listened by implementing method whose name equals to shortcut name.
- *  Pay attention to catch shortcut command your component has to be focusable and holds focus at the given time.
- *  For instance, to catch "undo_command"  do the following:
+ *  On the component level shortcut can be listened by implementing "shortcutFired(e)" listener handler.
+ *  Pay attention to catch shortcut your component has to be focusable - be able to hold focus.
+ *  For instance, to catch "UNDO" shortcut do the following:
 
         var pan = new zebkit.ui.Panel([
-            function redo_command() {
+            function shortcutFired(e) {
                 // handle shortcut here
+                if (e.shortcut === "UNDO") {
+
+                }
             },
 
             // visualize the component gets focus
@@ -3107,96 +3181,99 @@ pkg.FocusManager = Class(pkg.Manager, [
  *  @extends {zebkit.ui.Manager}
  */
 
-/**
- * Shortcut event is handled by registering a method handler with events manager. The manager is accessed as
- * "zebkit.ui.events" static variable:
-
-        zebkit.ui.events.bind(function commandFired(c) {
-            ...
-        });
-
- * @event shortcut
- * @param {Object} c shortcut command
- *         @param {Array} c.args shortcut arguments list
- *         @param {String} c.command shortcut name
- */
 pkg.ShortcutManager = Class(pkg.Manager, [
     function $prototype() {
+        this.keyPath = [];
+
         /**
          * Key pressed event handler.
          * @param  {zebkit.ui.KeyEvent} e a key event
          * @method keyPressed
          */
         this.keyPressed = function(e) {
+            if (e.code === null || this.keyPath.length > 5) {
+                this.keyPath = [];
+            } else if (e.repeat === 1) {
+                this.keyPath[this.keyPath.length] = e.code;
+            }
+
             var fo = pkg.focusManager.focusOwner;
-            if (fo != null && this.keyCommands[e.code]) {
-                var c = this.keyCommands[e.code];
-                if (c && c[e.mask] != null) {
-                    c = c[e.mask];
-
-                    SHORTCUT_EVENT.source  = fo;
-                    SHORTCUT_EVENT.command = c;
-                    pkg.events.fireEvent( "commandFired", SHORTCUT_EVENT);
-
-                    if (fo[c.command] != null) {
-                        if (c.args && c.args.length > 0) {
-                            fo[c.command].apply(fo, c.args);
-                        } else {
-                            fo[c.command]();
-                        }
-                    }
-                }
-            }
-        };
-
-        this.$parseKey = function(k) {
-            var m = 0, c = 0, r = k.split("+");
-            for(var i = 0; i < r.length; i++) {
-                var ch = r[i].trim().toUpperCase();
-                if (pkg.KeyEvent.hasOwnProperty("M_" + ch)) {
-                    m += pkg.KeyEvent["M_" + ch];
-                } else {
-                    if (pkg.KeyEvent.hasOwnProperty(ch)) {
-                        c = pkg.KeyEvent[ch];
+            if (this.keyPath.length > 1) {
+                var sh = this.keyShortcuts;
+                for(var i = 0; i < this.keyPath.length; i++) {
+                    var code = this.keyPath[i];
+                    if (sh[code] != null) {
+                        sh = sh[code];
                     } else {
-                        c = parseInt(ch);
-                        if (c == NaN) {
-                            throw new Error("Invalid key code : " + ch);
-                        }
+                        sh = null;
+                        break;
+                    }
+                }
+
+                if (sh !== null) {
+                    SHORTCUT_EVENT.source   = fo;
+                    SHORTCUT_EVENT.shortcut = sh;
+                    SHORTCUT_EVENT.keys     = this.keyPath.join('+');
+                    pkg.events.fireEvent("shortcutFired", SHORTCUT_EVENT);
+                }
+            }
+        };
+
+        this.keyReleased = function(e) {
+            if (e.key === "Meta") {
+                this.keyPath = [];
+            } else {
+                for(var i = 0; i < this.keyPath.length; i++) {
+                    if (this.keyPath[i] === e.code) {
+                        this.keyPath.splice(i, 1);
+                        break;
                     }
                 }
             }
-            return [m, c];
         };
 
-        this.setCommands = function(commands) {
-            for(var i=0; i < commands.length; i++) {
-                var c = commands[i],
-                    p = this.$parseKey(c.key),
-                    v = this.keyCommands[p[1]];
+        this.setShortcuts = function(shortcuts) {
+            for (var shortcut in shortcuts) {
+                var shortcutCombinations = shortcuts[shortcut];
+                shortcut = shortcut.trim();
 
-                if (v && v[p[0]]) {
-                    throw new Error("Duplicated command: '" + c.command +  "' (" + p +")");
+                if (Array.isArray(shortcutCombinations) === false) {
+                    shortcutCombinations = [ shortcutCombinations ];
                 }
 
-                if (v == null) {
-                    v = [];
-                }
+                for(var j = 0; j < shortcutCombinations.length; j++) {
+                    var shortcutCombination = shortcutCombinations[j];
+                    shortcutCombination = shortcutCombination.replace(/\s+/g, '');
 
-                v[p[0]] = c;
-                this.keyCommands[p[1]] = v;
+                    var shortcutKeys = shortcutCombination.split('+'),
+                        st           = this.keyShortcuts,
+                        len          = shortcutKeys.length;
+
+                    for(var i = 0; i < len; i++) {
+                        var key = shortcutKeys[i];
+                        if (st[key] == null) {
+                            st[key] = {};
+                        }
+
+                        if (i === (len - 1)) {
+                            st[key] = shortcut;
+                        } else {
+                            st = st[key];
+                        }
+                    }
+                }
             }
         };
     },
 
-    function(commands){
+    function(shortcuts) {
         this.$super();
-        this.keyCommands = {};
-        if (commands != null) {
-            pkg.events._.addEvents("commandFired");
-            this.setCommands(commands.common);
-            if (zebkit.isMacOS === true && commands.osx != null) {
-                this.setCommands(commands.osx);
+        this.keyShortcuts = {};
+        if (shortcuts != null) {
+            pkg.events._.addEvents("shortcutFired");
+            this.setShortcuts(shortcuts.common);
+            if (zebkit.isMacOS === true && shortcuts.osx != null) {
+                this.setShortcuts(shortcuts.osx);
             }
         }
     }
@@ -3309,12 +3386,61 @@ pkg.CursorManager = Class(pkg.Manager, [
 ]);
 
 /**
- * Event manager class. One of the key zebkit manager that is responsible for
- * distributing various events in zebkit UI. The manager provides number of
- * methods to register global events listeners.
+ * Event manager class. One of the key zebkit manager that is responsible for distributing various
+ * events in zebkit UI. The manager provides possibility to catch and handle UI events globally. Below
+ * is list event types that can be caught with the event manager:
+ *
+ *   - Key events:
+ *     - "keyTyped"
+ *     - "keyReleased"
+ *     - "keyPressed"
+ *
+ *   - Pointer events:
+ *     - "pointerDragged"
+ *     - "pointerDragStarted"
+ *     - "pointerDragEnded"
+ *     - "pointerMoved"
+ *     - "pointerClicked"
+ *     - "pointerDoubleClicked"
+ *     - "pointerPressed"
+ *     - "pointerReleased"
+ *     - "pointerEntered"
+ *     - "pointerExited"
+ *
+ *   - Focus event:
+ *     - "focusLost"
+ *     - "focusGained"
+ *
+ *   - Component events:
+ *     - "compSized"
+ *     - "compMoved"
+ *     - "compEnabled"
+ *     - "compShown"
+ *     - "compAdded"
+ *     - "compRemoved"
+ *
+ *   - Window events:
+ *     - "winOpened"
+ *     - "winActivated"
+ *
+ *   - Menu events:
+ *     - "menuItemSelected'
+ *
+ *   - Shortcut events:
+ *     - "shortcutFired"
+ *
+ * Current events manager is available with "zebkit.ui.events"
+ *
  * @class zebkit.ui.EventManager
  * @constructor
  * @extends {zebkit.ui.Manager}
+ * @example
+ *
+ *     // catch all pointer pressed events that are triggered by zebkit UI
+ *     zebkit.ui.events.bind(function pointerPressed(e) {
+ *         // handle event
+ *         ...
+ *     });
  */
 pkg.EventManager = Class(pkg.Manager, [
     function $clazz(argument) {
@@ -3351,12 +3477,10 @@ pkg.EventManager = Class(pkg.Manager, [
 
         this.$CHILD_EVENTS_MAP = {};
 
-        // add child<eventName> events names
-        var l = eventNames.length;
-        for(var i = 0; i < l; i++) {
+        // add child<eventName> events names mapping
+        for(var i = 0; i < eventNames.length; i++) {
             var eventName = eventNames[i];
-            eventNames.push("child" + eventName[0].toUpperCase() + eventName.substring(1));
-            this.$CHILD_EVENTS_MAP[eventName] = eventNames[l + i];
+            this.$CHILD_EVENTS_MAP[eventName] = "child" + eventName[0].toUpperCase() + eventName.substring(1);
         }
 
         this.Listerners = zebkit.util.ListenersClass.apply(this, eventNames);
@@ -3365,32 +3489,47 @@ pkg.EventManager = Class(pkg.Manager, [
     function $prototype(clazz) {
         var $CEM = clazz.$CHILD_EVENTS_MAP;
 
+        /**
+         * Fire event with the given id
+         * @param  {String} id an event id
+         * @param  {zebkit.util.Event} e different sort of event
+         * @return {Boolean} boolean flag that indicates if a event handling has been interrupted on one of a stage:
+         *
+         *    - Suppressed by a target component
+         *    - By a global listener
+         *    - By a target component event listener
+         *
+         * @method  fireEvent
+         * @protected
+         */
         this.fireEvent = function(id, e){
-            var t = e.source, kk = $CEM[id], b = false;
+            var childEvent = $CEM[id], evHandler = e.source[id];
 
             // assign id that matches method to be called
             e.id = id;
 
-            // call target component listener
-            if (t[id] != null) {
-                if (t[id].call(t, e) === true) {
-                    return true;
-                }
+            // TODO: not stable concept. the idea to suppress event distribution to global
+            // listeners (managers) and child components
+            if (e.source.suppressEvent != null && e.source.suppressEvent(e) === true) {
+                return true;
             }
 
             // call global listeners
-            b = this._[id](e);
+            if (this._[id](e) === false) {
+                // call target component listener
+                if (evHandler != null && evHandler.call(e.source, e) === true) {
+                    return true;
+                }
 
-            // call parent listeners
-            if (b === false) {
-                for (t = t.parent;t != null; t = t.parent){
-                    if (t[kk] != null) {
-                        t[kk].call(t, e);
+                // call parent listeners
+                for(var t = e.source.parent; t != null; t = t.parent){
+                    if (t[childEvent] != null) {
+                        t[childEvent].call(t, e);
                     }
                 }
+            } else {
+                return true;
             }
-
-            return b;
         };
     },
 
@@ -3400,17 +3539,114 @@ pkg.EventManager = Class(pkg.Manager, [
     }
 ]);
 
+
+/**
+ * Event manager reference. The reference can be used to register listeners that can
+ * get all events of the given type that are fired by zebkit UI. For instance you can
+ * catch all pointer pressed events as follow:
+ * @example
+ *
+ *     zebkit.ui.events.addListeners(function pointerPressed(e) {
+ *         // handle pointer pressed event here
+ *         ...
+ *     });
+ *
+ * @attribute events
+ * @type {zebkit.ui.EventManager}
+ * @readOnly
+ */
 this.events = new pkg.EventManager();
 
+
+/**
+ *  zCanvas zebkit UI component class. This is starting point for building zebkit UI. The class is a wrapper
+ *  for HTML5 Canvas element. The main goals of the class is catching all native HTML5 Canvas element  events
+ *  and translating its into Zebkit UI events.
+ *
+ *  zCanvas instantiation can trigger a new HTML Canvas will be created and added to HTML DOM tree.
+ *  It happens if developer doesn't pass an HTML Canvas element reference or an ID of existing HTML
+ *  Canvas element. To re-use an existent in DOM tree HTML5 canvas element pass an id of the canvas
+ *  element:
+
+        // a new HTML canvas element is created and added into HTML DOM tree
+        var canvas = zebkit.ui.zCanvas();
+
+        // a new HTML canvas element is created into HTML DOM tree
+        var canvas = zebkit.ui.zCanvas(400,500);  // pass canvas size
+
+        // stick to existent HTML canvas element
+        var canvas = zebkit.ui.zCanvas("ExistentCanvasID");
+
+ *  zCanvas has layered structure. Every layer is responsible for showing and controlling a dedicated
+ *  type of UI elements like windows pop-up menus, tool tips and so on. To start building UI use root layer.
+ *  The layer is standard zebkit UI panel that is accessible via "root" zCanvas field:
+
+        // create canvas
+        var canvas = zebkit.ui.zCanvas(400,500);
+
+        // save reference to canvas root layer where
+        // hierarchy of UI components have to be hosted
+        var root = canvas.root;
+
+        // fill root with UI components
+        var label = new zebkit.ui.Label("Label");
+        label.setBounds(10,10,100,50);
+        root.add(label);
+
+ *  @class zebkit.ui.zCanvas
+ *  @extends {zebkit.ui.HtmlCanvas}
+ *  @constructor
+ *  @param {String|Canvas} [element] an ID of a HTML canvas element or reference to an HTML Canvas element.
+ *  @param {Integer} [width] a width of an HTML canvas element
+ *  @param {Integer} [height] a height of an HTML canvas element
+ */
+
+/**
+ * Implement the event handler method  to catch canvas initialized event. The event is triggered once the
+ * canvas has been initiated and all properties listeners of the canvas are set upped. The event can be
+ * used to load saved data.
+
+     var p = new zebkit.ui.zCanvas(300, 300, [
+          function canvasInitialized() {
+              // do something
+          }
+     ]);
+
+ * @event  canvasInitialized
+ */
 pkg.zCanvas = Class(pkg.HtmlCanvas, [
     function $clazz () {
         this.CLASS_NAME = "zebcanvas";
     },
 
     function $prototype() {
-        this.$isRootCanvas   = true;
-        this.isSizeFull      = false;
+        /**
+         * Indicates this the root canvas element
+         * @attribute $isRootCanvas
+         * @type {Boolean}
+         * @private
+         * @default true
+         * @readOnly
+         */
+        this.$isRootCanvas = true;
 
+        /**
+         * Indicate if the canvas has to be stretched to fill the whole view port area.
+         * @type {Boolean}
+         * @attribute isSizeFull
+         * @readOnly
+         */
+        this.isSizeFull = false;
+
+        /**
+         * Transforms the pageX coordinate into relatively to the canvas origin
+         * coordinate taking in account the canvas transformation
+         * @param  {Number} pageX a pageX coordinate
+         * @param  {Number} pageY a pageY coordinate
+         * @return {Integer} an x coordinate that is relative to the canvas origin
+         * @method $toElementX
+         * @protected
+         */
         this.$toElementX = function(pageX, pageY) {
             pageX -= this.offx;
             pageY -= this.offy;
@@ -3420,6 +3656,15 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
                                                                   : pageX) - c.dx;
         };
 
+        /**
+         * Transforms the pageY coordinate into relatively to the canvas origin
+         * coordinate taking in account the canvas transformation
+         * @param  {Number} pageX a pageX coordinate
+         * @param  {Number} pageY a pageY coordinate
+         * @return {Integer} an y coordinate that is relative to the canvas origin
+         * @method $toElementY
+         * @protected
+         */
         this.$toElementY = function(pageX, pageY) {
             pageX -= this.offx;
             pageY -= this.offy;
@@ -3429,8 +3674,8 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
                                                                  : pageY) - c.dy;
         };
 
-        this.load = function(jsonPath, cb){
-            return this.root.load(jsonPath, cb);
+        this.load = function(jsonPath){
+            return this.root.load(jsonPath);
         };
 
         // TODO: may be rename to dedicated method $doWheelScroll
@@ -3447,6 +3692,13 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
             }
         };
 
+        /**
+         * Catches key typed events, adjusts and distributes it to UI hierarchy
+         * @param  {zebkit.ui.KeyEvent} e an event
+         * @private
+         * @method $keyTyped
+         * @return {Boolean}  true if the event has been processed
+         */
         this.$keyTyped = function(e) {
             if (pkg.focusManager.focusOwner != null) {
                 e.source = pkg.focusManager.focusOwner;
@@ -3455,6 +3707,13 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
             return false;
         };
 
+        /**
+         * Catches key pressed events, adjusts and distributes it to UI hierarchy
+         * @param  {zebkit.ui.KeyEvent} e an event
+         * @private
+         * @method $keyPressed
+         * @return {Boolean}  true if the event has been processed
+         */
         this.$keyPressed = function(e) {
             for(var i = this.kids.length - 1;i >= 0; i--){
                 var l = this.kids[i];
@@ -3471,6 +3730,13 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
             return false;
         };
 
+        /**
+         * Catches key released events, adjusts and distributes it to UI hierarchy
+         * @param  {zebkit.ui.KeyEvent} e an event
+         * @private
+         * @method $keyReleased
+         * @return {Boolean}  true if the event has been processed
+         */
         this.$keyReleased = function(e){
             if (pkg.focusManager.focusOwner != null) {
                 e.source = pkg.focusManager.focusOwner;
@@ -3479,6 +3745,12 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
             return false;
         };
 
+        /**
+         * Catches pointer entered events, adjusts and distributes it to UI hierarchy
+         * @param  {zebkit.ui.PointerEvent} e an event
+         * @private
+         * @method $pointerEntered
+         */
         this.$pointerEntered = function(e) {
             // TODO: review it quick and dirty fix try to track a situation
             //       when the canvas has been moved
@@ -3507,6 +3779,12 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
             }
         };
 
+        /**
+         * Catches pointer exited events, adjusts and distributes it to UI hierarchy
+         * @param  {zebkit.ui.PointerEvent} e an event
+         * @private
+         * @method $pointerExited
+         */
         this.$pointerExited = function(e) {
             var o = pkg.$pointerOwner[e.identifier];
             if (o != null) {
@@ -3518,16 +3796,9 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
         };
 
         /**
-         * Catch native canvas pointer move events
-         * @param {String} id an touch id (for touchable devices)
-         * @param {String} e a pointer event that has been triggered by canvas element
-         *
-         *         {
-         *             pageX : {Integer},
-         *             pageY : {Integer},
-         *             target: {HTMLElement}
-         *         }
-         * @protected
+         * Catches pointer moved events, adjusts and distributes it to UI hierarchy.
+         * @param  {zebkit.ui.PointerEvent} e an event
+         * @private
          * @method $pointerMoved
          */
         this.$pointerMoved = function(e){
@@ -3563,6 +3834,12 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
             return b;
         };
 
+        /**
+         * Catches pointer drag started events, adjusts and distributes it to UI hierarchy.
+         * @param  {zebkit.ui.PointerEvent} e an event
+         * @private
+         * @method $pointerDragStarted
+         */
         this.$pointerDragStarted = function(e) {
             var x = this.$toElementX(e.pageX, e.pageY),
                 y = this.$toElementY(e.pageX, e.pageY),
@@ -3577,6 +3854,12 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
             return false;
         };
 
+        /**
+         * Catches pointer dragged events, adjusts and distributes it to UI hierarchy.
+         * @param  {zebkit.ui.PointerEvent} e an event
+         * @private
+         * @method $pointerDragged
+         */
         this.$pointerDragged = function(e){
             if (pkg.$pointerOwner[e.identifier] != null) {
                 return pkg.events.fireEvent("pointerDragged", e.update(pkg.$pointerOwner[e.identifier],
@@ -3587,6 +3870,12 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
             return false;
         };
 
+        /**
+         * Catches pointer drag ended events, adjusts and distributes it to UI hierarchy.
+         * @param  {zebkit.ui.PointerEvent} e an event
+         * @private
+         * @method $pointerDragEnded
+         */
         this.$pointerDragEnded = function(e) {
             if (pkg.$pointerOwner[e.identifier] != null) {
                 return pkg.events.fireEvent("pointerDragEnded", e.update(pkg.$pointerOwner[e.identifier],
@@ -3596,6 +3885,12 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
             return false;
         };
 
+        /**
+         * Catches pointer clicked events, adjusts and distributes it to UI hierarchy.
+         * @param  {zebkit.ui.PointerEvent} e an event
+         * @private
+         * @method $pointerClicked
+         */
         this.$pointerClicked = function(e) {
             var x = this.$toElementX(e.pageX, e.pageY),
                 y = this.$toElementY(e.pageX, e.pageY),
@@ -3614,6 +3909,12 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
                              : false;
         };
 
+        /**
+         * Catches pointer released events, adjusts and distributes it to UI hierarchy.
+         * @param  {zebkit.ui.PointerEvent} e an event
+         * @private
+         * @method $pointerReleased
+         */
         this.$pointerReleased = function(e) {
             var x  = this.$toElementX(e.pageX, e.pageY),
                 y  = this.$toElementY(e.pageX, e.pageY),
@@ -3651,6 +3952,12 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
             }
         };
 
+        /**
+         * Catches pointer pressed events, adjusts and distributes it to UI hierarchy.
+         * @param  {zebkit.ui.PointerEvent} e an event
+         * @private
+         * @method $pointerPressed
+         */
         this.$pointerPressed = function(e) {
             var x  = this.$toElementX(e.pageX, e.pageY),
                 y  = this.$toElementY(e.pageX, e.pageY),
@@ -3682,7 +3989,6 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
             }
 
             var d = this.getComponentAt(x, y);
-
             if (d != null && d.isEnabled === true) {
                 if (pkg.$pointerOwner[e.identifier] !== d) {
                     pkg.$pointerOwner[e.identifier] = d;
@@ -3691,10 +3997,10 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
 
                 pkg.$pointerPressedOwner[e.identifier] = d;
 
-                // TODO: prove the solution (returning true) !?
+                // TODO: prove the solution (return true) !?
                 if (pkg.events.fireEvent("pointerPressed", e.update(d, x, y)) === true) {
-                   delete pkg.$pointerPressedOwner[e.identifier];
-                   return true;
+                    delete pkg.$pointerPressedOwner[e.identifier];
+                    return true;
                 }
             }
 
@@ -3775,19 +4081,36 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
             new pkg.MouseWheelSupport(this.$container, this);
         };
 
-        this.fullScreen = function() {
-            var element = document.documentElement;
-            if (element.requestFullscreen) {
-                element.requestFullscreen();
-              } else if(element.mozRequestFullScreen) {
-                element.mozRequestFullScreen();
-              } else if(element.webkitRequestFullscreen) {
-                element.webkitRequestFullscreen();
-              } else if(element.msRequestFullscreen) {
-                element.msRequestFullscreen();
-              }
-            //}
-        //    document.documentElement.webkitRequestFullscreen();
+        /**
+         * Force the canvas to occupy the all available view port area
+         * @param {Boolean} b true to force the canvas be stretched over all available view port area
+         * @chainable
+         * @method setSizeFull
+         */
+        this.setSizeFull = function(b) {
+            /**
+             * Indicate if the canvas has to be stretched to
+             * fill the whole screen area.
+             * @type {Boolean}
+             * @attribute isSizeFull
+             * @readOnly
+             */
+            if (this.isSizeFull !== true) {
+                if (zebkit.web.$contains(this.$container) !== true) {
+                    throw new Error("zCanvas is not a part of DOM tree");
+                }
+
+                this.isSizeFull = true;
+                this.setLocation(0, 0);
+
+                // adjust body to kill unnecessary gap for inline-block zCanvas element
+                // otherwise body size will be slightly horizontally bigger than visual
+                // viewport height what causes scroller appears
+                document.body.style["font-size"] = "0px";
+
+                var ws = zebkit.web.$viewPortSize();
+                this.setSize(ws.width, ws.height);
+            }
         };
     },
 
@@ -3897,32 +4220,6 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
         return this;
     },
 
-    function fullSize() {
-        /**
-         * Indicate if the canvas has to be stretched to
-         * fill the whole screen area.
-         * @type {Boolean}
-         * @attribute isFullSize
-         * @readOnly
-         */
-        if (this.isFullSize !== true) {
-            if (zebkit.web.$contains(this.$container) !== true) {
-                throw new Error("zCanvas is not a part of DOM tree");
-            }
-
-            this.isFullSize = true;
-            this.setLocation(0, 0);
-
-            // adjust body to kill unnecessary gap for inline-block zCanvas element
-            // otherwise body size will be slightly horizontally bigger than visual
-            // viewport height what causes scroller appears
-            document.body.style["font-size"] = "0px";
-
-            var ws = zebkit.web.$viewPortSize();
-            this.setSize(ws.width, ws.height);
-        }
-    },
-
     function setVisible(b) {
         var prev = this.isVisible;
         this.$super(b);
@@ -3958,61 +4255,75 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
 ]);
 
 
+/**
+ *  This special private manager that plays key role in integration of HTML ELement into zebkit UI hierarchy.
+ *  Description to the class contains technical details of implementation that should not be interested for
+ *  end users.
+ *
+ *  HTML element integrated into zebkit layout has to be tracked regarding:
+ *    1) DOM hierarchy. A new added into zebkit layout DOM element has to be attached to the first found
+ *       parent DOM element
+ *    2) Visibility. If a zebkit UI component change its visibility state it has to have side effect to all
+ *       children HTML elements on any subsequent hierarchy level
+ *    3) Moving a zebkit UI component has to correct location of children HTML element on any subsequent
+ *       hierarchy level.
+ *
+ *  The implementation of HTML element component has the following specific:
+ *    1) Every original HTML is wrapped with "div" element. It is necessary since not all HTML element has been
+ *       designed to be a container for another HTML element. By adding extra div we can consider the wrapper as
+ *       container. The wrapper element is used to control visibility, location, enabled state
+ *    2) HTML element has "isDOMElement" property set to true
+ *    3) HTML element visibility depends on an ancestor component visibility. HTML element is visible if:
+ *       - the element isVisible property is true
+ *       - the element has a parent DOM element set
+ *       - all his ancestors are visible
+ *       - size of element is more than zero
+ *       - getCanvas() != null
+ *
+ *  The visibility state is controlled with "e.style.visibility"
+ *
+ *  To support effective DOM hierarchy tracking a zebkit UI component defines "$domKid" property that contains
+ *  direct DOM element the UI component hosts and other UI components that host DOM element. This is sort of tree:
+ *
+ *  <pre>
+ *    +---------------------------------------------------------
+ *    |  p1 (zebkit component)
+ *    |   +--------------------------------------------------
+ *    |   |  p2 (zebkit component)
+ *    |   |    +---------+      +-----------------------+
+ *    |   |    |   h1    |      | p3 zebkit component   |
+ *    |   |    +---------+      |  +---------------+    |
+ *    |   |                     |  |    h3         |    |
+ *    |   |    +---------+      |  |  +---------+  |    |
+ *    |   |    |   h2    |      |  |  |   p4    |  |    |
+ *    |   |    +---------+      |  |  +---------+  |    |
+ *    |   |                     |  +---------------+    |
+ *    |   |                     +-----------------------+
+ *
+ *     p1.$domKids : {
+ *         p2.$domKids : {
+ *             h1,    * leaf elements are always DOM element
+ *             h2,
+ *             p3.$domKids : {
+ *                h3
+ *             }
+ *         }
+ *     }
+ *   </pre>
+ *
+ *  @constructor
+ *  @private
+ *  @class zebkit.ui.HtmlElementMan
+ */
 pkg.HtmlElementMan = Class(pkg.Manager, [
-//
-// HTML element integrated into zebkit layout has to be tracked regarding:
-//    1) DOM hierarchy. New added into zebkit layout DOM element has to be
-//       attached to the first found parent DOM element
-//    2) Visibility. If a zebkit UI component change its visibility state
-//       it has to have side effect to all children HTML elements on any
-//       subsequent hierarchy level
-//    3) Moving a zebkit UI component has to correct location of children
-//       HTML element on any subsequent hierarchy level.
-//
-//  The implementation of HTML element component has the following specific:
-//    1) Every original HTML is wrapped with "div" element. It is necessary since
-//       not all HTML element has been designed to be a container for another
-//       HTML element. By adding extra div we can consider the wrapper as container.
-//       The wrapper element is used to control visibility, location, enabled state
-//    2) HTML element has "isDOMElement" property set to true
-//    3) HTML element visibility depends on an ancestor component visibility.
-//       HTML element is visible if:
-//          -- the element isVisible property is true
-//          -- the element has a parent DOM element set
-//          -- all his ancestors are visible
-//          -- size of element is more than zero
-//          -- getCanvas() != null
-//       The visibility state is controlled with "e.style.visibility"
-//
-//   To support effective DOM hierarchy tracking a zebkit UI component can
-//   host "$domKid" property that contains direct DOM element the UI component
-//   hosts and other UI components that host DOM element. So it is sort of tree.
-//   For instance:
-//
-//    +---------------------------------------------------------
-//    |  p1 (zebkit component)
-//    |   +--------------------------------------------------
-//    |   |  p2 (zebkit component)
-//    |   |    +---------+      +-----------------------+
-//    |   |    |   h1    |      | p3 zebkit component    |
-//    |   |    +---------+      |  +---------------+    |
-//    |   |                     |  |    h3         |    |
-//    |   |    +---------+      |  |  +---------+  |    |
-//    |   |    |   h2    |      |  |  |   p4    |  |    |
-//    |   |    +---------+      |  |  +---------+  |    |
-//    |   |                     |  +---------------+    |
-//    |   |                     +-----------------------+
-//
-//     p1.$domKids : {
-//         p2.$domKids : {
-//             h1,   // leaf elements are always DOM element
-//             h2,
-//             p3.$domKids : {
-//                h3
-//             }
-//         }
-//     }
     function $prototype() {
+        /**
+         * Evaluates if the given zebkit HTML UI component is invisible state.
+         * @param  {zebkit.ui.HtmlElement}  c  an UI HTML element wrapper
+         * @private
+         * @method $isInInvisibleState
+         * @return {Boolean} true if the HTML element wrapped with zebkit UI is in invisible state
+         */
         function $isInInvisibleState(c) {
             if (c.isVisible === false           ||
                 c.$container.parentNode == null ||

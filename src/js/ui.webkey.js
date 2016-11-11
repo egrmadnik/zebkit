@@ -1,16 +1,215 @@
 zebkit.package("ui", function(pkg, Class) {
 
-    pkg.ClipboardSupport = Class([
-        function $clazz() {
-            this.Listeners = zebkit.util.ListenersClass("clipCopy", "clipPaste", "clipCut");
+    // IE doesn't allow standard window.Event instantiation
+    // this is a workaround to avoid the problem
+    function CustomEvent(event, params ) {
+        params = params || { bubbles: false, cancelable: false, detail: undefined };
+        var evt = document.createEvent( 'CustomEvent' );
+        evt.initCustomEvent( event, params.bubbles, params.cancelable, params.detail );
+        return evt;
+    }
+    CustomEvent.prototype = window.Event.prototype;
+
+    // Key CODES meta
+    // pr  - preventDefault, false if not defined
+    // rp  - repeatable key, true if not defined
+    // map  - map code to another code
+    // ignore  - don't fire the given event, false by default
+    var CODES = {
+            "KeyA"  : { keyCode: 65 },
+            "KeyB"  : { keyCode: 66 },
+            "KeyC"  : { keyCode: 67 },
+            "KeyD"  : { keyCode: 68 },
+            "KeyE"  : { keyCode: 69 },
+            "KeyF"  : { keyCode: 70 },
+            "KeyG"  : { keyCode: 71 },
+            "KeyH"  : { keyCode: 72 },
+            "KeyI"  : { keyCode: 73 },
+            "KeyJ"  : { keyCode: 74 },
+            "KeyK"  : { keyCode: 75 },
+            "KeyL"  : { keyCode: 76 },
+            "KeyM"  : { keyCode: 77 },
+            "KeyN"  : { keyCode: 78 },
+            "KeyO"  : { keyCode: 79 },
+            "KeyP"  : { keyCode: 80 },
+            "KeyQ"  : { keyCode: 81 },
+            "KeyR"  : { keyCode: 82 },
+            "KeyS"  : { keyCode: 83 },
+            "KeyT"  : { keyCode: 84 },
+            "KeyU"  : { keyCode: 85 },
+            "KeyV"  : { keyCode: 86 },
+            "KeyW"  : { keyCode: 87 },
+            "KeyX"  : { keyCode: 88 },
+            "KeyY"  : { keyCode: 89 },
+            "KeyZ"  : { keyCode: 90 },
+            "Digit0": { keyCode: 48 },
+            "Digit1": { keyCode: 49 },
+            "Digit2": { keyCode: 50 },
+            "Digit3": { keyCode: 51 },
+            "Digit4": { keyCode: 52 },
+            "Digit5": { keyCode: 53 },
+            "Digit6": { keyCode: 54 },
+            "Digit7": { keyCode: 55 },
+            "Digit8": { keyCode: 56 },
+            "Digit9": { keyCode: 57 },
+
+            "F1":  { keyCode: 112, key: "F1",   rp: false  },
+            "F2":  { keyCode: 113, key: "F2",   rp: false  },
+            "F3":  { keyCode: 114, key: "F3",   rp: false  },
+            "F4":  { keyCode: 115, key: "F4",   rp: false  },
+            "F5":  { keyCode: 116, key: "F5",   rp: false  },
+            "F6":  { keyCode: 117, key: "F6",   rp: false  },
+            "F7":  { keyCode: 118, key: "F7",   rp: false  },
+            "F8":  { keyCode: 119, key: "F8",   rp: false  },
+            "F9":  { keyCode: 120, key: "F9",   rp: false  },
+            "F10": { keyCode: 121, key: "F10",  rp: false  },
+            "F11": { keyCode: 122, key: "F11",  rp: false  },
+            "F12": { keyCode: 123, key: "F12",  rp: false  },
+            "F13": { keyCode: 124, key: "F13",  rp: false  },
+            "F14": { keyCode: 125, key: "F14",  rp: false  },
+            "F15": { keyCode: 126, key: "F15",  rp: false  },
+
+            "Numpad0"       : { keyCode: 96  },
+            "Numpad1"       : { keyCode: 97  },
+            "Numpad2"       : { keyCode: 98  },
+            "Numpad3"       : { keyCode: 99  },
+            "Numpad4"       : { keyCode: 100 },
+            "Numpad5"       : { keyCode: 101 },
+            "Numpad6"       : { keyCode: 102 },
+            "Numpad7"       : { keyCode: 103 },
+            "Numpad8"       : { keyCode: 104 },
+            "Numpad9"       : { keyCode: 105 },
+            "NumpadDecimal" : { keyCode: 110, key: "Decimal"  },
+            "NumpadSubtract": { keyCode: 109, key: "Subtract" },
+            "NumpadDivide"  : { keyCode: 111, key: "Divide"   },
+            "NumpadMultiply": { keyCode: 106, key: "Multiply" },
+            "NumpadAdd"     : { keyCode: 107, key: "Add"      },
+            "NumLock"       : { keyCode: (zebkit.isFF ? 144 : 12) , key: "NumLock", rp: false, ignore : true },
+
+            "Comma"        : { keyCode: 188 },
+            "Period"       : { keyCode: 190 },
+            "Semicolon"    : { keyCode: (zebkit.isFF ? 59  : 186) },
+            "Quote"        : { keyCode: 222 },
+            "BracketLeft"  : { keyCode: 219 },
+            "BracketRight" : { keyCode: 221 },
+            "Backquote"    : { keyCode: 192 },
+            "Backslash"    : { keyCode: 220 },
+            "Minus"        : { keyCode: (zebkit.isFF ? 173 : 189) },
+            "Equal"        : { keyCode: (zebkit.isFF ? 61  : 187) },
+
+            "NumpadEnter"  : { map: "Enter" },
+            "Enter"        : { keyCode: 13, key: "\n" },
+
+            "Slash"        : { keyCode: 191 },
+            "Space"        : { keyCode: 32, pr: true, key: " " },
+            "Delete"       : { keyCode: 46, key: "Delete" },
+
+            "IntlRo"     : { keyCode: (zebkit.isFF ? 167 : 193), key: "IntlRo"},
+
+            "Backspace"  :  { keyCode: 8, pr: true, key: "Backspace" },
+            "Tab":          { keyCode: 9, pr: true, key: "\t" },
+            "ContextMenu":  { keyCode: zebkit.isFF ? 93 : 0, pr: true, key: "ContextMenu" },
+
+            "ArrowLeft"   : { keyCode: 37, pr: true,  key: "ArrowLeft"   },
+            "ArrowRight"  : { keyCode: 39, pr: true,  key: "ArrowRight"  },
+            "ArrowUp"     : { keyCode: 38, pr: true,  key: "ArrowUp"     },
+            "ArrowDown"   : { keyCode: 40, pr: true,  key: "ArrowDown"   },
+            "PageUp"      : { keyCode: 33, pr: true,  key: "PaheUp"      },
+            "PageDown"    : { keyCode: 34, pr: true,  key: "PageDown"    },
+            "Home"        : { keyCode: 36, pr: true,  key: "Home"        },
+            "End"         : { keyCode: 35, pr: true,  key: "End"         },
+
+            "Escape"      : { keyCode: 27,  pr: true,  key: "Escape",   rp: false },
+            "CapsLock"    : { keyCode: 20,             key: "CapsLock", rp: false, ignore : true },
+
+            "Shift"       : { keyCode: 16,  pr: true, key: "Shift", rp: false,},
+            "ShiftLeft"   : { map: "Shift" },
+            "ShiftRight"  : { map: "Shift" },
+
+            "Alt"         : { keyCode: 18,  pr: true,  key: "Alt",  rp: false, },
+            "AltLeft"     : { map: "Alt" },
+            "AltRight"    : { map: "Alt" },
+
+            "Control"     : { keyCode: 17,  pr: true,  key: "Control",  rp: false },
+            "ControlRight": { map: "Control" },
+            "ControlLeft" : { map: "Control" },
+
+            "MetaLeft"    : { keyCode: 91,  pr: true,  key: "Meta", rp: false },
+            "MetaRight"   : { keyCode: 93,  pr: true,  key: "Meta", rp: false },
+            "OSLeft"      : { keyCode: 224,  map: "MetaLeft" },
+            "OSRight"     : { keyCode: 224,  map: "MetaRight"  }
         },
 
+        CODES_MAP = {};
+
+    // codes to that are not the same for different browsers
+    function initialize() {
+        // validate codes mapping
+        for(var k in CODES) {
+            var code = CODES[k];
+            if (typeof code.map !== "undefined")  {
+                if (typeof CODES[code.map] === "undefined") {
+                    throw new Error("Invalid mapping for code = '" + k + "'");
+                }
+            } else if (typeof code.keyCode === "undefined") {
+                throw new Error("unknown keyCode  for code = '" + k + "'");
+            }
+        }
+
+        // build codes map table for the cases when "code" property
+        CODES_MAP = {};
+        for(var k in CODES) {
+            var code = CODES[k];
+            if (typeof code.map !== "undefined") {
+                if (typeof code.keyCode !== "undefined") {
+                    CODES_MAP[code.keyCode] = code.map;
+                }
+            } else {
+                CODES_MAP[code.keyCode] = k;
+            }
+        }
+    }
+
+    function fetchCode(e) {
+        var code = e.code;
+        if (typeof code !== "undefined") {
+            if (CODES[code] != null && CODES[code].map != null) {
+                code = CODES[code].map;
+            }
+        } else {
+            code = CODES_MAP[(e.which || e.keyCode || 0)];
+            if (typeof code === "undefined") {
+                code = null;
+            }
+        }
+        return code;
+    }
+
+    initialize();
+
+
+    /**
+     * Clipboard support class. The class is light abstraction that helps to perform
+     * textual data exchange via system (browser) clipboard. Browsers have different approaches
+     * and features regarding clipboard implementation and clipboard API. This class
+     * hides the native specific and provides simple way to exchange data via clipboard.
+     * @param  {String} [clipboardTriggerKeyCode] a key code that starts triggering clipboard copy
+     * paste actions. It depends on platform. On Linux "Control" + <xxx> combination
+     * should be used, but on Mac OSX "MetaLeft" + xxx.
+     * To handle copy, paste and cut event override the follwoing methods:
+     *    - **copy**   "clipCopy(focusOwnerComponent, data)"
+     *    - **paste**  "clipPaste(focusOwnerComponent, data)"
+     *    - **cut**    "clipCut(focusOwnerComponent, data)"
+     * @constructor
+     * @class zebkit.ui.ClipboardSupport
+     */
+    pkg.ClipboardSupport = Class([
         function $prototype() {
             this.keyPressed = function (e) {
-                var focusOwner = pkg.focusManager.focusOwner;
-                if (e.code     === this.clipboardTriggerKey &&
-                    focusOwner !=  null                     &&
-                    (focusOwner.clipCopy  != null || focusOwner.clipPaste != null))
+                var focusOwner = this.getFocusOwner();
+                if (focusOwner !==  null                                         &&
+                    (focusOwner.clipCopy != null|| focusOwner.clipPaste != null) &&
+                     fetchCode(e) === this.clipboardTriggerKeyCode)
                 {
                     this.$clipboard.style.display = "block";
                     this.$clipboardCanvas = focusOwner.getCanvas();
@@ -23,28 +222,42 @@ zebkit.package("ui", function(pkg, Class) {
                     this.$clipboard.focus();
                 }
             };
+
+            this.getFocusOwner = function() {
+                return pkg.focusManager.focusOwner;
+            };
         },
 
-        function(clipboardTriggerKey) {
-            this.clipboardTriggerKey = clipboardTriggerKey;
+        function(clipboardTriggerKeyCode) {
+            if (arguments.length > 0) {
+                this.clipboardTriggerKeyCode = clipboardTriggerKeyCode;
+            } else {
+                this.clipboardTriggerKeyCode = zebkit.isMacOS ? "MetaLeft" : "Control";
+            }
 
             function $dupKeyEvent(e, id, target)  {
-                var k = new Event(id);
+                var k = new CustomEvent(id);
                 k.keyCode  = e.keyCode;
                 k.key      = e.key;
+                k.code     = e.code;
                 k.target   = target;
                 k.ctrlKey  = e.ctrlKey;
                 k.altKey   = e.altKey;
                 k.shiftKey = e.shiftKey;
                 k.metaKey  = e.metaKey;
+                k.which    = e.which;
                 return k;
             }
 
-            if (clipboardTriggerKey > 0) {
-                // TODO: why bind instead of being a manager ?
+            if (this.clipboardTriggerKeyCode != null) {
+                // TODO: why bind instead of being a manager ? It because manager class is not know at the moment
+                // clipboard class is loaded
+                // TODO: not a good pattern to access global variable from an instance constructor
                 pkg.events.bind(this);
 
-                this._ = new this.clazz.Listeners();
+                // TODO: not good practice to modify events manager events list from the constructor
+                // more over second instantiation of the class throws exception
+                //pkg.events.addEvents("clipboardFired");
 
                 var $clipboard = this.$clipboard = document.createElement("textarea"),
                     $this = this;
@@ -52,22 +265,26 @@ zebkit.package("ui", function(pkg, Class) {
                 $clipboard.setAttribute("style", "display:none;position:fixed;left:-99em;top:-99em;");
 
                 $clipboard.onkeydown = function(ee) {
-                    $this.$clipboardCanvas.element.dispatchEvent($dupKeyEvent(ee, 'keydown', $this.$clipboardCanvas.element));
-                    $clipboard.value="1";
+                    $this.$clipboardCanvas.element.dispatchEvent($dupKeyEvent(ee,
+                                                                              'keydown',
+                                                                              $this.$clipboardCanvas.element));
+                    $clipboard.value = "1";
                     $clipboard.select();
                 };
 
                 $clipboard.onkeyup = function(ee) {
-                    if (ee.keyCode === $this.clipboardTriggerKey) {
+                    if (fetchCode(ee) === $this.clipboardTriggerKeyCode) {
                         $clipboard.style.display = "none";
                         $this.$clipboardCanvas.element.focus();
                     }
 
-                    $this.$clipboardCanvas.element.dispatchEvent($dupKeyEvent(ee, 'keyup', $this.$clipboardCanvas.element));
+                    $this.$clipboardCanvas.element.dispatchEvent($dupKeyEvent(ee,
+                                                                              'keyup',
+                                                                              $this.$clipboardCanvas.element));
                 };
 
                 $clipboard.onblur = function() {
-                    this.value="";
+                    this.value ="";
                     this.style.display="none";
 
                     //!!! pass focus back to canvas
@@ -77,41 +294,51 @@ zebkit.package("ui", function(pkg, Class) {
                 };
 
                 $clipboard.oncopy = function(ee) {
-                    if (pkg.focusManager.focusOwner          != null &&
-                        pkg.focusManager.focusOwner.clipCopy != null    )
+                    var focusOwner = $this.getFocusOwner();
+                    if (focusOwner          !== null &&
+                        focusOwner.clipCopy != null     )
                     {
-                        var v = pkg.focusManager.focusOwner.clipCopy();
+                        var v = focusOwner.clipCopy();
                         $clipboard.value = (v == null ? "" : v);
                         $clipboard.select();
-                        $this._.clipCopy(v, $clipboard.value);
+                        if ($this.clipCopy != null) {
+                            $this.clipCopy(v, $clipboard.value);
+                        }
                     }
                 };
 
                 $clipboard.oncut = function(ee) {
-                    if (pkg.focusManager.focusOwner && pkg.focusManager.focusOwner.cut != null) {
-                        $clipboard.value = pkg.focusManager.focusOwner.cut();
+                    var focusOwner = $this.getFocusOwner();
+                    if (focusOwner !== null && focusOwner.cut != null) {
+                        $clipboard.value = focusOwner.cut();
                         $clipboard.select();
-                        $this._.clipCut(pkg.focusManager.focusOwner, $clipboard.value);
+                        if ($this.clipCut != null) {
+                            $this.clipCut(focusOwner, $clipboard.value);
+                        }
                     }
                 };
 
                 if (zebkit.isFF === true) {
                     $clipboard.addEventListener ("input", function(ee) {
-                        if (pkg.focusManager.focusOwner &&
-                            pkg.focusManager.focusOwner.clipPaste != null)
-                        {
-                            pkg.focusManager.focusOwner.clipPaste($clipboard.value);
-                            $this._.clipPaste(pkg.focusManager.focusOwner, $clipboard.value);
+                        var focusOwner = $this.getFocusOwner();
+                        if (focusOwner !== null && focusOwner.clipPaste != null) {
+                            focusOwner.clipPaste($clipboard.value);
+                            if ($this.clipPaste != null) {
+                                $this.clipPaste(focusOwner, $clipboard.value);
+                            }
                         }
+
                     }, false);
-                }
-                else {
+                } else {
                     $clipboard.onpaste = function(ee) {
-                        if (pkg.focusManager.focusOwner != null && pkg.focusManager.focusOwner.clipPaste != null) {
+                        var focusOwner = $this.getFocusOwner();
+                        if (focusOwner !== null && focusOwner.clipPaste != null) {
                             var txt = (typeof ee.clipboardData == "undefined") ? window.clipboardData.getData('Text')  // IE
                                                                                : ee.clipboardData.getData('text/plain');
-                            pkg.focusManager.focusOwner.clipPaste(txt);
-                            $this._.clipPaste(pkg.focusManager.focusOwner, txt);
+                            focusOwner.clipPaste(txt);
+                            if ($this.clipPaste != null) {
+                                $this.clipPaste(focusOwner, txt);
+                            }
                         }
                         $clipboard.value = "";
                     };
@@ -121,89 +348,120 @@ zebkit.package("ui", function(pkg, Class) {
         }
     ]);
 
-
-
     /**
      * Input key event class.
-     * @param {zebkit.ui.Panel} source a source of the key input event
-     * @param {Integer} code a code of pressed key
-     * @param {String} ch a character of typed key
-     * @param {Integer} mask a bits mask of pressed meta keys:  zebkit.ui.KeyEvent.M_CTRL,
-     * zebkit.ui.KeyEvent.M_SHIFT, zebkit.ui.KeyEvent.M_ALT, zebkit.ui.KeyEvent.M_CMD
      * @class  zebkit.ui.KeyEvent
      * @extends zebkit.util.Event
      * @constructor
      */
     pkg.KeyEvent = Class(zebkit.util.Event, [
-        function $clazz() {
-            this.M_CTRL  = 1;
-            this.M_SHIFT = 2;
-            this.M_ALT   = 4;
-            this.M_CMD   = 8;
-        },
-
         function $prototype() {
             /**
              * A code of a pressed key
              * @attribute code
              * @readOnly
-             * @type {Integer}
+             * @type {Strung}
              */
-            this.code = 0;
+            this.code = null;
 
             /**
-             * A bits mask of pressed meta keys (CTRL, ALT, etc)
-             * @attribute mask
-             * @readOnly
-             * @type {Integer}
-             */
-            this.mask = 0;
-
-            /**
-             * A character of a typed key
-             * @attribute ch
+             * A pressed key
+             * @attribute key
              * @readOnly
              * @type {String}
              */
-            this.ch = 0;
+            this.key = null;
 
-            this.type = "kb";
+            /**
+             * Input device type. Can be for instance "keyboard", vkeyboard" (virtual keyboard)
+             * @attribute device
+             * @default "keyboard"
+             * @type {String}
+             */
+            this.device = "keyboard";
 
-            this.altKey = this.shiftKey = this.ctrlKey = this.metaKey = false;
+            /**
+             * Boolean that shows state of ALT key.
+             * @attribute altKey
+             * @type {Boolean}
+             * @readOnly
+             */
+            this.altKey = false;
 
+            /**
+             * Boolean that shows state of SHIFT key.
+             * @attribute shiftKey
+             * @type {Boolean}
+             * @readOnly
+             */
+            this.shiftKey = false;
 
-            this.$fillWithParams = function(source, code, ch, mask) {
-                this.$setMask(mask);
-                this.code   = code;
-                this.ch     = ch;
-                this.source = source;
-                return this;
-            };
+            /**
+             * Boolean that shows state of CTRL key.
+             * @attribute ctrlKey
+             * @type {Boolean}
+             * @readOnly
+             */
+            this.ctrlKey = false;
 
-            this.$setMask = function(m) {
-                m = (m & pkg.KeyEvent.M_ALT & pkg.KeyEvent.M_SHIFT & pkg.KeyEvent.M_CTRL & pkg.KeyEvent.M_CMD);
-                this.mask = m;
-                this.altKey   = ((m & pkg.KeyEvent.M_ALT  ) > 0);
-                this.shiftKey = ((m & pkg.KeyEvent.M_SHIFT) > 0);
-                this.ctrlKey  = ((m & pkg.KeyEvent.M_CTRL ) > 0);
-                this.metaKey  = ((m & pkg.KeyEvent.M_CMD  ) > 0);
-                return this;
-            };
+            /**
+             * Boolean that shows state of META key.
+             * @attribute metaKey
+             * @type {Boolean}
+             * @readOnly
+             */
+            this.metaKey = false;
 
+            /**
+             * Repeat counter
+             * @attribute repeat
+             * @type {Number}
+             */
+            this.repeat = 0;
+
+            /**
+             * Time stamp
+             * @attribute  timeStamp
+             * @type {Number}
+             */
+            this.timeStamp = 0;
+
+            /**
+             * Fulfills the given abstract event with fields from the specified native WEB key event
+             * @param  {KeyboardEvent} e a native WEB event
+             * @method $fillWith
+             * @chainable
+             * @protected
+             */
             this.$fillWith = function(e) {
-                this.code = (e.which || e.keyCode || 0);
-                if (this.code === pkg.KeyEvent.ENTER) {
-                    this.ch = "\n";
-                }
-                else {
-                    // FF sets keyCode to zero for some diacritic characters
-                    // to fix the problem we have to try get the code from "key" field
-                    // of event that stores a character
-                    if (this.code === 0 && e.key != null && e.key.length() === 1) {
-                        this.code = e.key.charCodeAt(0);
-                        this.ch   = e.key;
+                // code defines integer that in a case of
+                // key pressed/released is zero or equals to physical key layout integer identifier
+                // but for keyTyped should depict Unicode character code
+                var keyCode = (e.which || e.keyCode || 0);
+
+                this.code = fetchCode(e);
+
+                if (this.code === "Enter" || this.code === "Space" || this.code === "Tab") {
+                    this.key = CODES[this.code].key;
+                } else if (e.key != null) {
+                    this.key = e.key;
+                } else if (e.type === "keypress") {
+                    this.key = e.charCode > 0 && keyCode >= 32 ? String.fromCharCode(e.charCode)
+                                                               : null;
+                } else {
+                    if (e.keyIdentifier != null) {
+                        if (e.keyIdentifier[0] === 'U' &&  e.keyIdentifier[1] === '+') {
+                            this.key = String.fromCharCode(parseInt(e.keyIdentifier.substring(2), 16));
+                        } else {
+                            this.key = e.keyIdentifier;
+                        }
                     } else {
-                        this.ch = e.charCode > 0 && this.code >= 32 ? String.fromCharCode(e.charCode) : 0;
+                        if (this.code != null && CODES[this.code] != null && CODES[this.code].key != null) {
+                            this.key = CODES[this.code].key;
+                        } else {
+                            this.key = e.charCode > 0 && keyCode >= 32 ? String.fromCharCode(e.charCode)
+                                                                       : null;
+                        }
                     }
                 }
 
@@ -211,24 +469,71 @@ zebkit.package("ui", function(pkg, Class) {
                 this.shiftKey = e.shiftKey;
                 this.ctrlKey  = e.ctrlKey;
                 this.metaKey  = e.metaKey;
-
-                this.mask = 0;
-                if (e.altKey)   this.mask += pkg.KeyEvent.M_ALT;
-                if (e.shiftKey) this.mask += pkg.KeyEvent.M_SHIFT;
-                if (e.ctrlKey)  this.mask += pkg.KeyEvent.M_CTRL;
-                if (e.metaKey)  this.mask += pkg.KeyEvent.M_CMD;
-
                 return this;
             };
-        },
+
+            this.getModifierState = function(m) {
+                if (m === "Meta") {
+                    return this.metaKey;
+                }
+
+                if (m === "Control") {
+                    return this.ctrlKey;
+                }
+
+                if (m === "Shift") {
+                    return this.shiftKey;
+                }
+
+                if (m === "Alt") {
+                    return this.altKey;
+                }
+
+                throw new Error("Unknown modifier key '" + m + "'");
+            };
+        }
     ]);
 
 
-    var $keyPressedCode = -1, KEY_EVENT = new pkg.KeyEvent();
+    var KEY_DOWN_EVENT  = new pkg.KeyEvent(),
+        KEY_UP_EVENT    = new pkg.KeyEvent(),
+        KEY_PRESS_EVENT = new pkg.KeyEvent(),
+        wasMetaLeftPressed  = false,
+        wasMetaRightPressed = false;
 
+    /**
+     * Class that is responsible for translating native DOM element key event into abstract event that further
+     * can be transfered to zebkit UI engine (or any other destination). Browsers key events support can be
+     * implemented with slight differences from the standards. The goal of the class is key events unification.
+     * The class fires three types of key events to passed event destination code:
+     *    - $keyPressed(e)
+     *    - $keyReleased(e)
+     *    - $keyTyped(e)
+     *
+     * For instance imagine we have a DOM Element and want to have identical sequence and parameters of key
+     * events the DOM element triggers. It can be done as follow:
+     *
+     *      new KeyEventUnifier(domElement, {
+     *          "$keyPressed" : function(e) {
+     *              ...
+     *          },
+     *
+     *          "$keyReleased" : function(e) {
+     *              ...
+     *          },
+     *
+     *          "$keyTyped" : function(e) {
+     *              ...
+     *          }
+     *      });
+     *
+     * @param  {HTMLElement} element
+     * @param  {Object} destination a destination listener that can listen
+     * @constructor
+     * @class  zebkit.ui.KeyEventUninfier
+     */
     pkg.KeyEventUnifier = Class([
         function(element, destination) {
-
             //   Alt + x  was pressed  (for IE11 consider sequence of execution of "alt" and "x" keys)
             //   Chrome/Safari/FF  keydown -> keydown -> keypressed
             // ----------------------------------------------------------------------------------------------------------------------
@@ -256,30 +561,148 @@ zebkit.package("ui", function(pkg, Class) {
             //          |  18 + 88    |  18 + 88     |          |                  |                |                   |
             //
             element.onkeydown = function(e) {
-                KEY_EVENT.$fillWith(e);
-                var code = $keyPressedCode = KEY_EVENT.code;
-                //!!!!
-                // TODO: hard coded constants
-                // Since container of zCanvas catch all events from its children DOM
-                // elements don't prevent the event for the children DOM element
-                if (destination.$keyPressed(KEY_EVENT) === true ||
-                    (code != 13 &&
-                     code < 47  &&
-                     code != 32 &&
-                    e.target === element))
-                {
-                    e.preventDefault();
+
+                var code = KEY_DOWN_EVENT.code,
+                    pts  = KEY_DOWN_EVENT.timeStamp,
+                    ts   = new Date().getTime();
+
+                // fix loosing meta left keyup event in some browsers
+                var fc = fetchCode(e);
+
+                // ignore some keys that cannot be handled properly
+                if (CODES[fc] != null && CODES[fc].ignore === true) {
+                    return;
                 }
 
+                if (wasMetaLeftPressed === true && (e.metaKey !== true ||  fc === "MetaLeft")) {
+                    wasMetaLeftPressed = false;
+                    try {
+                        KEY_DOWN_EVENT.code      = "MetaLeft";
+                        KEY_DOWN_EVENT.repeat    = 0;
+                        KEY_DOWN_EVENT.metaKey   = true;
+                        KEY_DOWN_EVENT.timeStamp = ts;
+                        destination.$keyReleased(KEY_DOWN_EVENT);
+                    } catch(e) {
+                        zebkit.$printError(e);
+                    } finally {
+                        KEY_DOWN_EVENT.code = null;
+                        code = null;
+                    }
+                }
+
+                // fix loosing meta right keyup event in some browsers
+                if (wasMetaRightPressed === true && (e.metaKey !== true ||  fc === "MetaRight")) {
+                    wasMetaRightPressed = false;
+                    try {
+                        KEY_DOWN_EVENT.code      = "MetaRight";
+                        KEY_DOWN_EVENT.repeat    = 0;
+                        KEY_DOWN_EVENT.metaKey   = true;
+                        KEY_DOWN_EVENT.timeStamp = ts;
+                        destination.$keyReleased(KEY_DOWN_EVENT);
+                    } catch(e) {
+                        zebkit.$printError(e);
+                    } finally {
+                        KEY_DOWN_EVENT.code = null;
+                        code = null;
+                    }
+                }
+
+                // we suppose key down object is shared with key up that means it
+                // holds state of key (we can understand whether a key has been
+                // still held or was released by checking if the code equals)
+                KEY_DOWN_EVENT.$fillWith(e);
+                KEY_DOWN_EVENT.timeStamp = ts;
+
+                // calculate repeat counter
+                if (KEY_DOWN_EVENT.code === code && e.metaKey !== true && (ts - pts) < 1000) {
+                    KEY_DOWN_EVENT.repeat++;
+                } else {
+                    KEY_DOWN_EVENT.repeat = 1;
+                }
+
+                //!!!!
+                // Suppress some standard browser actions.
+                // Since container of zCanvas catch all events from its children DOM
+                // elements don't prevent the event for the children DOM element
+                var key = CODES[KEY_DOWN_EVENT.code];
+                if (key != null && key.pr === true && e.target === element) {
+                    e.preventDefault();
+                }
                 e.stopPropagation();
+
+                // fire key pressed event
+                try {
+                    destination.$keyPressed(KEY_DOWN_EVENT);
+                } catch(e) {
+                    zebkit.$printError(e);
+                }
+
+                if (KEY_DOWN_EVENT.code === "MetaLeft") {
+                    wasMetaLeftPressed = true;
+                } else if (KEY_DOWN_EVENT.code === "MetaRight") {
+                    wasMetaRightPressed = true;
+                } else {
+                    // if meta key is kept than generate key released event for
+                    // all none-Meta keys. it is required since Meta + <a key>
+                    // will never fire key released for <a key> (except state keys
+                    // like shift, control etc)
+                    if (e.metaKey === true) {
+                        // only repeat
+                        if (key == null || key.rp !== false) {
+                            try {
+                                KEY_UP_EVENT.$fillWith(e);
+                                KEY_UP_EVENT.repeat = 0;
+                                KEY_UP_EVENT.timeStamp = ts;
+                                destination.$keyReleased(KEY_UP_EVENT);
+                            } catch(e) {
+                                zebkit.$printError(e);
+                            }
+                        }
+                    } else if (KEY_DOWN_EVENT.code === "Space" ||
+                               KEY_DOWN_EVENT.code === "Enter" ||
+                               KEY_DOWN_EVENT.code === "Tab"     )
+                    {
+                        // since space and enter key press event triggers preventDefault
+                        // standard key press can never happen so let's emulate it here
+                        KEY_PRESS_EVENT.$fillWith(e);
+                        KEY_PRESS_EVENT.repeat = KEY_DOWN_EVENT.repeat;
+                        KEY_PRESS_EVENT.timeStamp = ts;
+                        destination.$keyTyped(KEY_PRESS_EVENT);
+                    }
+                }
             };
 
             element.onkeyup = function(e) {
-                $keyPressedCode = -1;
-                if (destination.$keyReleased(KEY_EVENT.$fillWith(e)) === true) {
-                    e.preventDefault();
-                }
                 e.stopPropagation();
+
+                KEY_UP_EVENT.$fillWith(e);
+
+                // ignore some keys that cannot be handled properly
+                if (CODES[KEY_UP_EVENT.code] != null && CODES[KEY_UP_EVENT.code].ignore === true) {
+                    return;
+                }
+
+                if (wasMetaLeftPressed === true && KEY_UP_EVENT.code === "MetaLeft") {
+                    wasMetaLeftPressed = false;
+                }
+
+                if (wasMetaRightPressed === true && KEY_UP_EVENT.code === "MetaRight") {
+                    wasMetaRightPressed = false;
+                }
+
+                var key = CODES[KEY_UP_EVENT.code];
+                if (e.metaKey !== true || (key != null && key.rp === false)) {
+                    KEY_UP_EVENT.repeat    = 0;
+                    KEY_UP_EVENT.timeStamp = new Date().getTime();
+                    try {
+                        destination.$keyReleased(KEY_UP_EVENT);
+                    } finally {
+                        // clean repeat counter
+                        if (KEY_DOWN_EVENT.code === KEY_UP_EVENT.code) {
+                            KEY_DOWN_EVENT.repeat = 0;
+                        }
+                    }
+                }
             };
 
             //   Alt + x  was pressed  (for IE11 consider sequence of execution of "alt" and "x" keys)
@@ -308,35 +731,28 @@ zebkit.package("ui", function(pkg, Class) {
             //          |  8776 (≈)   |              |          |                  |                |                   |
             //
             element.onkeypress = function(e) {
-                KEY_EVENT.$fillWith(e);
-
-                var code = KEY_EVENT.code;
-                if (KEY_EVENT.ch === 0) {
-                    // wrap with try catch to restore variable
-                    try {
-                        if ($keyPressedCode != code) {
-                            if (destination.$keyPressed(KEY_EVENT) === true) {
-                                e.preventDefault();
-                            }
-                        }
-                    }
-                    catch(ee) {
-                        $keyPressedCode = -1;
-                        throw ee;
-                    }
-                    $keyPressedCode = -1;
-                }
-                else {
-                    // Since container of zCanvas catch all events from its children DOM
-                    // elements don't prevent the event for the children DOM element
-                    if (destination.$keyTyped(KEY_EVENT) === true || (e.target === element && code < 47 && code != 32)) {
-                        e.preventDefault();
-                    }
-                }
-
                 e.stopPropagation();
+
+                // pressed meta key should bring to ignorance keypress event since the event
+                // is emulated in keydown event handler.
+                if (e.metaKey !== true) {
+                    KEY_PRESS_EVENT.$fillWith(e);
+
+                    KEY_PRESS_EVENT.code   = KEY_DOWN_EVENT.code;      // copy code of keydown key since key press can contain undefined code
+                    KEY_PRESS_EVENT.repeat = KEY_DOWN_EVENT.repeat;
+
+                    if (KEY_PRESS_EVENT.code !== "Space" &&
+                        KEY_PRESS_EVENT.code !== "Enter" &&
+                        KEY_PRESS_EVENT.code !== "Tab"   &&
+                        KEY_PRESS_EVENT.code !== "ContextMenu")
+                    {
+                        // Since container of zCanvas catch all events from its children DOM
+                        // elements don't prevent the event for the children DOM element
+                        KEY_PRESS_EVENT.timeStamp = new Date().getTime();
+                        destination.$keyTyped(KEY_PRESS_EVENT);
+                    }
+                }
             };
         }
     ]);
-
 });

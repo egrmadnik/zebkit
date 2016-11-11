@@ -1,10 +1,21 @@
-(function(pkg, Class) {
+zebkit.package(function(pkg, Class) {
     if (typeof console === "undefined" ) {
         console = {
             log  : function() {
-                return print.apply(this, arguments);
+                if (typeof print !== 'undefined') {
+                    return print.apply(this, arguments);
+                } else {
+                    var args = Array.prototype.slice.call(arguments);
+                    if (typeof alert !== "undefined") {
+                        alert(args.join());
+                    } else {
+                        throw new Error("Cannot find output to log : " + args.join());
+                    }
+                }
             }
         };
+
+        console.warn = console.error = console.log;
     }
 
     pkg.Output = Class([
@@ -15,19 +26,11 @@
 
             this._p = function(l, o) {
                 o = this.format(o);
-                if (pkg.isInBrowser) {
-                    if (typeof console === "undefined" || !console.log) {
-                        alert(o);
-                    }
-                    else {
-                        if (l === 0) console.log(o);
-                        else {
-                            if (l == 1) console.warn(o);
-                            else console.error(o);
-                        }
-                    }
+                if (l === 0) console.log(o);
+                else {
+                    if (l == 1) console.warn(o);
+                    else        console.error(o);
                 }
-                else pkg.$global.print(o);
             };
 
             this.format = function (o) {
@@ -54,8 +57,7 @@
                     this.el.setAttribute("id", element);
                     document.body.appendChild(this.el);
                 }
-            }
-            else {
+            } else {
                 if (element == null) {
                     throw new Error("Unknown HTML output element");
                 }
@@ -105,29 +107,24 @@
                         this.$timer = setInterval(function() {
                             if ($this.$justSaved === true) {
                                 $this.$justSaved = false;
-                                return;
-                            }
-
-                            if ($this.buffer.length === 0) {
+                            } else  if ($this.buffer.length === 0) {
                                 clearInterval($this.$timer);
                                 $this.$timer = null;
-                                return;
-                            }
+                            } else {
+                                try {
+                                    var q = $this.query("log", {});
+                                    for(var i=0; i < $this.buffer.length; i++) {
+                                        q   += "&level=" + $this.buffer[i]["level"];
+                                        q   += "&message=" +  $this.buffer[i]["message"];
+                                        q   += "&time=" + $this.buffer[i]["time"];
+                                    }
+                                    $this.buffer.length= 0;
 
-                            try {
-                                var q = $this.query("log", {});
-                                for(var i=0; i < $this.buffer.length; i++) {
-                                    q   += "&level=" + $this.buffer[i]["level"];
-                                    q   += "&message=" +  $this.buffer[i]["message"];
-                                    q   += "&time=" + $this.buffer[i]["time"];
+                                    var r = $this.http.POST(q).split("\n");
+                                    if (parseInt(r[0], 10) < 0) throw new Error(r[1]);
+                                } catch(e) {
+                                    alert(e);
                                 }
-                                $this.buffer.length= 0;
-
-                                var r = $this.http.POST(q).split("\n");
-                                if (parseInt(r[0], 10) < 0) throw new Error(r[1]);
-                            }
-                            catch(e) {
-                                alert(e);
                             }
                         }, 1500);
                     }
@@ -311,7 +308,7 @@
 
     pkg.runTests = function() {
         var out = pkg.$out, c = 0,  err = 0, sk = 0, title = null;
-        if (pkg.isInBrowser) {
+        if (typeof navigator !== "undefined") {
             out = new pkg.HtmlOutput();
         }
 
@@ -346,8 +343,7 @@
                 if (k.indexOf("_") === 0) {
                     out.warn("? " + k + " (remove leading '_' to enable '" + k + "' test case)");
                     sk++;
-                }
-                else {
+                } else {
                     (function(f, k) {
                         runner.$currentTestCase = k;
 
@@ -368,24 +364,23 @@
                             }
                         };
 
-                        runner.run(function() {
+                        runner.than(function() {
                             c++ ;
                             f.call(this);
                         })
                         .
-                        run(function() {
+                        than(function() {
                             out.print("+ " + k);
                         });
                     })(f, k);
                 }
             }
 
-            runner.run(function() {
+            runner.than(function() {
                 out.print("==============================================");
                 if (c === 0) {
                     out.warn("No test case to be run was found");
-                }
-                else {
+                } else {
                     if (sk > 0) {
                         out.warn("" + sk + " test cases have been skipped");
                     }
@@ -394,11 +389,10 @@
                 }
             });
 
-            runner.error(function(e) {
+            runner.catch(function(e) {
                 if (e instanceof AssertionError) {
                     out.error("- " + this.$currentTestCase + " || " + e.message);
-                }
-                else {
+                } else {
                     out.error("" + this.$currentTestCase + " (unexpected error) " + (e.stack ? e.stack : e));
                     console.log("" + e.stack);
                 }
@@ -406,8 +400,7 @@
                 this.$currentTestCase = null;
             });
 
-        }
-        else {
+        } else {
             for(var i = 0; i < args.length; i++) {
                 var f = args[i], k = pkg.$FN(f);
 
@@ -415,19 +408,16 @@
                     if (k.indexOf("_") === 0) {
                         out.warn("? " + k + " (remove leading '_' to enable '" + k + "' test case)");
                         sk++;
-                    }
-                    else {
+                    } else {
                         c++;
                         f();
                         out.print("+ " + k);
                     }
-                }
-                catch(e) {
+                } catch(e) {
                     err++;
                     if (e instanceof AssertionError) {
                         out.error("- " + k + " || " + e.message);
-                    }
-                    else {
+                    } else {
                         out.error("" + k + " (unexpected error) " + (e.stack ? e.stack : e));
                         console.log("" + e.stack);
                         throw e;
@@ -438,16 +428,14 @@
             out.print("==============================================");
             if (c === 0) {
                 out.warn("No test case to be run was found");
-            }
-            else {
+            } else {
                 if (sk > 0) {
                     out.warn("" + sk + " test cases have been skipped");
                 }
 
                 if (err === 0) {
                     out.print((sk === 0 ? "ALL (" + c  + ")" : c) + " test cases have passed successfully");
-                }
-                else {
+                } else {
                     out.error("" + err  + " test cases have failed");
                 }
 
@@ -482,5 +470,4 @@
 
         clazz.prototype[methodName].$watched = m;
     };
-
-})(zebkit, zebkit.Class);
+});

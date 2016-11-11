@@ -18,113 +18,35 @@
         "ListLayout"    : "zebkit.layout.ListLayout"
     },
 
-    "KeyEvent": {
-        "A":65, "B":66, "C":67, "D":68, "E":69, "F":70, "G":71, "H":72, "I":73, "J":74, "K":75,
-        "L":76, "M":77, "N":78, "O":79, "P":80, "Q":81, "R":82, "S":83, "T":84, "U":85, "V":86,
-        "W":87, "X":88, "Y":89, "Z":90, "0":48, "1":49, "2":50, "3":51, "4":52, "5":53, "6":54,
-        "7":55, "8":56, "9":57, "F1":112, "F2":113, "F3":114, "F4":115, "F5":116, "F6":117,
-        "F7":118, "F8":119, "F9":120, "F10":121, "F11" : 122, "F12" : 123, ",":188, ";" : 186, "'" : 222,
-        "[":219, "]":221, "\\":220,  "/":191,  "ENTER":13, "ESCAPE" : 27, "SPACE" : 32, "DELETE" : 46,
-        "BSPACE":8, "TAB":9, "INSERT":45, "DELETE":46, "LEFT":37, "RIGHT":39, "UP":38, "DOWN":40,
-        "HOME":36,"END":35,"PAGEUP":33,"PAGEDOWN":34, "CMD":{ ".expr":"zebkit.isFF?224:91" }, "SHIFT": 16,
-        "CTRL" : 17, "ALT":18
-    },
-
     "focusManager"   : { "$ ? zebkit.ui.FocusManager"  :[] },
     "htmlManager"    : { "$ ? zebkit.ui.HtmlElementMan":[] },
     "cursorManager"  : { "$ ? zebkit.ui.CursorManager" :[] },
 
-    "commandManager" : {
-        "$zebkit.ui.ShortcutManager" :[{
-            "common": [
-                {
-                    "command" : "undo_command",
-                    "key"     : "Ctrl+z"
-                },
-                {
-                    "command" : "redo_command",
-                    "key"     : "Ctrl+Shift+z"
-                },
-                {
-                    "command" : "selectAll_command",
-                    "key"     : "Ctrl+A"
-                },
-                {
-                    "command" : "nextWord_command",
-                    "args"    : [ false, 1 ],
-                    "key"     : "Ctrl+Right"
-                },
-                {
-                    "command" : "nextWord_command",
-                    "args"    : [ false, -1 ],
-                    "key"     : "Ctrl+Left"
-                },
-                {
-                    "command" : "nextWord_command",
-                    "args"    : [ true, 1],
-                    "key"     : "Ctrl+Shift+Right"
-                },
-                {
-                    "command" : "nextWord_command",
-                    "args"    : [ true, -1],
-                    "key"     : "Ctrl+Shift+Left"
-                },
-                {
-                    "command" : "nextPage_command",
-                    "args"    : [ false, -1],
-                    "key"     : "Ctrl+Up"
-                },
-                {
-                    "command" : "nextPage_command",
-                    "args"    : [ false, 1],
-                    "key"     : "Ctrl+Down"
-                },
-                {
-                    "command" : "nextPage_command",
-                    "args"    : [ true, -1],
-                    "key"     : "Ctrl+Up+Shift"
-                },
-                {
-                    "command" : "nextPage_command",
-                    "args"    : [ true, 1],
-                    "key"     : "Ctrl+Down+Shift"
-                }
-            ],
-            "osx" : [
-                {
-                    "command"   : "undo_command",
-                    "key"       : "Cmd+z"
-                },
-                {
-                    "command" : "redo_command",
-                    "key"     : "Cmd+Shift+z"
-                },
-                {
-                    "command" : "selectAll_command",
-                    "key"     : "Cmd+A"
-                },
-                {
-                    "command" : "nextWord_command",
-                    "args"    : [ false, 1 ],
-                    "key"     : "Cmd+Right"
-                },
-                {
-                    "command" : "nextWord_command",
-                    "args"    : [ false, -1 ],
-                    "key"     : "Cmd+Left"
-                },
-                {
-                    "command" : "nextWord_command",
-                    "args"    : [ true, 1],
-                    "key"     : "Cmd+Shift+Right"
-                },
-                {
-                    "command" : "nextWord_command",
-                    "args"    : [ true, -1],
-                    "key"     : "Cmd+Shift+Left"
-                }
-            ]
-         }]
+    "shortcuts" : {
+        "$zebkit.ui.ShortcutManager" :{
+            "common": {
+                "UNDO"          : "Control + KeyZ",
+                "REDO"          : "Control + Shift + KeyZ",
+                "SELECTALL"     : "Control + KeyA",
+                "NEXTWORD"      : "Control + ArrowRight",
+                "PREVWORD"      : "Control + ArrowLeft",
+                "NEXTWORDSELECT": "Control + Shift + ArrowRight",
+                "PREVWORDSELECT": "Control + Shift + ArrowLeft",
+                "PREVPAGE"      : "Control + ArrowUp",
+                "NEXTPAGE"      : "Control + ArrowDown",
+                "PREVPAGESELECT": "Control + ArrowUp + Shift",
+                "NEXTPAGESELECT": "Control + ArrowDown + Shift"
+            },
+            "osx" : {
+                "UNDO"          : "MetaLeft + KeyZ",
+                "REDO"          : "MetaLeft + Shift + KeyZ",
+                "SELECTALL"     : "MetaLeft + KeyA",
+                "NEXTWORD"      : "MetaLeft + ArrowRight",
+                "PREVWORD"      : "MetaLeft + ArrowLeft",
+                "NEXTWORDSELECT": "MetaLeft + Shift + ArrowRight",
+                "PREVWORDSELECT": "MetaLeft + Shift + ArrowLeft"
+            }
+         }
     },
 
     "popup" : {
@@ -132,7 +54,7 @@
     },
 
     "clipboardSupport" : {
-        "$zebkit.ui.ClipboardSupport":  {".expr" : "zebkit.isMacOS ? zebkit.ui.KeyEvent.CMD : zebkit.ui.KeyEvent.CTRL" }
+        "$zebkit.ui.ClipboardSupport": []
     },
 
     "font"          : { "$Font" : ["Arial", 14] },

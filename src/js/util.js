@@ -1,10 +1,26 @@
 /**
- * Number of different utilities methods and classes
- * @module util
- * @requires zebkit
+ * Number of different utilities methods and classes. The package has alternative to JS promise approach
+ * that helps to make your code more linear looking nevertheless it can contain asynchronous calling.
+ * One more useful class is zebkit JSON bag that allows developer to describe number of objects
+ * and its properties value in JSON format.
+ * @class zebkit.util
+ * @access package
  */
-(function(pkg, Class, Interface) {
+zebkit.package("util", function(pkg, Class) {
 
+/**
+ * Validate the specified value to be equal one of the given values
+ * @param  {value} value a value to be validated
+ * @param  {Object} [value]* a number of valid values to test against
+ * @throws Error if the value doesn't match any valid value
+ * @for  zebkit.util
+ * @method  $validateValue
+ * @example
+ *      // test if the alignment is equal one of the possible values
+ *      // throws error otherwise
+ *      zebkit.util.$validateValue(alignment, "top", "left", "right", "bottom");
+ * @protected
+ */
 pkg.$validateValue = function(value) {
     if (arguments.length < 2) {
         throw new Error("Invalid arguments list. List of valid values is expected");
@@ -48,11 +64,13 @@ pkg.format = function(s, obj, ph) {
             if (v == null) {
                 ph2 = ph;
                 v = "";
-            }
-            else {
+            } else {
                 v = "" + v;
             }
-            for(var k = v.length; k < ml; k++) v = ph2 + v;
+
+            for(var k = v.length; k < ml; k++) {
+                v = ph2 + v;
+            }
         }
 
         if (v == null) v = ph;
@@ -67,39 +85,57 @@ pkg.format = function(s, obj, ph) {
     return s;
 };
 
+/**
+ * Abstract event class.
+ * @class zebkit.util.Event
+ * @constructor
+ */
 pkg.Event = Class([
     function $prototype() {
+        /**
+         * Source of an event
+         * @attribute source
+         * @type {Object}
+         * @default null
+         * @readOnly
+         */
         this.source = null;
     }
 ]);
 
 /**
- * Sequential tasks runner. Allows developers to execute number of tasks (async and sync) in the
- * the order they have been called by runner:
+ * Sequential tasks runner. Allows developers to execute number of steps (async and sync) in the
+ * exact order they have been called by runner. The ideas of the runner implementation is making the
+ * code more readable and plain nevertheless it includes asynchronous parts:
+ * @example
 
         var r = new zebkit.util.Runner();
 
-        r.run(function() {
+        // step 1
+        r.than(function() {
             // call three asynchronous HTTP GET requests to read three files
+            // pass join to every async. method to be notified when the async.
+            // part is completed
             zebkit.io.GET("http://test.com/a.txt", this.join());
             zebkit.io.GET("http://test.com/b.txt", this.join());
             zebkit.io.GET("http://test.com/c.txt", this.join());
         })
-        .
-        run(function(r1, r2, r3) {
+        .  // step 2
+        than(function(r1, r2, r3) {
             // handle completely read on previous step files
             r1.responseText  // "a.txt" file content
             r2.responseText  // "b.txt" file content
             r3.responseText  // "c.txt" file content
         })
-        .
-        error(function(e) {
+        . // handle error
+        catch(function(e) {
             // called when an exception has occurred
             ...
         });
 
 
- * @class zebkit.ui.Runner
+ * @class zebkit.util.Runner
+ * @constructor
  */
 pkg.Runner = function() {
     this.$tasks      = [];
@@ -107,7 +143,14 @@ pkg.Runner = function() {
     this.$error      = null;
     this.$busy       = 0;
 
-    this.run = function(body) {
+    /**
+     * Run the given method as one of the sequential step of the runner execution.
+     * @method  than
+     * @param  {Function} body a method to be executed. The method can get results of previous step
+     * execution as its arguments. The method is called in context of instance of a Runner.
+     * @chainable
+     */
+    this.than = function(body) {
         this.$tasks.push(function() {
             // clean results of execution of a previous task
             this.$results = [];
@@ -138,6 +181,11 @@ pkg.Runner = function() {
         return this;
     };
 
+    /**
+     * Fire error if something goes wrong.
+     * @param  {Error} e an error
+     * @method fireError
+     */
     this.fireError = function(e) {
         if (this.$error == null) {
             this.$busy    = 0;
@@ -147,6 +195,13 @@ pkg.Runner = function() {
         this.$schedule();
     };
 
+    /**
+     * Returns join callback for asynchronous parts of the runner. The callback has to be requested and called by
+     * an asynchronous method to inform the runner the given method is completed.
+     * @return {Function} a method to notify runner the given asynchronous part has been completed. The passed
+     * to the method arguments will be passed to the next step of the runner.
+     * @method join
+     */
     this.join = function() {
         var $this = this,
             index = this.$busy++;
@@ -178,15 +233,22 @@ pkg.Runner = function() {
         };
     };
 
-    this.error = function(callback) {
+    /**
+     * Method to catch error that has occurred during the runner sequence execution.
+     * @param  {Function} callback a callback to handle the error. The method gets an error
+     * that has happened as its argument
+     * @chainable
+     * @method catch
+     */
+    this.catch = function(callback) {
         var $this = this;
         this.$tasks.push(function() {
             if ($this.$error != null) {
                 try {
                     callback.call($this, $this.$error);
-                }
-                finally {
                     $this.$error = null;
+                } catch(e) {
+                    $this.$error = e;
                 }
             }
             $this.$schedule();
@@ -202,11 +264,44 @@ pkg.Runner = function() {
     };
 };
 
+
+function _ls_child(r, name, deep, eq, cb) {
+    if (r.kids != null) {
+        for (var i = 0; i < r.kids.length; i++) {
+            var kid = r.kids[i];
+            if (name === '*' || eq(kid, name)) {
+                if (cb(kid)) return true;
+            }
+
+            if (deep && _ls_child(kid, name, deep, eq, cb)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function _find(root, ms, idx, eq, cb) {
+    if (ms == null || idx >= ms.length) {
+        return cb(root);
+    }
+
+    var m = ms[idx];
+    return _ls_child(root, m[2], m[1] === "//", eq, function(child) {
+        if (m[3]) {
+            var v = child[m[4].substring(1)];
+            if (v == null || v.toString() !== m[5]) {
+                return false;
+            }
+        }
+        return _find(child, ms, idx + 1, eq, cb);
+    });
+}
+
 /**
- * Find by xpath-like path an element in a tree-like structure. The method is flexible way to look up
- * elements in tree structures. The only requirements the passed tree-like structure has to follow is
- * declaring a "kids" array field if the element has a children element. To understand if the given tree
- * element matches the current path fragment a special equality function has to be passed.
+ *  Finds an item by xpath-like simplified expression applied to a tree-like structure. Passed tree-like structure
+ *  doesn't have a special requirements except items of the structure have to define its kids by exposing "kids"
+ *  field. The field is array of children elements:
 
         var treeLikeRoot = {
             value : "Root",
@@ -217,7 +312,7 @@ pkg.Runner = function() {
         };
 
         zebkit.util.findInTree(treeLikeRoot,
-                              "/Root/item1",
+                              "/item1",
                               function(item, fragment) {
                                   return item.value == fragment;
                               },
@@ -228,89 +323,87 @@ pkg.Runner = function() {
                               });
 
 
- * @param  {Object} root a tree root element. If the element has a children element it has to
- * declare "kids" field. This field is an array of all children elements
- * @param  {String}   path a xpath-like path. The path has to satisfy number of requirements
+ * The find method traverse the tree-like structure according to the xpath-like expression. To understand if
+ * the given tree item confronts with the currently traversing path fragment a special equality method has
+ * to be passed. The method gets the traversing tree item, a string path fragment and has to decide if the
+ * given tree item complies the specified path fragment.
+ *
+ * @param  {Object} root a tree root element. If the element has a children elements the children have to
+ * be stored in  "kids" field as an array.
+ * @param  {String}  path a xpath-like expression. The path has to satisfy number of requirements
  * and rules:
 
-    - "/" means lookup among all direct children elements
-    - "//" means lookup among all children elements recursively
-    - "*" means any path value
-    -[@attr=100] means number attribute
-    -[@attr=true] means boolean attribute
-    -[@attr='value'] means string attribute
+    - "/"   traverse sibling tree items
+    - "//"  traverse descendants tree item
+    - "*"   match any tree item
+    - "abc" match a tree item that matches "abc"
+    - "."   root element
+    -[@attr=100]  means number attribute match
+    -[@attr=true] means boolean attribute match
+    -[@attr='value'] means string attribute match
     - Path has always starts from "/" or "//"
-    - Path element always has to be defined: "*" or an symbolic name
+    - Path element has to be defined: "*" or an symbolic name
 
  *
  * Path examples:
 
     - "//*" traverse all tree elements
     - "//*[@a=10]" traverse all tree elements that has an attribute "a" that equals 10
-    - "/Root/Item" find an element by exact path
+    - "/Item1/Item2" find an element by exact path
 
  * @param  {Function}  eq  an equality function. The function gets current evaluated tree element
  * and a path fragment against which the tree element has to be evaluated. It is expected the method
  * returns boolean value to say if the given passed tree element matches the path fragment.
  * @param  {Function} cb callback function that is called every time a new tree element
  * matches the given path fragment. The function has to return true if the tree look up
- * has to be stopped
- * @api  zebkit.util.findInTree()
+ * has to be interrupted
  * @method findInTree
+ * @for  zebkit.util
  */
 pkg.findInTree = function(root, path, eq, cb) {
-    var findRE = /(\/\/|\/)?([^\[\/]+)(\[\s*(\@[a-zA-Z_][a-zA-Z0-9_\.]*)\s*\=\s*([0-9]+|true|false|\'[^']*\')\s*\])?/g,
-        m = null, res = [];
+    if (root == null) {
+        throw new Error("Invalid null root");
+    }
 
-    function _find(root, ms, idx, cb) {
-        function list_child(r, name, deep, cb) {
-            if (r.kids != null) {
-                for (var i = 0; i < r.kids.length; i++) {
-                    var kid = r.kids[i];
-                    if (name === '*' || eq(kid, name)) {
-                        if (cb(kid)) return true;
-                    }
+    if (path === '.') {
+        cb(root);
+    } else {
+        // Path fragment regexp parser:
+        //
+        //  1     2               3
+        // (/)?(name)([(@attrName)=(attrValue)])?
+        //                 4            5
+        //
+        var findRE = /(\/\/|\/)?([^\[\/]+)(\[\s*(\@[a-zA-Z_][a-zA-Z0-9_\.]*)\s*\=\s*([0-9]+|true|false|\'[^']*\')\s*\])?/g,
+            m      = null,
+            res    = [],
+            c      = 0;
 
-                    if (deep && list_child(kid, name, deep, cb)) {
-                        return true;
-                    }
-                }
+        while (m = findRE.exec(path)) {
+            if (m[1] == null || m[2] == null || m[2].trim().length === 0) {
+                break;
             }
-            return false;
+
+            c += m[0].length;
+
+            if (m[3] && m[5][0] === "'") {
+                m[5] = m[5].substring(1, m[5].length - 1);
+            }
+            res.push(m);
         }
 
-        if (ms == null || idx >= ms.length) {
-            return cb(root);
+        if (res.length === 0 || c < path.length) {
+            throw new Error("Invalid path: '" + path + "'," + c);
         }
 
-        var m = ms[idx];
-        return list_child(root, m[2], m[1] === "//", function(child) {
-            if (m[3] && child[m[4].substring(1)] != m[5]) return false;
-            return _find(child, ms, idx + 1, cb);
-        });
-    }
-
-    var c = 0;
-    while (m = findRE.exec(path)) {
-        if (m[1] == null || m[2] == null || m[2].trim().length === 0) {
-            break;
+        if (typeof root.kids !== "undefined" && root.kids.length > 0) {
+            _find( root, res, 0, eq, cb);
         }
-
-        c += m[0].length;
-
-        if (m[3] && m[5][0] === "'") m[5] = m[5].substring(1, m[5].length - 1);
-        res.push(m);
     }
-
-    if (res.length === 0 || c < path.length) {
-        throw new Error("Invalid path: '" + path + "'," + c);
-    }
-
-    _find({ kids:[root] }, res, 0, cb);
 };
 
 /**
- * RGB color class. This class represents rgb(a) color as JavaScript structure:
+ * RGB color class. This class represents a rgb color as JavaScript structure:
 
        // rgb color
        var rgb1 = new zebkit.util.rgb(100,200,100);
@@ -324,7 +417,14 @@ pkg.findInTree = function(root, path, eq, cb) {
        // hex rgb color
        var rgb3 = new zebkit.util.rgb("#CCDDFF");
 
- * @param  {Integer|String} r  red color intensity or if this is the only constructor parameter it denotes
+ * @param  {Integer|String} r  the meaning of the argument depends on number of arguments the
+ * constructor gets:
+ *
+ *   - If constructor gets only this argument the argument is considered as encoded rgb color:
+ *      - **String**  means its hex encoded ("#CCFFDD") or rgb ("rgb(100,10,122)", "rgba(100,33,33,0.6)"") encoded color
+ *      - **Integer** means this is number encoded rgb color
+ *   - Otherwise the argument is an integer value that depicts a red intensity of rgb color
+ *
  * encoded in string rgb color
  * @param  {Integer} [g]  green color intensity
  * @param  {Integer} [b] blue color intensity
@@ -374,8 +474,7 @@ pkg.rgb = function (r, g, b, a) {
             this.s = r;
             if (r[0] === '#') {
                 r = parseInt(r.substring(1), 16);
-            }
-            else {
+            } else {
                 if (r[0] === 'r' && r[1] === 'g' && r[2] === 'b') {
                     var i = r.indexOf('(', 3), p = r.substring(i + 1, r.indexOf(')', i + 1)).split(",");
                     this.r = parseInt(p[0].trim(), 10);
@@ -392,8 +491,7 @@ pkg.rgb = function (r, g, b, a) {
         this.r =  r >> 16;
         this.g = (r >> 8) & 0xFF;
         this.b = (r & 0xFF);
-    }
-    else {
+    } else {
         this.r = r;
         this.g = g;
         this.b = b;
@@ -415,7 +513,15 @@ pkg.rgb.prototype.toString = function() {
     return this.s;
 };
 
+/**
+ * Black color constant
+ * @attribute black
+ * @type {zebkit.util.rgb}
+ * @static
+ */
 rgb.black       = new rgb(0);
+
+
 rgb.white       = new rgb(0xFFFFFF);
 rgb.red         = new rgb(255,0,0);
 rgb.blue        = new rgb(0,0,255);
@@ -446,7 +552,7 @@ rgb.transparent = new rgb(0, 0, 0, 0.0);
  *      { x: {Integer}, y:{Integer}, width:{Integer}, height:{Integer} }
  *
  * @method intersection
- * @api zebkit.util.intersection();
+ * @for zebkit.util
  */
 pkg.intersection = function(x1,y1,w1,h1,x2,y2,w2,h2,r){
     r.x = x1 > x2 ? x1 : x2;
@@ -455,11 +561,43 @@ pkg.intersection = function(x1,y1,w1,h1,x2,y2,w2,h2,r){
     r.height = Math.min(y1 + h1, y2 + h2) - r.y;
 };
 
+/**
+ * Test if two rectangular areas have intersection
+ * @param  {Integer} x1 a x coordinate of the first rectangular area
+ * @param  {Integer} y1 a y coordinate of the first rectangular area
+ * @param  {Integer} w1 a width of the first rectangular area
+ * @param  {Integer} h1 a height of the first rectangular area
+ * @param  {Integer} x2 a x coordinate of the first rectangular area
+ * @param  {Integer} y2 a y coordinate of the first rectangular area
+ * @param  {Integer} w2 a width of the first rectangular area
+ * @param  {Integer} h2 a height of the first rectangular area
+ * @return {Boolean} true if the given two rectangular areas intersect
+ *
+ * @method isIntersect
+ * @for zebkit.util
+ */
 pkg.isIntersect = function(x1,y1,w1,h1,x2,y2,w2,h2){
     return (Math.min(x1 + w1, x2 + w2) - (x1 > x2 ? x1 : x2)) > 0 &&
            (Math.min(y1 + h1, y2 + h2) - (y1 > y2 ? y1 : y2)) > 0;
 };
 
+/**
+ * Unite two rectangular areas to one rectangular area.
+ * @param  {Integer} x1 a x coordinate of the first rectangular area
+ * @param  {Integer} y1 a y coordinate of the first rectangular area
+ * @param  {Integer} w1 a width of the first rectangular area
+ * @param  {Integer} h1 a height of the first rectangular area
+ * @param  {Integer} x2 a x coordinate of the first rectangular area
+ * @param  {Integer} y2 a y coordinate of the first rectangular area
+ * @param  {Integer} w2 a width of the first rectangular area
+ * @param  {Integer} h2 a height of the first rectangular area
+ * @param  {Object}  r  an object to store result
+ *
+ *      { x: {Integer}, y:{Integer}, width:{Integer}, height:{Integer} }
+ *
+ * @method unite
+ * @for zebkit.util
+ */
 pkg.unite = function(x1,y1,w1,h1,x2,y2,w2,h2,r){
     r.x = x1 < x2 ? x1 : x2;
     r.y = y1 < y2 ? y1 : y2;
@@ -474,8 +612,8 @@ pkg.isLetter = function (ch) {
 };
 
 /**
- * This this META class is handy container to keep different types of listeners and
- * fire events to the listeners:
+ * This method allows to declare a listeners container class for the given
+ * dedicated event types.
 
         // create listener container to keep three different events
         // handlers
@@ -496,15 +634,21 @@ pkg.isLetter = function (ch) {
            ...
         });
 
+        // add listener for both event1 and event2 events
+        listeners.add(function() {
+           ...
+        });
+
         // and firing event1 to registered handlers
         listeners.event1(...);
 
         // and firing event2 to registered handlers
         listeners.event2(...);
 
- * @class zebkit.util.Listeners
- * @constructor
- * @param {String} [events]* events types the container has to support
+ * @for zebkit.util
+ * @method ListenersClass
+ * @param {String} [events]* events types the listeners container has to support
+ * @return {zebkit.util.Listener} a listener container class
  */
 var $NewListener = function() {
     var args = Array.prototype.slice.call(arguments);
@@ -551,10 +695,9 @@ var $NewListener = function() {
                 if (arguments.length === 0) {
                     // remove all
                     this.v.length = 0;
-                }
-                else {
+                } else {
                     var i = 0;
-                    while((i = this.v.indexOf(l)) >= 0) {
+                    while ((i = this.v.indexOf(l)) >= 0) {
                         if (i % 2 > 0) i--;
                         this.v.splice(i, 2);
                     }
@@ -572,8 +715,7 @@ var $NewListener = function() {
             }
             return false;
         };
-    }
-    else {
+    } else {
         var names = {};
         for(var i=0; i< args.length; i++) {
             names[args[i]] = true;
@@ -596,8 +738,7 @@ var $NewListener = function() {
 
                 if (this.methods[n] == null) this.methods[n] = [];
                 this.methods[n].push(this, l);
-            }
-            else {
+            } else {
                 var b = false;
                 for(var k in names) {
                     if (typeof l[k] === "function") {
@@ -627,8 +768,8 @@ var $NewListener = function() {
                         if (this.methods != null) {
                             var c = this.methods[name];
                             if (c != null) {
-                                for(var i = 0; i < c.length; i+=2) {
-                                    if (c[i+1].apply(c[i], arguments) === true) {
+                                for(var i = 0; i < c.length; i += 2) {
+                                    if (c[i + 1].apply(c[i], arguments) === true) {
                                         return true;
                                     }
                                 }
@@ -636,8 +777,8 @@ var $NewListener = function() {
 
                             c = this.methods[''];
                             if (c != null) {
-                                for(var i = 0; i < c.length; i+=2) {
-                                    if (c[i+1].apply(c[i], arguments) === true) {
+                                for(var i = 0; i < c.length; i += 2) {
+                                    if (c[i + 1].apply(c[i], arguments) === true) {
                                         return true;
                                     }
                                 }
@@ -660,12 +801,11 @@ var $NewListener = function() {
                         if (this.methods.hasOwnProperty(k)) this.methods[k].length = 0;
                     }
                     this.methods = {};
-                }
-                else {
+                } else {
                     for (var k in this.methods) {
                         var v = this.methods[k], i = 0;
                         while ((i = v.indexOf(l)) >= 0) {
-                            if (i%2 > 0) i--;
+                            if (i % 2 > 0) i--;
                             v.splice(i, 2);
                         }
 
@@ -681,19 +821,64 @@ var $NewListener = function() {
     return clazz;
 };
 
+/**
+ * Listeners container class that can be handy to store number of listeners
+ * for one type of event.
+ * @param {String} [eventName] an event name the listeners container has been
+ * created. By default "fired" is default event name. Event name is used to fire
+ * the given event to a listener container.
+ * @constructor
+ * @class zebkit.util.Listeners
+ * @example
+ *
+ *      // create container with a default event name
+ *      var  container = new Listeners();
+ *
+ *      // register a listener
+ *      var  listener = container.add(function(param1, param2) {
+ *          // handle fired event
+ *      });
+ *
+ *      ...
+ *      // fire event
+ *      container.fired(1, 2, 3);
+ *
+ *      // remove listener
+ *      container.remove(listener);
+ *
+ * @extends {zebkit.util.Listener}
+ */
+
+
+/**
+ * Add listener
+ * @param {Function|Object} l a listener method or object.
+ * @return {Function} a listener that has been registered in the container. The result should
+ * be used to un-register the listener
+ * @method  add
+ */
+
+
+/**
+ * Remove listener or all registered listeners from the container
+ * @param {Function} [l] a listener to be removed. If the argument has not been specified
+ * all registered in the container listeners will be removed
+ * @method  remove
+ */
 pkg.Listeners = $NewListener();
+
+
 pkg.ListenersClass = $NewListener;
 
 
 /**
- * Useful class to track a virtual cursor position in a structure that has
- * dedicated number of lines where every line has a number of elements. The
- * structure metric has to be described by providing an instance of
- * zebkit.util.Position.Metric interface that discovers how many
- * lines the structure has and how many elements every line includes.
+ * Useful class to track a virtual cursor position in a structure that has dedicated number of lines
+ * where every line has a number of elements. The structure metric has to be described by providing
+ * an instance of zebkit.util.Position.Metric interface that discovers how many lines the structure
+ * has and how many elements every line includes.
  * @param {zebkit.util.Position.Metric} m a position metric
  * @constructor
- * @class  zebkit.util.Position
+ * @class zebkit.util.Position
  */
 
 /**
@@ -710,6 +895,42 @@ pkg.ListenersClass = $NewListener;
  * @param {Integer} prevCol a previous virtual cursor column in the previous line
  */
 pkg.Position = Class([
+    function(pi){
+        this._ = new this.clazz.Listeners();
+
+        /**
+         * Shows if the position object is in valid state.
+         * @private
+         * @type {Boolean}
+         * @attribute isValid
+         */
+        this.isValid = false;
+
+        /**
+         * Current virtual cursor line position
+         * @attribute currentLine
+         * @type {Integer}
+         * @readOnly
+         */
+
+        /**
+         * Current virtual cursor column position
+         * @attribute currentCol
+         * @type {Integer}
+         * @readOnly
+         */
+
+        /**
+         * Current virtual cursor offset
+         * @attribute offset
+         * @type {Integer}
+         * @readOnly
+         */
+
+        this.currentLine = this.currentCol = this.offset = 0;
+        this.setMetric(pi);
+    },
+
     function $clazz() {
         this.Listeners = pkg.ListenersClass("posChanged"),
 
@@ -738,8 +959,7 @@ pkg.Position = Class([
           * @return {Integer} a maximal element index
           * @method  getMaxOffset
           */
-
-        this.Metric = Interface([
+        this.Metric = zebkit.Interface([
             "abstract",
                 function getLines()     {},
                 function getLineSize()  {},
@@ -747,11 +967,20 @@ pkg.Position = Class([
         ]);
     },
 
+    /**
+     *  @for zebkit.util.Position
+     */
+
     function $prototype() {
         /**
          * Set the specified virtual cursor offsest
-         * @param {Integer} o an offset, pass null to set position to indefinite state
-         * @return {Integer} an offset that has been set
+         * @param {Integer} o an offset, pass null to set position to indefinite state.
+         *
+         *   - if offset is null than offset will set to -1 (undefined state)
+         *   - if offset is less than zero than offset will be set to zero
+         *   - if offset is greater or equal to maximal possible offset it will be set to maximal possible offset
+         *
+         *  @return {Integer} an offset that has been set
          * @method setOffset
          */
         this.setOffset = function(o){
@@ -774,8 +1003,7 @@ pkg.Position = Class([
                 if (p != null){
                     this.currentLine = p[0];
                     this.currentCol  = p[1];
-                }
-                else {
+                } else {
                     this.currentLine = this.currentCol = -1;
                 }
                 this.isValid = true;
@@ -796,7 +1024,7 @@ pkg.Position = Class([
         };
 
         /**
-         * Set the vurtual cursor line and the given column in the line
+         * Set the virtual cursor line and the given column in the line
          * @param {Integer} r a line
          * @param {Integer} c a column in the line
          * @method setRowCol
@@ -814,14 +1042,30 @@ pkg.Position = Class([
             }
         };
 
-        this.inserted = function(off,size) {
+        /**
+         * Special method to inform the position object that its state has to be adjusted
+         * because of the given portion of data had been inserted .
+         * @param  {Integer} off  an offset the insertion has happened
+         * @param  {Integer} size a length of the inserted portion
+         * @protected
+         * @method  removed
+         */
+        this.inserted = function(off, size) {
             if (this.offset >= 0 && off <= this.offset){
                 this.isValid = false;
                 this.setOffset(this.offset + size);
             }
         };
 
-        this.removed = function (off,size){
+        /**
+         * Special method to inform the position object that its state has to be adjusted
+         * because of the given portion of data had been removed.
+         * @param  {Integer} off  an offset the removal has happened
+         * @param  {Integer} size a length of the removed portion
+         * @protected
+         * @method  removed
+         */
+        this.removed = function (off, size){
             if (this.offset >= 0 && this.offset >= off){
                 this.isValid = false;
                 this.setOffset(this.offset >= (off + size) ? this.offset - size
@@ -855,8 +1099,7 @@ pkg.Position = Class([
                         if (off < this.offset) d = -1;
                         else return [sl, this.currentCol];
                     }
-                }
-                else {
+                } else {
                     d = (~~(max / off) === 0) ? -1 : 1;
                     if (d < 0) {
                         sl = m.getLines() - 1;
@@ -897,12 +1140,12 @@ pkg.Position = Class([
                 startOffset = this.offset - this.currentCol;
                 startLine = this.currentLine;
             }
+
             if (startLine <= row) {
                 for(var i = startLine;i < row; i++) {
                     startOffset += m.getLineSize(i);
                 }
-            }
-            else {
+            } else {
                 for(var i = startLine - 1;i >= row; i--) {
                     startOffset -= m.getLineSize(i);
                 }
@@ -928,8 +1171,7 @@ pkg.Position = Class([
         this.seekLineTo = function(t,num){
             if (this.offset < 0){
                 this.setOffset(0);
-            }
-            else {
+            } else {
                 if (arguments.length === 1) num = 1;
 
                 var prevOffset = this.offset, prevLine = this.currentLine, prevCol = this.currentCol;
@@ -941,7 +1183,7 @@ pkg.Position = Class([
                         } break;
                     case "end":
                         var maxCol = this.metrics.getLineSize(this.currentLine);
-                        if (this.currentCol < (maxCol - 1)){
+                        if (this.currentCol < (maxCol - 1)) {
                             this.offset += (maxCol - this.currentCol - 1);
                             this.currentCol = maxCol - 1;
                         } break;
@@ -949,24 +1191,30 @@ pkg.Position = Class([
                         if (this.currentLine > 0) {
                             this.offset -= (this.currentCol + 1);
                             this.currentLine--;
-                            for(var i = 0;this.currentLine > 0 && i < (num - 1); i++, this.currentLine--){
+                            for(var i = 0; this.currentLine > 0 && i < (num - 1); i++, this.currentLine--) {
                                 this.offset -= this.metrics.getLineSize(this.currentLine);
                             }
+
                             var maxCol = this.metrics.getLineSize(this.currentLine);
-                            if (this.currentCol < maxCol) this.offset -= (maxCol - this.currentCol - 1);
-                            else this.currentCol = maxCol - 1;
+                            if (this.currentCol < maxCol) {
+                                this.offset -= (maxCol - this.currentCol - 1);
+                            } else {
+                                this.currentCol = maxCol - 1;
+                            }
                         } break;
                     case "down":
                         if (this.currentLine < (this.metrics.getLines() - 1)) {
                             this.offset += (this.metrics.getLineSize(this.currentLine) - this.currentCol);
                             this.currentLine++;
                             var size = this.metrics.getLines() - 1;
-                            for(var i = 0;this.currentLine < size && i < (num - 1); i++ ,this.currentLine++ ){
+                            for(var i = 0;this.currentLine < size && i < (num - 1); i++ ,this.currentLine++ ) {
                                 this.offset += this.metrics.getLineSize(this.currentLine);
                             }
+
                             var maxCol = this.metrics.getLineSize(this.currentLine);
-                            if (this.currentCol < maxCol) this.offset += this.currentCol;
-                            else {
+                            if (this.currentCol < maxCol) {
+                                this.offset += this.currentCol;
+                            } else {
                                 this.currentCol = maxCol - 1;
                                 this.offset += this.currentCol;
                             }
@@ -978,35 +1226,6 @@ pkg.Position = Class([
             }
         };
 
-        this[''] = function(pi){
-            this._ = new this.clazz.Listeners();
-            this.isValid = false;
-
-            /**
-             * Current virtual cursor line position
-             * @attribute currentLine
-             * @type {Integer}
-             * @readOnly
-             */
-
-            /**
-             * Current virtual cursor column position
-             * @attribute currentCol
-             * @type {Integer}
-             * @readOnly
-             */
-
-            /**
-             * Current virtual cursor offset
-             * @attribute offset
-             * @type {Integer}
-             * @readOnly
-             */
-
-            this.currentLine = this.currentCol = this.offset = 0;
-            this.setMetric(pi);
-        };
-
         /**
          * Set position metric. Metric describes how many lines
          * and elements in these line the virtual cursor can be navigated
@@ -1014,7 +1233,10 @@ pkg.Position = Class([
          * @method setMetric
          */
         this.setMetric = function (p){
-            if (p == null) throw new Error("Null metric");
+            if (p == null) {
+                throw new Error("Null metric");
+            }
+
             if (p != this.metrics){
                 this.metrics = p;
                 this.setOffset(null);
@@ -1023,6 +1245,14 @@ pkg.Position = Class([
     }
 ]);
 
+/**
+ * Single column position implementation. More simple and more fast implementation of
+ * position class for the cases when only one column is possible.
+ * @param {zebkit.util.Position.Metric} m a position metric
+ * @constructor
+ * @class zebkit.util.SingleColPosition
+ * @extends {zebkit.util.Position}
+ */
 pkg.SingleColPosition = Class(pkg.Position, [
     function $prototype() {
         this.setRowCol = function(r,c) {
@@ -1055,9 +1285,11 @@ pkg.SingleColPosition = Class(pkg.Position, [
         this.seekLineTo = function(t, num){
             if (this.offset < 0){
                 this.setOffset(0);
-            }
-            else {
-                if (arguments.length === 1) num = 1;
+            } else {
+                if (arguments.length === 1) {
+                    num = 1;
+                }
+
                 switch(t) {
                     case "begin":
                     case "end": break;
@@ -1076,262 +1308,511 @@ pkg.SingleColPosition = Class(pkg.Position, [
     }
 ]);
 
-(function() {
-    var quantum = 40, tasks = Array(5), count = 0, pid = -1;
+/**
+ * Task set is light-weight class to host number of callbacks methods that are called within a context of one JS interval
+ * method execution. The class manages special tasks queue to run it one by one as soon as a dedicated interval for the
+ * given task is elapsed
 
-    function dispatcher() {
-        var c = 0;
-        for(var i = 0; i < tasks.length; i++) {
-            var t = tasks[i];
+        var tasks = zebkit.util.TaskSet();
 
-            if (t.isStarted === true) {
-                c++;
-                if (t.si <= 0) {
-                    try {
-                        if (t.ctx == null) t.task(t);
-                        else               t.task.call(t.ctx, t);
-                    }
-                    catch(e) {
-                        console.log(e.stack ? e.stack : e);
-                    }
-
-                    t.si += t.ri;
-                }
-                else {
-                    t.si -= quantum;
-                }
+        tasks.run(function(t) {
+            // task1 body
+            ...
+            if (condition) {
+                t.shutdown();
             }
-        }
+        }, 1000, 200);
 
-        if (c === 0 && pid >= 0) {
-            window.clearInterval(pid);
-            pid = -1;
-        }
-    }
+        tasks.run(function(t) {
+            // task2 body
+            ...
+            if (condition) {
+                t.shutdown();
+            }
+        }, 2000, 300);
+
+ * @constructor
+ * @param  {Integer} [maxTasks] maximal possible number of active tasks in queue.
+ * @class zebkit.util.TasksSet
+ */
+pkg.TasksSet = Class([
+    function $clazz() {
+        /**
+         * Task class
+         * @class zebkit.util.TasksSet.Task
+         * @for zebkit.util.TasksSet.Task
+         * @param {zebkit.util.TasksSet} tasksSet a reference to tasks set that manages the task
+         * @constructor
+         */
+        this.Task = Class([
+            function $prototype() {
+                /**
+                 * Shutdown the given task.
+                 * @return {Boolean} true if the task has been stopped
+                 * @method shutdown
+                 */
+                this.shutdown = function() {
+                    return this.taskSet.shutdown(this);
+                };
+
+                /**
+                 * Pause the given task.
+                 * @return {Boolean} true if the task has been paused
+                 * @method pause
+                 */
+                this.pause = function() {
+                    if (this.task == null) {
+                        throw new Error("Stopped task cannot be paused");
+                    }
+
+                    if (this.isStarted === true) {
+                        this.isStarted = false;
+                        return true;
+                    }
+                    return false;
+                };
+
+                /**
+                 * Resume the given task
+                 * @param {Integer} [startIn] a time in milliseconds to resume the task
+                 * @return {Boolean} true if the task has been resumed
+                 * @method resume
+                 */
+                this.resume = function(t) {
+                    if (this.task == null) {
+                        throw new Error("Stopped task cannot be paused");
+                    }
+
+                    this.si = arguments.length > 0 ? t : 0;
+                    if (this.isStarted === true) {
+                        return false;
+                    }
+                    this.isStarted = true;
+                    return true;
+                };
+            },
+
+            function(set) {
+                /**
+                 * Reference to a tasks set that owns the task
+                 * @type {zebkit.util.TasksSet}
+                 * @attribute taskSet
+                 * @private
+                 * @readOnly
+                 */
+                this.taskSet = set;
+
+
+                this.task = null;
+                this.ri = this.si  = 0;
+
+                /**
+                 * Indicates if the task is executed (active)
+                 * @type {Boolean}
+                 * @attribute isStarted
+                 * @readOnly
+                 */
+                this.isStarted = false;
+            }
+        ]);
+    },
 
     /**
-     * Task is keeps a context of and allows developers
-     * to run, shutdown, pause a required method as a task
-     * Developer cannot instantiate the class directly.
-     * Use "zebkit.util.task(...)" method to do it:
-
-        var t = zebkit.util.task(function(context) {
-            // task body
-            ...
-        });
-
-        // run task in 1 second and repeat the task execution
-        // every half second
-        t.run(1000, 500);
-        ...
-
-        t.shutdown(); // stop the task
-
-     * @class zebkit.util.TaskCotext
+     *  @for  zebkit.util.TasksSet
      */
-    function Task() {
-        this.ctx = this.task = null;
-        this.ri  = this.si  = 0;
+    function $prototype() {
+        /**
+         * Interval
+         * @attribute quantum
+         * @private
+         * @type {Number}
+         * @default 40
+         */
+        this.quantum = 40;
 
         /**
-         * Indicates if the task is executed (active)
-         * @type {Boolean}
-         * @attribute isStarted
-         * @readOnly
+         * pid of executed JS interval method callback
+         * @attribute pid
+         * @private
+         * @type {Number}
+         * @default -1
          */
-        this.isStarted = false;
-    }
+        this.pid = -1;
 
-    pkg.TaskCotext = Task;
+        /**
+         * Number of run in the set tasks
+         * @attribute count
+         * @private
+         * @type {Number}
+         * @default 0
+         */
+        this.count = 0;
 
-    /**
-     * Shutdown the given task.
-     * @method shutdown
-     */
-    Task.prototype.shutdown = function() {
-        if (this.task != null) {
-            count--;
-            this.ctx = this.task = null;
-            this.isStarted = false;
-            this.ri = this.si = 0;
-        }
-
-        if (count === 0 && pid  >= 0) {
-            window.clearInterval(pid);
-            pid = -1;
-        }
-    };
-
-    /**
-     * Run the task
-     * @param {Integer} [startIn] a time (in milliseconds) in which the task has to be started
-     * @param {Integer} [repeatIn] a period (in milliseconds) the task has to be executed
-     * @method run
-     */
-    Task.prototype.run = function(startIn, repeatIn) {
-        if (this.task == null) {
-            throw new Error("Task body has not been defined");
-        }
-
-        if (arguments.length > 0) this.si = startIn;
-        if (arguments.length > 1) this.ri = repeatIn;
-        if (this.ri <= 0) this.ri = 150;
-
-        this.isStarted = true;
-
-        if (count > 0 && pid < 0) {
-            pid = window.setInterval(dispatcher, quantum);
-        }
-
-        return this;
-    };
-
-    /**
-     * Pause the given task.
-     * @method pause
-     */
-    Task.prototype.pause = function(t) {
-        if (this.task == null) {
-            throw new Error("Stopped task cannot be paused");
-        }
-
-        if (arguments.length === 0) {
-            this.isStarted = false;
-        }
-        else {
-            this.si = t;
-        }
-    };
-
-    // pre-fill tasks pool
-    for(var i = 0; i < tasks.length; i++) {
-        tasks[i] = new Task();
-    }
-
-    /**
-     * Take a free task from pool and run it with the specified
-     * body and the given context.
-
-        // allocate task
-        var task = zebkit.util.task(function (ctx) {
-            // do something
-
-            // complete task if necessary
-            ctx.shutdown();
-        });
-
-        // run task in second and re-run it every 2 seconds
-        task.run(1000, 2000);
-
-        ...
-
-        // pause the task
-        task.pause();
-
-        ...
-        // run it again
-        task.run();
-
-     * @param  {Function|Object} f a function that has to be executed
-     * @param  {Object} [ctx]  a context the task has to be executed
-     * @return {zebkit.util.Task} an allocated task
-     * @method task
-     * @api zebkit.util.task
-     */
-    pkg.task = function(f, ctx){
-        if (typeof f != "function") {
-            ctx = f;
-            f = f.run;
-        }
-
-        if (f == null) {
-            throw new Error("" + f);
-        }
-
-        // find free and return free task
-        for(var i=0; i < tasks.length; i++) {
-            var j = (i + count) % tasks.length, t = tasks[j];
-            if (t.task == null) {
-                t.task = f;
-                t.ctx  = ctx;
-                count++;
-                return t;
+        /**
+         * Shut down all active at the given moment tasks
+         * body and the given context.
+         * @method shutdownAll
+         */
+        this.shutdownAll = function() {
+            for(var i = 0; i < this.tasks.length; i++) {
+                this.shutdown(this.tasks[i]);
             }
+        };
+
+        /**
+         * Shutdown the given task
+         * @param  {zebkit.util.TasksSet.Task} t a task
+         * @return {Boolean}  true if the task has been stopped, false if the task has not been started
+         * to be stopped
+         * @protected
+         * @method shutdown
+         */
+        this.shutdown = function(t) {
+            if (t.task != null) {
+                this.count--;
+                t.task = null;
+                t.isStarted = false;
+                t.ri = t.si = 0;
+                return true;
+            }
+
+            if (this.count === 0 && this.pid  >= 0) {
+                window.clearInterval(this.pid);
+                this.pid = -1;
+            }
+
+            return false;
+        };
+
+        /**
+         * Take a free task from tasks pool and run it once in the specified period of time.
+         * @param  {Function|Object} f a task function that has to be executed. The task method gets the task
+         * context as its argument. You can pass an object as the argument if the object has "run" method
+         * implemented. In this cases "run" method will be used as the task body.
+         * @param  {Integer} [startIn]  time in milliseconds the task has to be executed in
+         * @method runOnce
+         */
+        this.runOnce = function(f, startIn) {
+            this.run(f, startIn, -1);
+        };
+
+        /**
+         * Take a free task from pool and run it with the specified body and the given context.
+         * @param  {Function|Object} f a task function that has to be executed. The task method gets the task
+         * context as its argument. You can pass an object as the argument if the object has "run" method
+         * implemented. In this cases "run" method will be used as the task body.
+         * @param {Integer} [si]  time in milliseconds the task has to be executed
+         * @param {Integer} [ri]  the time in milliseconds the task has to be periodically repeated
+         * @return {zebkit.util.Task} an allocated task
+         * @example
+         *
+            var tasks = new zebkit.util.TasksSet();
+
+            // execute task
+            var task = tasks.run(function (t) {
+                // do something
+                ...
+                // complete task if necessary
+                t.shutdown();
+            }, 100, 300);
+
+            // pause task
+            task.pause(1000, 2000);
+
+            ...
+            // resume task in a second
+            task.resume(1000);
+
+         * @example
+         *
+             var tasks = new zebkit.util.TasksSet();
+
+             var a = new zebkit.Dummy([
+                 function run() {
+                    // task body
+                    ...
+                 }
+             ]);
+
+             // execute task
+             var task = tasks.runOnce(a);
+
+         * @method run
+         */
+        this.run = function(f, si, ri){
+            if (f == null) {
+                throw new Error("" + f);
+            }
+
+            var $this = this;
+            function dispatcher() {
+                var c = 0;
+                for(var i = 0; i < $this.tasks.length; i++) {
+                    var t = $this.tasks[i];
+
+                    // count paused or run tasks
+                    if (t.task !== null) {  // means task has been shutdown
+                        c++;
+                    }
+
+                    if (t.isStarted) {
+                        if (t.si <= 0) {
+                            try {
+                                if (typeof t.task.run !== 'undefined') {
+                                    t.task.run(t);
+                                } else {
+                                    t.task(t);
+                                }
+
+                                if (t.ri < 0) {
+                                    t.shutdown();
+                                }
+                            } catch(e) {
+                                console.log(e.stack ? e.stack : e);
+                            }
+
+                            t.si += t.ri;
+                        } else {
+                            t.si -= $this.quantum;
+                        }
+                    }
+                }
+
+                if (c === 0 && $this.pid >= 0) {
+                    window.clearInterval($this.pid);
+                    $this.pid = -1;
+                }
+            }
+
+            // find free and return free task
+            for(var i = 0; i < this.tasks.length; i++) {
+                var j = (i + this.count) % this.tasks.length,
+                    t = this.tasks[j];
+
+                if (t.task == null) {
+                    // initialize internal variables start in and repeat in
+                    // arguments
+                    t.si = (arguments.length > 1) ? si : 0;
+                    t.ri = (arguments.length > 2) ? ri : -1;
+                    t.isStarted = true;
+                    t.task = f;
+                    this.count++;
+
+                    if (this.count > 0 && this.pid < 0) {
+                        this.pid = window.setInterval(dispatcher, this.quantum);
+                    }
+
+                    return t;
+                }
+            }
+
+            throw new Error("Out of tasks limit");
+        };
+    },
+
+    function(c) {
+        this.tasks = Array(arguments.length > 0 ? c : 5);
+
+        // pre-fill tasks pool
+        for (var i = 0; i < this.tasks.length; i++) {
+            this.tasks[i] = new this.clazz.Task(this);
         }
-
-        throw new Error("Out of tasks limit");
-    };
-
-    /**
-     * Shut down all active at the given moment tasks
-     * body and the given context.
-     * @method shutdownAll
-     * @api zebkit.util.shutdownAll
-     */
-    pkg.shutdownAll = function() {
-        for(var i=0; i < tasks.length; i++) {
-            tasks[i].shutdown();
-        }
-    };
-})();
-
+    }
+]);
 
 /**
- * JSON configuration objects loader class. The class is
- * handy way to keep and load configuration encoded in JSON
- * format. Except standard JSON types the class uses number
- * of JSON values and key interpretations such as:
-
-    - **"@key_of_refernced_value"** String values that start from "@" character are considered
-      as a reference to other values
-    - **{ "$class_name":[ arg1, arg2, ...], "prop1": ...}** Key names that starts from "$" character
-      are considered as name of class that has to be instantiated as the value
-    - **{"?isToucable": { "label": true } }** Key names that start from "?" are considered as
-      conditional section.
-
- * Also the class support section inheritance. That means
- * you can say to include part of JSON to another part of JSON.
- * For instance, imagine JSON describes properties for number
- * of UI components where an UI component can inherits another
- * one.
-
-        {
-           // base component
-           "BaseComponent": {
-               "background": "red",
-               "border": "plain",
-               "size": [300, 300]
-           },
-
-            // component that inherits properties from BaseComponent,
-            // but override background property with own value
-           "ExtenderComp": {
-               "inherit": [ "BaseComponent" ],
-               "background": "green"
-           }
-        }
-
+ * JSON object loader class is a handy way to load hierarchy of objects encoded with
+ * JSON format. The class supports standard JSON types plus it extends JSON with a number of
+ * features that helps to make object creation more flexible. JSON Bag allows developers
+ * to describe creation of any type of object. For instance if you have a class "ABC" with
+ * properties "prop1", "prop2", "prop3" you can use instance of the class as a value of
+ * a JSON property as follow:
  *
- * The loading of JSON can be multi steps procedure where
- * you can load few JSON. That means you can compose the
- * final configuration from number of JSON files:
-
-        // prepare object that will keep loaded data
-        var loadedData = {};
-
-        // create bag
-        var bag = zebkit.util.Bag(loadedData);
-
-        // load the bag with two JSON
-        bag.load("{ ... }", false).load("{  ...  }");
-
-
+ *      { "instanceOfABC": {
+ *              "$ABC"  : [],
+ *              "prop1" : "property 1 value",
+ *              "prop2" : true,
+ *              "prop3" : 200
+ *          }
+ *      }
+ *
+ *  And than:
+ *
+ *       // load JSON mentioned above
+ *       zebkit.util.Bag.load("abc.json").than(function(bag) {
+ *           bag.get("instanceOfABC");
+ *       });
+ *
+ *  Features the JSON bag supports are listed below:
+ *
+ *    - **Access to hierarchical properties** You can use dot notation to get a property value. For
+ *    instance:
+ *
+ *     { "a" : {
+ *            "b" : {
+ *                "c" : 100
+ *            }
+ *         }
+ *     }
+ *
+ *     zebkit.util.Bag.load("abc.json").than(function(bag) {
+ *         bag.get("a.b.c"); // 100
+ *     });
+ *
+ *
+ *    - **Property reference** Every string JSON value that starts from "@" considers as reference to
+ *    another property value in the given JSON.
+ *
+ *     {  "a" : 100,
+ *        "b" : {
+ *            "c" : "@a.b"
+ *        }
+ *     }
+ *
+ *    here property "b.c" equals to 100 since it refers to  property "a.b"
+ *
+ *    - **Inheritance** By using special property name "inherit" it is possible to embed set of properties
+ *    from a JSON object:
+ *
+ *     {
+ *        // base component
+ *        "BaseComponent": {
+ *            "background": "red",
+ *            "border": "plain",
+ *            "size": [300, 300]
+ *        },
+ *
+ *        // component that inherits properties from BaseComponent,
+ *        // but override background property with own value
+ *        "ExtenderComp": {
+ *            "inherit": [ "BaseComponent" ],
+ *            "background": "green"
+ *        }
+ *     }
+ *
+ *    - **Class instantiation**  Property can be easily initialized with an instantiation of required class. JSON
+ *    bag considers all properties whose name starts from "$" character as a class name that has to be instantiated:
+ *
+ *     {  "date": {
+ *           { "$Date" : [] }
+ *         }
+ *     }
+ *
+ *   Here property "date" is set to instance of JS Date class.
+ *
+ *   - **Factory classes** JSON bag follows special pattern to describe special type of property whose value
+ *   is re-instantiated every time the property is requested. Definition of the property value is the same
+ *   to class instantiation, but the name of class has to prefixed with "*" character:
+ *
+ *
+ *     {  "date" : {
+ *           "$ *Date" : []
+ *        }
+ *     }
+ *
+ *
+ *   Here, every time you call get("date") method a new instance of JS date object will be returned. So
+ *   every time will have current time.
+ *
+ *   - **JS Object initialization** If you have an object in your code you can easily fulfill properties of the
+ *   object with JSON bag. For instance you can create zebkit UI panel and adjust its background, border and so on
+ *   with what is stored in JSON:
+ *
+ *
+ *    {
+ *      "background": "red",
+ *      "layout"    : { "$zebkit.layout.BorderLayout": [] },
+ *      "border"    : { "$zebkit.ui.RoundBorder": [ "black", 2 ] }
+ *    }
+ *
+ *    var pan = new zebkit.ui.Panel();
+ *    zebkit.util.Bag.load("pan.json", pan).than(function(bag) {
+ *        // loaded and fullil panel
+ *        ...
+ *    });
+ *
+ *
+ *   - **Expression** You can evaluate expression as a property value:
+ *
+ *
+ *      {
+ *          "a": { ".expr":  "100*10" }
+ *      }
+ *
+ *
+ *   Here property "a" equals 1000
+ *
  * @class zebkit.util.Bag
  * @constructor
  * @param {Object} [obj] a root object to be loaded with
  * the given JSON configuration
  */
 pkg.Bag = zebkit.Class([
+    function (root) {
+        /**
+         * Environment variables that can be referred from loaded content
+         * @attribute variables
+         * @type {Object}
+         */
+        this.variables = {};
+
+        /**
+         * Object that keeps loaded and resolved content of a JSON
+         * @readOnly
+         * @attribute root
+         * @type {Object}
+         * @default {}
+         */
+        this.root = (root != null ? root : null);
+
+        /**
+         * Map of aliases and appropriate classes
+         * @attribute classAliases
+         * @protected
+         * @type {Object}
+         * @default {}
+         */
+        this.classAliases = {};
+
+        /**
+         * Original JSON as a JS object
+         * @attribute content
+         * @protected
+         * @type {Object}
+         * @default null
+         */
+        this.content = null;
+    },
+
+    function $clazz() {
+        /**
+         * Load the given JSON content.
+         * @param  {String|Object} p a JSON source. It can be:
+         *   - JSON string
+         *   - URL to a JSON
+         *   - JavaScript object
+         *
+         * @param {Object} [obj] an JS object that has to be filled with the JSON
+         * @return {zebkit.util.Runner} a reference to runner
+         * @static
+         * @example
+         *
+         *     zebkit.util.Bag.load("http://test.com/test.json").than(function(bag) {
+         *         // loaded and ready to use JSON bag
+         *         bag.get("a.b.c");
+         *     }).catch(function(e) {
+         *         // handle error
+         *     });
+         *
+         * @method load
+         */
+        this.load = function(p, obj) {
+            return new pkg.Bag(arguments.length > 1 ? obj : null).load(p).than(function(res) {
+                return res;
+            });
+        };
+    },
+
     function $prototype() {
         /**
          * The property says if the object introspection is required to try find a setter
@@ -1350,24 +1831,35 @@ pkg.Bag = zebkit.Class([
          */
         this.usePropertySetters = true;
 
+        /**
+         * Property indicates if an exception has to be thrown if "get(name)" method cannot find
+         * a property by a name. If the property is set to true than no exception is thrown if a
+         * property cannot be fetched by a key.
+         * @type {Boolean}
+         * @default false
+         * @attribute ignoreNonExistentKeys
+         */
         this.ignoreNonExistentKeys = false;
 
+        /**
+         * Property that indicates if the bag has to perform search properties in a global space
+         * @attribute globalPropertyLookup
+         * @type {Boolean}
+         * @default  false
+         */
         this.globalPropertyLookup = false;
 
         /**
-         * Get a property value. The property name can point to embedded fields:
+         * Get a property value by the given key. The property name can point to embedded fields:
          *
-         *      var bag = new Bag().load("my.json");
-         *      bag.get("a.b.c");
+         *      zebkit.util.Bag.load("my.json").than(function(bag) {
+         *          bag.get("a.b.c");
+         *      });
          *
-         * Also the special property type is considered - factory. Access to such property
-         * causes a new instance of a class object will be created. Property is considered
-         * as a factory property if it declares a "$new" field. The filed should point to
-         * a method that will be called to instantiate the property value.
          *
          * @param  {String} key a property key.
          * @return {Object} a property value
-         * @throws Error if property cannot be found and "ignoreNonExistentKeys" is true
+         * @throws Error if property cannot be found and "ignoreNonExistentKeys" is set to true
          * @method  get
          */
         this.get = function(key) {
@@ -1383,6 +1875,15 @@ pkg.Bag = zebkit.Class([
             return v;
         };
 
+        /**
+         * Internal implementation of fetching a property value.
+         * @param  {Array} keys array of a key path parts
+         * @param  {Object} root an object to start resolving a property value
+         * @method  $get
+         * @protected
+         * @return {Object} a property value or undefined if the property  cannot be fetched from the
+         * object
+         */
         this.$get = function(keys, root) {
             var v = root;
             for(var i = 0; i < keys.length; i++) {
@@ -1394,6 +1895,13 @@ pkg.Bag = zebkit.Class([
             return v != null && v.$new ? v.$new() : v;
         };
 
+        /**
+         * Test if the given value has atomic type (String, Number or Boolean).
+         * @param  {Object}  v a value
+         * @return {Boolean} true if the value has atomic type
+         * @protected
+         * @method  $isAtomic
+         */
         this.$isAtomic = function(v) {
             return zebkit.isString(v) || zebkit.isNumber(v) || zebkit.isBoolean(v);
         };
@@ -1419,6 +1927,13 @@ pkg.Bag = zebkit.Class([
             return m.apply(ctx, Array.isArray(args) ? args : [ args ]);
         };
 
+        /**
+         * Build a value by the given JSON description
+         * @param  {Object} d a JSON description
+         * @return {Object} a value
+         * @protected
+         * @method buildValue
+         */
         this.buildValue = function(d) {
             if (d == null || zebkit.isNumber(d) || zebkit.isBoolean(d)) {
                 return d;
@@ -1465,17 +1980,15 @@ pkg.Bag = zebkit.Class([
 
                     delete d[k]; // delete class name
 
-                    // '?' means optinal class instance.
+                    // '?' means optional class instance.
                     if (classname[0] === "?") {
                         classname = classname.substring(1).trim();
                         try {
                             clz = this.resolveClass(classname[0] === '*' ? classname.substring(1).trim() : classname);
-                        }
-                        catch (e) {
+                        } catch (e) {
                             return null;
                         }
-                    }
-                    else {
+                    } else {
                         clz = this.resolveClass(classname[0] === '*' ? classname.substring(1).trim() : classname);
                     }
 
@@ -1519,15 +2032,13 @@ pkg.Bag = zebkit.Class([
                         if (typeof mres !== 'undefined') {
                             return mres;
                         }
-                    }
-                    else {
+                    } else {
                         if (k[0] === "?") {
                             k = k.substring(1).trim();
                             if (typeof d[k] !== "undefined") {
                                 d[k] = this.buildValue(d[k]);
                             }
-                        }
-                        else {
+                        } else {
                             d[k] = this.buildValue(d[k]);
                         }
                     }
@@ -1537,6 +2048,14 @@ pkg.Bag = zebkit.Class([
             return d;
         };
 
+        /**
+         * Populates the given object with a properties described with the specified description.
+         * @param  {Object} obj an object
+         * @param  {Object} desc a properties description
+         * @return {Object} an object with populated with the given description properties
+         * @method populate
+         * @protected
+         */
         this.populate = function(obj, desc) {
             var inc = desc.inherit;
             if (inc != null) {
@@ -1578,12 +2097,10 @@ pkg.Bag = zebkit.Class([
                     var ov = obj[k];
                     if (ov == null || this.$isAtomic(ov) || Array.isArray(ov) ||
                         v == null  || this.$isAtomic(v)  || Array.isArray(v)  ||
-                        this.$isClassDefinition(k, v)                            )
+                        this.$isClassDefinition(v)                              )
                     {
-
                         obj[k] = this.buildValue(v);
-                    }
-                    else {
+                    } else {
                         obj[k] = this.populate(obj[k], v);
                     }
                 }
@@ -1591,7 +2108,14 @@ pkg.Bag = zebkit.Class([
             return obj;
         };
 
-        this.$isClassDefinition = function(kk, v) {
+        /**
+         * Tests if the the given object is a class instantiation description
+         * @param  {Object}  v a value
+         * @private
+         * @method $isClassDefinition
+         * @return {Boolean}  true if the object is a class instantiation description
+         */
+        this.$isClassDefinition = function(v) {
             if (v != null && v.constructor === Object) {
                 for(var k in v) {
                     if (k[0] === '$') {
@@ -1605,28 +2129,48 @@ pkg.Bag = zebkit.Class([
 
         /**
          * Called every time the given class name has to be transformed into
-         * the class object (constructor) reference.
+         * the class object (constructor) reference. The method checks if the given class name
+         * is alias that is mapped with the bag to a class.
          * @param  {String} className a class name
-         * @return {Function}   a class reference
+         * @return {Function} a class reference
          * @method resolveClass
+         * @protected
          */
         this.resolveClass = function (className) {
             return this.classAliases.hasOwnProperty(className) ? this.classAliases[className]
                                                                : zebkit.Class.forName(className);
         };
 
+        /**
+         * Adds class aliases
+         * @param {Object} aliases dictionary where key is a class alias that can be referenced from
+         * JSON and the value is class itself (constructor)
+         * @method  addClassAliases
+         */
         this.addClassAliases = function (aliases) {
             for(var k in aliases) {
                 this.classAliases[k] = Class.forName(aliases[k].trim());
             }
         };
 
+        /**
+         * Adds variables that should be used to resolve references in JSON.
+         * @param {Object} variables a dictionary whose key is name of a variable.
+         * @method  addVariables
+         */
         this.addVariables = function(variables) {
             for(var k in variables) {
                 this.variables[k] = variables[k];
             }
         };
 
+        /**
+         * Inherits properties from the given objects.
+         * @param  {Object} o  an object that inherits properties
+         * @param  {String|Array} inc a reference or references to object whose properties have to be inherited
+         * @method inherit
+         * @protected
+         */
         this.inherit = function(o, inc) {
             if (Array.isArray(inc) === false) inc = [ inc ];
             for (var i = 0; i < inc.length; i++) {
@@ -1649,21 +2193,34 @@ pkg.Bag = zebkit.Class([
         };
 
         /**
-         * Load the given JSON content and parse if the given flag is true. The passed
-         * boolean flag controls parsing. The flag is used to load few JSON. Before
-         * parsing the JSONs are merged and than the final result is parsed.
-         * @param  {String|Object} s a JSON content to be loaded. It can be a JSON as string or
-         * URL to JSON or JSON object
-         * @param {Function} [cb] callback function if the JSOn content has to be loaded asynchronously
-         * @chainable
-         * @return {zebkit.util.Bag} a reference to the bag class instance
+         * Load and parse the given JSON content.
+         * @param  {String|Object} s a JSON content. It can be:
+         *    - **String**
+         *       - JSON string
+         *       - URL to a JSON
+         *    - **Object** JavaScript object
+         * @return {zebkit.util.Runner} a reference to the runner
          * @method load
+         * @example
+         *
+         *     // load JSON in bag from a remote site asynchronously
+         *     new zebkit.util.Bag().load("http://test.com/test.json").than(
+         *         function(bag) {
+         *             // bag is loaded and ready for use
+         *             bag.get("a.c");
+         *         }
+         *     ).catch(function(error) {
+         *         // handle error
+         *         ...
+         *     });
          */
-        this.load = function(s, cb) {
-            var runner = new pkg.Runner(),
-                $this  = this;
+        this.load = function(s) {
+            if (s == null) {
+                throw new Error("Null content");
+            }
 
-            runner.run(function() {
+            var $this = this;
+            return new pkg.Runner().than(function() {
                 if (zebkit.isString(s)) {
                     s = s.trim();
 
@@ -1676,53 +2233,56 @@ pkg.Bag = zebkit.Class([
 
                         $this.url = s.toString();
 
-                        if (cb == null) {
+                        // TODO: back-doors for deprecated sync loading
+                        if (this.$sync === true) {
                             return zebkit.io.GET(p);
+                        } else {
+                            var join = this.join();
+                            zebkit.io.GET(p, function(r) {
+                                if (r.status != 200) {
+                                    runner.fireError(new Error("Invalid JSON path"));
+                                } else {
+                                    join.call($this, r.responseText);
+                                }
+                            });
                         }
-
-                        var join = this.join();
-                        zebkit.io.GET(p, function(r) {
-                            if (r.status != 200) {
-                                runner.fireError(new Error("Invalid JSON path"));
-                            }
-                            else {
-                                join.call($this, r.responseText);
-                            }
-                        });
-
-                        return;
+                    } else {
+                        return s;
                     }
+                } else {
+                    return s;
                 }
-                return s;
             })
             . // parse JSON if necessary
-            run(function(s) {
+            than(function(s) {
                 if (zebkit.isString(s)) {
                     try {
                         return JSON.parse(s);
-                    }
-                    catch(e) {
+                    } catch(e) {
                         throw new Error("JSON format error: " + e);
                     }
                 }
                 return s;
             })
             . // populate JSON content
-            run(function(content) {
+            than(function(content) {
                 $this.content = content;
                 $this.root = ($this.root == null ? $this.buildValue(content)
                                                  : $this.populate($this.root, content));
-                if (cb != null) cb.call($this);
-            })
-            .
-            error(function(e) {
-                if (cb != null) cb.call($this, e);
-                throw e;
+                return $this;
             });
-
-            return this;
         };
 
+        /**
+         * Resolve variable of the given property. The method tries to resolve it in "root" element
+         * of the bag class instance, than it looks the property in original JSON content and at last
+         * it tries to find the property in global space if "globalPropertyLookup" attribute is set
+         * to true
+         * @param  {String} name a property name
+         * @private
+         * @method resolveVar
+         * @return {Object} a value of the property
+         */
         this.resolveVar = function(name) {
             if (this.variables.hasOwnProperty(name)) {
                 return this.variables[name];
@@ -1753,38 +2313,8 @@ pkg.Bag = zebkit.Class([
             eval("var r="+e);
             return r;
         };
-
-        this[''] = function (root) {
-            /**
-             * Environment variables that can be referred from loaded content
-             * @attribute variables
-             * @type {Object}
-             */
-            this.variables = {};
-
-            /**
-             * Object that keeps loaded and resolved content
-             * @readonly
-             * @attribute root
-             * @type {Object}
-             * @default {}
-             */
-            this.root = (root != null ? root : null);
-
-            /**
-             * Map of classes
-             * @attribute classAliases
-             * @protected
-             * @type {Object}
-             * @default {}
-             */
-            this.classAliases = {};
-        };
     }
 ]);
 
-/**
- * @for
- */
 
-})(zebkit("util"), zebkit.Class, zebkit.Interface);
+});

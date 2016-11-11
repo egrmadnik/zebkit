@@ -1,13 +1,21 @@
-(function(pkg, Class) {
+zebkit.package("layout", function(pkg, Class) {
 
 /**
- * Layout package provides number of classes, interfaces, methods and
- * variables that allows developer easily implement rules based layouting
- * of hierarchy of rectangular elements. The package has no relation
- * to any concrete UI, but it can be applied to a required UI framework
+ * Layout package provides number of classes, interfaces, methods and variables that allows
+ * developers easily implement rules based layouting of hierarchy of rectangular elements.
+ * The package has no relation to any concrete UI, but it can be applied to a required UI
+ * framework very easily. In general layout manager requires an UI component to provide:
+ *    - **setLocation(x,y)** method
+ *    - **setSize(w,h)** method
+ *    - **setBounds()** method
+ *    - **getPreferredSize(x,y)** method
+ *    - **getTop(), getBottom(), getRight(), getLeft()** methods
+ *    - **constraints** read only property
+ *    - **width, height, x, y** read only metrics properties
+ *    - **kids** read only property that keep all children components
  *
- * @module layout
- * @main layout
+ * @access package
+ * @class zebkit.layout
  */
 
  /**
@@ -17,7 +25,7 @@
   * @param  {zebkit.layout.Layoutable} child  a children component
   * @return {zebkit.layout.Layoutable}  a direct children component
   * @method getDirectChild
-  * @for zebkit.layout
+  * @for  zebkit.layout
   */
 pkg.getDirectChild = function(parent, child) {
     for(; child !== null && child.parent !== parent; child = child.parent) {}
@@ -25,9 +33,12 @@ pkg.getDirectChild = function(parent, child) {
 };
 
 /**
- * Layout manager interface
+ * Layout manager interface is simple interface that all layout managers have to
+ * implement. One method has to calculate preferred size of the given component and
+ * another one method has to perform layouting of children components of the given
+ * target component.
  * @class zebkit.layout.Layout
- * @interface
+ * @interface zebkit.layout.Layout
  */
 
 /**
@@ -48,15 +59,15 @@ pkg.Layout = new zebkit.Interface([
 ]);
 
 /**
- * Find a direct component located at the given location of the specified
- * parent component and the specified parent component
+ * Find a direct component located at the given location of the specified parent component
+ * and the specified parent component
  * @param  {Integer} x a x coordinate relatively to the parent component
  * @param  {Integer} y a y coordinate relatively to the parent component
  * @param  {zebkit.layout.Layoutable} parent  a parent component
  * @return {zebkit.layout.Layoutable} an index of direct children component
  * or -1 if no a children component can be found
  * @method getDirectAt
- * @api zebkit.layout.getDirectAt()
+ * @for  zebkit.layout
  */
 pkg.getDirectAt = function(x,y,p){
     for(var i = 0;i < p.kids.length; i++){
@@ -74,7 +85,7 @@ pkg.getDirectAt = function(x,y,p){
  * @param  {zebkit.layout.Layoutable} c a component
  * @return {zebkit.layout.Layoutable}  a top parent component
  * @method getTopParent
- * @api zebkit.layout.getTopParent()
+ * @for  zebkit.layout
  */
 pkg.getTopParent = function(c){
     for(; c != null && c.parent !== null; c = c.parent);
@@ -92,7 +103,7 @@ pkg.getTopParent = function(c){
         { x:{Integer}, y:{Integer} }
 
  * @method toParentOrigin
- * @api zebkit.layout.toParentOrigin()
+ * @for  zebkit.layout
  */
 pkg.toParentOrigin = function(x,y,c,p){
     if (arguments.length === 1) {
@@ -125,7 +136,7 @@ pkg.toParentOrigin = function(x,y,c,p){
  *      { x:{Integer}, y:{Integer} }
  *
  * @method toChildOrigin
- * @api zebkit.layout.toChildOrigin()
+ * @for  zebkit.layout
  */
 pkg.toChildOrigin = function(x, y, p, c){
     while(c !== p){
@@ -145,7 +156,7 @@ pkg.toChildOrigin = function(x, y, p, c){
         { width:{Integer}, height:{Integer} }
 
  * @method getMaxPreferredSize
- * @api zebkit.layout.getMaxPreferredSize()
+ * @for zebkit.layout
  */
 pkg.getMaxPreferredSize = function(target) {
     var maxWidth = 0, maxHeight = 0;
@@ -160,19 +171,34 @@ pkg.getMaxPreferredSize = function(target) {
     return { width:maxWidth, height:maxHeight };
 };
 
+
+/**
+ * Test if the given parent component is ancestor of the specified component.
+ * @param  {zebkit.layout.Layoutable}  p a parent component
+ * @param  {zebkit.layout.Layoutable}  c a component
+ * @return {Boolean} true if the given parent is ancestor of the specified component
+ * @for  zebkit.layout
+ * @method  isAncestorOf
+ */
 pkg.isAncestorOf = function(p, c){
     for(; c !== null && c !== p; c = c.parent);
     return c != null;
 };
 
+function eq_tree_class(node, name) {
+    if (name[0] === '~') {
+        return node.clazz != null && zebkit.instanceOf(node, zebkit.Class.forName(name.substring(1)));
+    } else {
+        return typeof node.clazz.$name !== "undefined" && node.clazz.$name === name;
+    }
+}
+
+
 /**
- * Layoutable class defines rectangular component that
- * has elementary metrical properties like width, height
- * and location and can be a participant of layout management
- * process. Layoutable component is container that can
- * contains other layoutable component as its children.
- * The children components are ordered by applying a layout
- * manager of its parent component.
+ * Layoutable class defines rectangular component that has elementary metrical properties like width,
+ * height and location and can be a participant of layout management process. Layoutable component is
+ * container that can contains other layoutable component as its children. The children components are
+ * ordered by applying a layout manager of its parent component.
  * @class zebkit.layout.Layoutable
  * @constructor
  * @extends {zebkit.layout.Layout}
@@ -255,23 +281,24 @@ pkg.Layoutable = Class(pkg.Layout, [
             p = p.trim();
             if (p[0] === '/') return p;
             if (p[0] === '#') return "//*[@id='" + p.substring(1).trim() + "']";
-            return "//" + (p[0] === '.' ? p.substring(1).trim() : p);
+            return "//" + p;
         }
 
         /**
          * Find a first children component that satisfies the passed path expression.
          * @param  {String} path path expression. Path expression is simplified form
          * of XPath-like expression:
-
-        "/Panel"  - find first children that is an instance of zebkit.ui.Panel
-        "/Panel[@id='top']" - find first children that is an instance of zebkit.ui.Panel with "id" property that equals "top"
-        "//Panel"  - find first children that is an instance of zebkit.ui.Panel recursively
-
+         *
+         *   - **"/zebkit.ui.Panel"**  - find the first child item that has class name equals "zebkit.ui.Panel"
+         *   - **"/zebkit.ui.Panel[@id='top']"** - find the first child item that has class name equals "zebkit.ui.Panel" and "id" property equals "top"
+         *   - **"zebkit.ui.Panel"**  - find recursively the first child item that has class name equals "zebkit.ui.Panel"
+         *   - **"~zebkit.ui.Panel"**  - find recursively the first child item that is an instance of "zebkit.ui.Panel" class
+         *
          * Shortcuts:
-
-            "#id" - find a component by its "id" attribute value. This is equivalent of "//*[@id='a component id property']" path
-            "zebkit.ui.Button" - find a component by its class.  This is equivalent of "//className" path
-
+         *
+         *   - **"#id"** - find an item by its "id" attribute value. This is equivalent of "//*[@id='a component id property']" path
+         *   - **"zebkit.ui.Button"** - find an item by its class.  This is equivalent of "//className" path
+         *
          *
          * @method find
          * @return {zebkit.layout.Layoutable} found children component or null if
@@ -280,31 +307,30 @@ pkg.Layoutable = Class(pkg.Layout, [
         this.find = function(path){
             var res = null;
             zebkit.util.findInTree(this, $normPath(path),
-                function(node, name) {
-                    return node.clazz != null && zebkit.instanceOf(node, zebkit.Class.forName(name));
-                },
+                eq_tree_class,
 
                 function(kid) {
                    res = kid;
                    return true;
-            });
+                }
+            );
             return res;
         };
 
         /**
          * Find children components that satisfy the passed path expression.
-         * @param  {String} path path expression. Path expression is
-         * simplified form of XPath-like expression:
-
-         "/Panel"  - find first children that is an instance of zebkit.ui.Panel
-         "/Panel[@id='top']" - find first children that is an instance of zebkit.ui.Panel with "id" property that equals "top"
-         "//Panel"  - find first children that is an instance of zebkit.ui.Panel recursively
-
+         * @param  {String} path path expression. Path expression is simplified form of XPath-like expression:
+         *
+         *   - **"/zebkit.ui.Panel"** - find all children items that have class names equal "zebkit.ui.Panel"
+         *   - **"/zebkit.ui.Panel[@id='top']"** - find all children items that have class names equal "zebkit.ui.Panel" and "id" property equals "top"
+         *   - **"zebkit.ui.Panel"** - find recursively all children items that have class name equal "zebkit.ui.Panel"
+         *   - **"~zebkit.ui.Panel"** - find recursively all children items that are instances of "zebkit.ui.Panel" class
+         *
          * Shortcuts:
-
-            "#id" - find a component by its "id" attribute value. This is equivalent of "//*[@id='a component id property']" path
-            "zebkit.ui.Button" - find a component by its class.  This is equivalent of "//className" path
-
+         *
+         *   - **"#id"** - find an item by its "id" attribute value. This is equivalent of "//*[@id='a component id property']" path
+         *   - **"zebkit.ui.Button"** - find an item by its class.  This is equivalent of "//zebkit.ui.Button" path
+         *
          * @param {Function} [callback] function that is called every time a
          * new children component has been found.
          * @method findAll
@@ -320,18 +346,15 @@ pkg.Layoutable = Class(pkg.Layout, [
                 };
             }
 
-            zebkit.util.findInTree(this, $normPath(path),
-                function(node, name) {
-                    return node.clazz != null && zebkit.instanceOf(node, zebkit.Class.forName(name));
-                }, callback);
+            zebkit.util.findInTree(this, $normPath(path), eq_tree_class, callback);
             return res;
         };
 
         /**
          * Set the given id for the component
-         * @chainable
          * @param {String} id an ID to be set
          * @method setId
+         * @chainable
          */
         this.setId = function(id) {
             this.id = id;
@@ -349,7 +372,8 @@ pkg.Layoutable = Class(pkg.Layout, [
             layout: new zebkit.layout.BorderLayout()
         })
 
-        c.add(new zebkit.layout.Layoutable()).add(zebkit.layout.Layoutable()).add(zebkit.layout.Layoutable());
+        c.add(new zebkit.layout.Layoutable()).add(zebkit.layout.Layoutable())
+                                             .add(zebkit.layout.Layoutable());
         c.properties("//*", {
             size: [100, 200]
         });
@@ -393,18 +417,13 @@ pkg.Layoutable = Class(pkg.Layout, [
         };
 
         /**
-         * Validate the component metrics. The method is called as
-         * a one step of the component validation procedure. The
-         * method causes "recalc" method execution if the method
-         * has been implemented and the component is in invalid
-         * state. It is supposed the "recalc" method has to be
-         * implemented by a component as safe place where the
-         * component metrics can be calculated. Component
-         * metrics is individual for the given component
-         * properties that has influence to the component
-         * preferred size value. In many cases the properties
-         * calculation has to be minimized what can be done
-         * by moving the calculation in "recalc" method
+         * Validate the component metrics. The method is called as a one step of the component validation
+         * procedure. The method causes "recalc" method execution if the method has been implemented and
+         * the component is in invalid state. It is supposed the "recalc" method has to be implemented by
+         * a component as safe place where the component metrics can be calculated. Component metrics is
+         * individual for the given component properties that has influence to the component preferred
+         * size value. In many cases the properties calculation has to be minimized what can be done by
+         * moving the calculation in "recalc" method
          * @method validateMetric
          * @protected
          */
@@ -416,22 +435,18 @@ pkg.Layoutable = Class(pkg.Layout, [
         };
 
         /**
-         * By default there is no any implementation of "recalc" method
-         * in the layoutable component. In other words the method doesn't
-         * exist. Developer should implement the method if the need a proper
-         * and efficient place  to calculate component properties that
-         * have influence to the component preferred size. The "recalc"
-         * method is called only when it is really necessary to compute
-         * the component metrics.
+         * By default there is no any implementation of "recalc" method in the layoutable component. In other
+         * words the method doesn't exist. Developer should implement the method if the need a proper and
+         * efficient place  to calculate component properties that have influence to the component preferred
+         * size. The "recalc" method is called only when it is really necessary to compute the component metrics.
          * @method recalc
          * @protected
          */
 
         /**
-         * Invalidate the component layout. Layout invalidation means the
-         * component children components have to be placed with the component
-         * layout manager. Layout invalidation causes a parent component
-         * layout is also invalidated.
+         * Invalidate the component layout. Layout invalidation means the component children components have to
+         * be placed with the component layout manager. Layout invalidation causes a parent component layout is
+         * also invalidated.
          * @method invalidateLayout
          * @protected
          */
@@ -475,14 +490,13 @@ pkg.Layoutable = Class(pkg.Layout, [
         };
 
         /**
-         * The method can be implemented to be informed every time
-         * the component has completed to layout its children components
+         * The method can be implemented to be informed every time the component has completed to layout
+         * its children components
          * @method laidout
          */
 
         /**
-         * Get preferred size. The preferred size includes  top, left,
-         * bottom and right paddings and
+         * Get preferred size. The preferred size includes  top, left, bottom and right paddings and
          * the size the component wants to have
          * @method getPreferredSize
          * @return {Object} return size object the component wants to
@@ -575,10 +589,8 @@ pkg.Layoutable = Class(pkg.Layout, [
         };
 
         /**
-         * Internal implementation of the component
-         * preferred size calculation.
-         * @param  {zebkit.layout.Layoutable} target a component
-         * for that the metric has to be calculated
+         * Internal implementation of the component preferred size calculation.
+         * @param  {zebkit.layout.Layoutable} target a component for that the metric has to be calculated
          * @return {Object} a preferred size. The method always
          * returns { width:10, height:10 } as the component preferred
          * size
@@ -590,11 +602,9 @@ pkg.Layoutable = Class(pkg.Layout, [
         };
 
         /**
-         * By default layoutbable component itself implements
-         * layout manager to order its children components.
-         * This method implementation does nothing, so children
-         * component will placed according locations and sizes they
-         * have set.
+         * By default layoutbable component itself implements layout manager to order its children
+         * components. This method implementation does nothing, so children component will placed
+         * according locations and sizes they have set.
          * @method doLayout
          * @private
          */
@@ -650,6 +660,7 @@ pkg.Layoutable = Class(pkg.Layout, [
          * @param  {Integer} xx x coordinate relatively to the layoutable component parent
          * @param  {Integer} yy y coordinate relatively to the layoutable component parent
          * @method setLocation
+         * @chainable
          */
         this.setLocation = function (xx,yy){
             if (xx != this.x || this.y != yy){
@@ -690,6 +701,7 @@ pkg.Layoutable = Class(pkg.Layout, [
          * @param  {Integer} w a width of the component
          * @param  {Integer} h a height of the component
          * @method setSize
+         * @chainable
          */
         this.setSize = function (w,h){
             if (w != this.width || h != this.height){
@@ -726,6 +738,14 @@ pkg.Layoutable = Class(pkg.Layout, [
             return null;
         };
 
+        /**
+         * Set the component constraints without invalidating the component and its parents components
+         * layouts and metrics. It is supposed to be used for internal use
+         * @protected
+         * @param {Object} c a constraints
+         * @chainable
+         * @method $setConstraints
+         */
         this.$setConstraints = function(c) {
             this.constraints = c;
             return this;
@@ -777,14 +797,11 @@ pkg.Layoutable = Class(pkg.Layout, [
          */
 
         /**
-         * Set the specified preferred size the component has to have.
-         * Component preferred size is important thing that is widely
-         * used to layout the component. Usually the preferred
-         * size is calculated by a concrete component basing on
-         * its metrics. For instance, label component calculates its
-         * preferred size basing on text size. But if it is required
-         * the component preferred size can be fixed with the desired
-         * value.
+         * Set the specified preferred size the component has to have. Component preferred size is
+         * important thing that is widely used to layout the component. Usually the preferred
+         * size is calculated by a concrete component basing on its metrics. For instance, label
+         * component calculates its preferred size basing on text size. But if it is required
+         * the component preferred size can be fixed with the desired value.
          * @param  {Integer} w a preferred width. Pass "-1" as the
          * argument value to not set preferred width
          * @param  {Integer} h a preferred height. Pass "-1" as the
@@ -833,34 +850,46 @@ pkg.Layoutable = Class(pkg.Layout, [
             return (arguments.length === 1) ? this.insert(this.kids.length, null, constr)
                                             : this.insert(this.kids.length, constr, d);
         };
+    },
 
-        // speedup constructor execution
-        this[''] = function() {
-            /**
-             *  Reference to children components
-             *  @attribute kids
-             *  @type {Array}
-             *  @default empty array
-             *  @readOnly
-             */
-            this.kids = [];
+    function() {
+        /**
+         *  Reference to children components
+         *  @attribute kids
+         *  @type {Array}
+         *  @default empty array
+         *  @readOnly
+         */
+        this.kids = [];
 
-            /**
-            * Layout manager that is used to order children layoutable components
-            * @attribute layout
-            * @default itself
-            * @readOnly
-            * @type {zebkit.layout.Layout}
-            */
-            this.layout = this;
-        };
+        /**
+        * Layout manager that is used to order children layoutable components
+        * @attribute layout
+        * @default itself
+        * @readOnly
+        * @type {zebkit.layout.Layout}
+        */
+        this.layout = this;
     }
 ]);
 
 /**
- *  Layout manager implementation that places layoutbale components
- *  on top of each other stretching its to fill all available parent
- *  component space
+ *  Layout manager implementation that places layoutbale components on top of each other stretching
+ *  its to fill all available parent component space. Components that want to have be sized according
+ *  to its preferred sizes have to have its constraints set to "usePsSize".
+ *  @example
+ *
+ *      var pan = new zebkit.ui.Panel();
+ *      pan.setLayout(new zebkit.ui.StackLayout());
+ *
+ *      // label component will be stretched over all available pan area
+ *      pan.add(new zebkit.ui.Label("A"));
+ *
+ *      // button component will be sized according to its preferred size
+ *      // and aligned to have centered vertical and horizontal alignments
+ *      pan.add(new zebkit.ui.Button("Ok").setConstraints("usePsSize"));
+ *
+ *
  *  @class zebkit.layout.StackLayout
  *  @constructor
  */
@@ -896,10 +925,12 @@ pkg.StackLayout = Class(pkg.Layout, [
 ]);
 
 /**
- *  Layout manager implementation that logically splits component area into five areas: top, bottom, left, right and center.
- *  Top and bottom components are stretched to fill all available space horizontally and are sized to have preferred height horizontally.
- *  Left and right components are stretched to fill all available space vertically and are sized to have preferred width vertically.
- *  Center component is stretched to occupy all available space taking in account top, left, right and bottom components.
+ *  Layout manager implementation that logically splits component area into five areas: top, bottom,
+ *  left, right and center. Top and bottom components are stretched to fill all available space
+ *  horizontally and are sized to have preferred height horizontally. Left and right components are
+ *  stretched to fill all available space vertically and are sized to have preferred width vertically.
+ *  Center component is stretched to occupy all available space taking in account top, left, right
+ *  and bottom components.
 
        // create panel with border layout
        var p = new zebkit.ui.Panel(new zebkit.layout.BorderLayout());
@@ -917,6 +948,15 @@ pkg.StackLayout = Class(pkg.Layout, [
  * @extends {zebkit.layout.Layout}
  */
 pkg.BorderLayout = Class(pkg.Layout, [
+    function(hgap,vgap){
+        if (arguments.length > 0) {
+            this.hgap = this.vgap = hgap;
+            if (arguments.length > 1) {
+                this.vgap = vgap;
+            }
+        }
+    },
+
     function $prototype() {
         /**
          * Horizontal gap (space between components)
@@ -934,15 +974,6 @@ pkg.BorderLayout = Class(pkg.Layout, [
          * @type {Integer}
          */
         this.hgap = this.vgap = 0;
-
-        this[''] = function(hgap,vgap){
-            if (arguments.length > 0) {
-                this.hgap = this.vgap = hgap;
-                if (arguments.length > 1) {
-                    this.vgap = vgap;
-                }
-            }
-        };
 
         this.calcPreferredSize = function (target){
             var center = null, left = null,  right = null, top = null, bottom = null, topRight = null, d = null;
@@ -1022,18 +1053,17 @@ pkg.BorderLayout = Class(pkg.Layout, [
                             if (top != null) {
                                 throw new Error("Component with top constraints is already defined");
                             }
-                            var ps = kid.getPreferredSize();
-                            kid.setBounds(l, t, r - l, ps.height);
-                            t += ps.height + this.vgap;
+                            kid.setBounds(l, t, r - l, kid.getPreferredSize().height);
+                            t += kid.height + this.vgap;
                             top = kid;
                             break;
                         case "bottom":
                             if (bottom != null) {
                                 throw new Error("Component with bottom constraints is already defined");
                             }
-                            var ps = kid.getPreferredSize();
-                            kid.setBounds(l, b - ps.height, r - l, ps.height);
-                            b -= ps.height + this.vgap;
+                            var bh = kid.getPreferredSize().height;
+                            kid.setBounds(l, b - bh, r - l, bh);
+                            b -= bh + this.vgap;
                             bottom = kid;
                             break;
                         case "left":
@@ -1048,24 +1078,23 @@ pkg.BorderLayout = Class(pkg.Layout, [
                             }
                             right = kid;
                             break;
-                        default: throw new Error("Invalid constraints: " + kid.constraints);
+                        default: throw new Error("Invalid constraints: '" + kid.constraints + "'");
                     }
                 }
             }
 
-            if (right != null){
-                var d = right.getPreferredSize();
-                right.setBounds(r - d.width, t, d.width, b - t);
-                r -= d.width + this.hgap;
+            if (right != null) {
+                var rw = right.getPreferredSize().width;
+                right.setBounds(r - rw, t, rw, b - t);
+                r -= rw + this.hgap;
             }
 
-            if (left != null){
-                var d = left.getPreferredSize();
-                left.setBounds(l, t, d.width, b - t);
-                l += d.width + this.hgap;
+            if (left != null) {
+                left.setBounds(l, t, left.getPreferredSize().width, b - t);
+                l += left.width + this.hgap;
             }
 
-            if (center != null){
+            if (center != null) {
                 center.setBounds(l, t, r - l, b - t);
             }
         };
@@ -1073,20 +1102,51 @@ pkg.BorderLayout = Class(pkg.Layout, [
 ]);
 
 /**
- * Rester layout manager can be used to use absolute position of
- * layoutable components. That means all components will be laid
- * out according coordinates and size they have. Raster layout manager
- * provides extra possibilities to control children components placing.
- * It is possible to align components by specifying layout constraints,
- * size component to its preferred size and so on.
- * @param {Boolean} [usePsSize] flag to add extra rule to set
- * components size to its preferred sizes.
+ * Rester layout manager can be used to use absolute position of layoutable components. That means
+ * all components will be laid out according coordinates and size they have. Raster layout manager
+ * provides extra possibilities to control children components placing. It is possible to align
+ * components by specifying layout constraints, size component to its preferred size and so on.
+ * Constraints that can be set for components are the following
+ *    - "top"
+ *    - "topRight"
+ *    - "topLeft"
+ *    - "bottom"
+ *    - "bottomLeft"
+ *    - "bottomRight"
+ *    - "right"
+ *    - "center"
+ *    - "left"
+ * @example
+ *     // instantiate component to be ordered
+ *     var topLeftLab = zebkit.ui.Label("topLeft");
+ *     var leftLab    = zebkit.ui.Label("left");
+ *     var centerLab  = zebkit.ui.Label("center");
+ *
+ *     // instantiate a container with raster layoyt manager set
+ *     // the manager is adjusted to size added child component to
+ *     // its preferred sizes
+ *     var container = new zebkit.ui.Panel(new zebkit.layout.RasterLayout(true));
+ *
+ *     // add child components with appropriate constraints
+ *     container.add("topLeft", topLeftLab);
+ *     container.add("left", leftLab);
+ *     container.add("center", centerLab);
+ *
+ * @param {Boolean} [usePsSize] flag to add extra rule to set components size to its preferred
+ * sizes.
  * @class  zebkit.layout.RasterLayout
  * @constructor
  * @extends {zebkit.layout.Layout}
  */
 pkg.RasterLayout = Class(pkg.Layout, [
     function $prototype() {
+        /**
+         * Define if managed with layout manager components have to be sized according to its
+         * preferred size
+         * @attribute usePsSize
+         * @type {Boolean}
+         * @default false
+         */
         this.usePsSize = false;
 
         this.calcPreferredSize = function(c){
@@ -1151,18 +1211,18 @@ pkg.RasterLayout = Class(pkg.Layout, [
                 }
             }
         };
+    },
 
-        this[''] = function(ups) {
-            if (arguments.length > 0) {
-                this.usePsSize = ups;
-            }
-        };
+    function(usePsSize) {
+        if (arguments.length > 0) {
+            this.usePsSize = usePsSize;
+        }
     }
 ]);
 
 /**
- * Flow layout manager group and places components aligned with
- * different vertical and horizontal alignments
+ * Flow layout manager group and places components ordered with different vertical and horizontal
+ * alignments
 
         // create panel and set flow layout for it
         // components added to the panel will be placed
@@ -1187,8 +1247,8 @@ pkg.RasterLayout = Class(pkg.Layout, [
      "center"
      "bottom"
 
- * @param {String} [dir] ("horizontal" by default) a direction
- * the component has to be placed in the layout
+ * @param {String} [dir] ("horizontal" by default) a direction the component has to be placed
+ * in the layout
 
      "vertical"
      "horizontal"
@@ -1199,6 +1259,23 @@ pkg.RasterLayout = Class(pkg.Layout, [
  * @extends {zebkit.layout.Layout}
  */
 pkg.FlowLayout = Class(pkg.Layout, [
+    function (ax, ay, dir, g){
+        if (arguments.length === 1) {
+            this.gap = ax;
+        } else {
+            if (arguments.length > 1) {
+                this.ax = ax;
+                this.ay = ay;
+            }
+
+            if (arguments.length > 2)  {
+                this.direction = zebkit.util.$validateValue(dir, "horizontal", "vertical");
+            }
+
+            if (arguments.length > 3) this.gap = g;
+        }
+    },
+
     function $prototype() {
         /**
          * Gap between laid out components
@@ -1236,23 +1313,14 @@ pkg.FlowLayout = Class(pkg.Layout, [
          */
         this.direction = "horizontal";
 
+        /**
+         * Define if the last added component has to be stretched to occupy
+         * the rest of horizontal or vertical space of a parent component.
+         * @attribute stretchLast
+         * @type {Boolean}
+         * @default false
+         */
         this.stretchLast = false;
-
-        this[''] =  function (ax, ay, dir, g){
-            if (arguments.length === 1) this.gap = ax;
-            else {
-                if (arguments.length > 1) {
-                    this.ax = ax;
-                    this.ay = ay;
-                }
-
-                if (arguments.length > 2)  {
-                    this.direction = zebkit.util.$validateValue(dir, "horizontal", "vertical");
-                }
-
-                if (arguments.length > 3) this.gap = g;
-            }
-        };
 
         this.calcPreferredSize = function (c){
             var m = { width:0, height:0 }, cc = 0;
@@ -1367,6 +1435,15 @@ pkg.FlowLayout = Class(pkg.Layout, [
  * @extends {zebkit.layout.Layout}
  */
 pkg.ListLayout = Class(pkg.Layout,[
+    function (ax, gap) {
+        if (arguments.length === 1) {
+            this.gap = ax;
+        } else if (arguments.length > 1) {
+            this.ax  = zebkit.util.$validateValue(ax, "stretch", "left", "right", "center");
+            this.gap = gap;
+        }
+    },
+
     function $prototype() {
         /**
          * Horizontal list items alignment
@@ -1383,15 +1460,6 @@ pkg.ListLayout = Class(pkg.Layout,[
          * @readOnly
          */
         this.gap = 0;
-
-        this[''] = function (ax, gap) {
-            if (arguments.length === 1) {
-                this.gap = ax;
-            } else if (arguments.length > 1) {
-                this.ax  = zebkit.util.$validateValue(ax, "stretch", "left", "right", "center");
-                this.gap = gap;
-            }
-        };
 
         this.calcPreferredSize = function (lw){
             var w = 0, h = 0, c = 0;
@@ -1434,8 +1502,8 @@ pkg.ListLayout = Class(pkg.Layout,[
 ]);
 
 /**
- * Percent layout places components vertically or horizontally and
- * sizes its according to its percentage constraints.
+ * Percent layout places components vertically or horizontally and sizes its according to its
+ * percentage constraints.
 
         // create panel and set percent layout for it
         var p = new zebkit.ui.Panel();
@@ -1457,6 +1525,14 @@ pkg.ListLayout = Class(pkg.Layout,[
  * @extends {zebkit.layout.Layout}
  */
 pkg.PercentLayout = Class(pkg.Layout, [
+    function(dir, gap, stretch) {
+        if (arguments.length > 0) {
+            this.direction = zebkit.util.$validateValue(dir, "horizontal", "vertical");
+            if (arguments.length > 1) this.gap = gap;
+            if (arguments.length > 2) this.stretch = stretch;
+        }
+    },
+
     function $prototype() {
          /**
           * Direction the components have to be placed (vertically or horizontally)
@@ -1486,14 +1562,6 @@ pkg.PercentLayout = Class(pkg.Layout, [
          * @default true
          */
         this.stretch = true;
-
-        this[''] = function(dir, gap, stretch) {
-            if (arguments.length > 0) {
-                this.direction = zebkit.util.$validateValue(dir, "horizontal", "vertical");
-                if (arguments.length > 1) this.gap = gap;
-                if (arguments.length > 2) this.stretch = stretch;
-            }
-        };
 
         this.doLayout = function(target){
             var right  = target.getRight(),
@@ -1579,6 +1647,17 @@ pkg.PercentLayout = Class(pkg.Layout, [
  * @class zebkit.layout.Constraints
  */
 pkg.Constraints = Class([
+    function(ax, ay, p) {
+        if (arguments.length > 0) {
+            this.ax = ax;
+            if (arguments.length > 1) this.ay = ay;
+            if (arguments.length > 2) this.setPadding(p);
+
+            zebkit.util.$validateValue(this.ax, "stretch", "left", "center", "right");
+            zebkit.util.$validateValue(this.ay, "stretch", "top", "center", "bottom");
+        }
+    },
+
     function $prototype() {
         /**
          * Top cell padding
@@ -1626,20 +1705,10 @@ pkg.Constraints = Class([
         this.ay = this.ax = "stretch";
         this.rowSpan = this.colSpan = 1;
 
-        this[''] = function(ax, ay, p) {
-            if (arguments.length > 0) {
-                this.ax = ax;
-                if (arguments.length > 1) this.ay = ay;
-                if (arguments.length > 2) this.setPadding(p);
-
-                zebkit.util.$validateValue(this.ax, "stretch", "left", "center", "right");
-                zebkit.util.$validateValue(this.ay, "stretch", "top", "center", "bottom");
-            }
-        };
-
         /**
          * Set all four paddings (top, left, bottom, right) to the given value
          * @param  {Integer} p a padding
+         * @chainable
          * @method setPadding
          */
 
@@ -1649,6 +1718,7 @@ pkg.Constraints = Class([
          * @param  {Integer} l a left padding
          * @param  {Integer} b a bottom padding
          * @param  {Integer} r a right padding
+         * @chainable
          * @method setPadding
          */
         this.setPadding = function(t,l,b,r) {
@@ -1666,10 +1736,9 @@ pkg.Constraints = Class([
 ]);
 
 /**
- * Grid layout manager. can be used to split a component area to
- * number of virtual cells where children components can be placed.
- * The way how the children components have to be laid out in the cells can
- * be customized by using "zebkit.layout.Constraints" class:
+ * Grid layout manager. can be used to split a component area to number of virtual cells where
+ * children components can be placed. The way how the children components have to be laid out
+ * in the cells can be customized by using "zebkit.layout.Constraints" class:
 
         // create constraints
         var ctr = new zebkit.layout.Constraints();
@@ -1683,66 +1752,87 @@ pkg.Constraints = Class([
         // create panel and set grid layout manager with two
         // virtual rows and columns
         var p = new zebkit.ui.Panel();
-        p.setLayout(new zebkit.layout.GridLayout(2,2));
+        p.setLayout(new zebkit.layout.GridLayout(2, 2));
 
         // add children component
-        p.add(ctr, new zebkit.ui.Label("Cell 1,1"));
-        p.add(ctr, new zebkit.ui.Label("Cell 1,2"));
-        p.add(ctr, new zebkit.ui.Label("Cell 2,1"));
-        p.add(ctr, new zebkit.ui.Label("Cell 2,2"));
+        p.add(ctr, new zebkit.ui.Label("Cell 1, 1"));
+        p.add(ctr, new zebkit.ui.Label("Cell 1, 2"));
+        p.add(ctr, new zebkit.ui.Label("Cell 2, 1"));
+        p.add(ctr, new zebkit.ui.Label("Cell 2, 2"));
 
- * @param {Integer} rows a number of virtual rows to layout
- * children components
- * @param {Integer} cols a number of virtual columns to
- * layout children components
- * @param {String} [ax] horizontal alignment
- * @param {String} [ay] vertical alignment
- * layout children components
+ * @param {Integer} rows a number of virtual rows to layout children components
+ * @param {Integer} cols a number of virtual columns to layout children components
+ * @param {Boolean} [stretchRows] true if virtual cell height has to be stretched to occupy the
+ * whole vertical container component space
+ * @param {Boolean} [stretchCols] true if virtual cell width has to be stretched to occupy the
+ * whole horizontal container component space
  * @constructor
  * @class  zebkit.layout.GridLayout
  * @extends {zebkit.layout.Layout}
  */
 pkg.GridLayout = Class(pkg.Layout, [
+    function(r, c, stretchRows, stretchCols) {
+        /**
+         * Number of virtual rows to place children components
+         * @attribute rows
+         * @readOnly
+         * @type {Integer}
+         */
+        this.rows = r;
+
+        /**
+         * Number of virtual columns to place children components
+         * @attribute cols
+         * @readOnly
+         * @type {Integer}
+         */
+        this.cols = c;
+
+        this.colSizes = Array(c + 1);
+        this.rowSizes = Array(r + 1);
+
+        /**
+         * Default constraints that is applied for children components
+         * that doesn't define own constraints
+         * @type {zebkit.layout.Constraints}
+         * @attribute constraints
+         */
+        this.constraints = new pkg.Constraints();
+
+        if (arguments.length > 2) this.stretchRows = (stretchRows === true);
+        if (arguments.length > 3) this.stretchCols = (stretchCols === true);
+    },
+
     function $prototype() {
         this.stretchCols = this.stretchRows = false;
 
-        this[''] = function(r, c, stretchRows, stretchCols) {
-            /**
-             * Number of virtual rows to place children components
-             * @attribute rows
-             * @readOnly
-             * @type {Integer}
-             */
-            this.rows = r;
+        /**
+         * Set default grid layout cell paddings (top, left, bottom, right) to the given value
+         * @param  {Integer} p a padding
+         * @chainable
+         * @method setPadding
+         */
 
-            /**
-             * Number of virtual columns to place children components
-             * @attribute cols
-             * @readOnly
-             * @type {Integer}
-             */
-            this.cols = c;
-
-            this.colSizes = Array(c + 1);
-            this.rowSizes = Array(r + 1);
-
-            /**
-             * Default constraints that is applied for children components
-             * that doesn't define own constraints
-             * @type {zebkit.layout.Constraints}
-             * @attribute constraints
-             */
-            this.constraints = new pkg.Constraints();
-
-            if (arguments.length > 2) this.stretchRows = stretchRows === true;
-            if (arguments.length > 3) this.stretchCols = stretchCols === true;
-        };
-
+        /**
+         * Set default grid layout cell paddings: top, left, bottom, right
+         * @param  {Integer} t a top padding
+         * @param  {Integer} l a left padding
+         * @param  {Integer} b a bottom padding
+         * @param  {Integer} r a right padding
+         * @chainable
+         * @method setPadding
+         */
         this.setPadding = function() {
             this.constraints.setPadding.apply(this.constraints, arguments);
             return this;
         };
 
+        /**
+         * Set default constraints.
+         * @method setDefaultConstraints
+         * @chainable
+         * @param {zebkit.layout.Constraints} c a constraints
+         */
         this.setDefaultConstraints = function(c) {
             this.constraints = c;
             return this;
@@ -1841,14 +1931,14 @@ pkg.GridLayout = Class(pkg.Layout, [
 
             if (this.stretchCols) {
                 var dw = c.width - left - c.getRight() - colSizes[cols];
-                for(var i = 0;i < cols; i ++ ) {
+                for(var i = 0; i < cols; i ++ ) {
                     colSizes[i] = colSizes[i] + (colSizes[i] !== 0 ? Math.floor((dw * colSizes[i]) / colSizes[cols]) : 0);
                 }
             }
 
             if (this.stretchRows) {
                 var dh = c.height - top - c.getBottom() - rowSizes[rows];
-                for(var i = 0;i < rows; i++) {
+                for(var i = 0; i < rows; i++) {
                     rowSizes[i] = rowSizes[i] + (rowSizes[i] !== 0 ? Math.floor((dh * rowSizes[i]) / rowSizes[rows]) : 0);
                 }
             }
@@ -1892,8 +1982,4 @@ pkg.GridLayout = Class(pkg.Layout, [
 ]);
 
 
-/**
- * @for
- */
-
-})(zebkit("layout"), zebkit.Class);
+});

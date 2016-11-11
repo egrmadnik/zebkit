@@ -1,5 +1,6 @@
 ---
 layout: page
+tags: menu
 title: Zebkit ?
 ---
 
@@ -12,56 +13,54 @@ Zebkit is unique UI platform that renders UI components on HTML5 Canvas element.
 Abstract JS API, powerful OOP concept, rich UI components set is good basement for software engineering with minimal impact of typical WEB mess. 
 {% endcapture %}
 
-{% include zsample2.html canvas_id='sample1' title='Example of simple zebkit application to play video advertising' description=description %}
+{% include zsample2.html canvas_id='designer' title='Example of simple zebkit application shape and move components' description=description %}
 
 <br/>
-Zebkit can be good alternative for development mobile, single page applications with no limitations regarding desirable UI components set. Everything can be rendered with zebkit.  
+Zebkit is good choice for development mobile, single page applications with no limitations regarding desirable UI components set. Everything can be rendered with zebkit.  
 
 <script>
-zebkit()['zebkit.theme']= "dark";
+
+zebkit.config["zebkit.theme"] = "dark";
 
 zebkit.ready(function() {
-    var z = new zebra.ui.zCanvas("sample1", 450, 200);
-    z.root.setLayout(new zebra.layout.BorderLayout());
-    z.root.setBorder(new zebkit.ui.Border("black", 1, 6));
-    z.root.setPadding(4);
-    z.root.setBorder(new zebkit.ui.Border("red", 2, 6));
-    z.root.setBackground("black");
-    z.root.add("center", new zebkit.ui.SplitPan(
-        new zebkit.ui.tree.CompTree({
-            value: "Brands", 
-            kids:  [  
-                new zebkit.ui.ImageLabel("BMW","public/images/bmw_small.png").setPadding(4,6,4,6).setImgPreferredSize(32).setId("bmw"),
-                new zebkit.ui.ImageLabel("SAAB","public/images/saab_small.png").setPadding(4,6,4,6).setImgPreferredSize(32).setId("saab"),
-                new zebkit.ui.ImageLabel("Honda", "public/images/honda_small.png").setPadding(4,6,4,6).setImgPreferredSize(32).setId("honda")
-            ]
-        }).properties("//*", { 
-              color    : "red", 
-              font     : "bold"
-          }).setId("tree"), 
-        new zebkit.ui.StackPan(
-            new zebkit.ui.VideoPan("public/images/grippen.mp4").setId("saabVideo").setVisible(false),
-            new zebkit.ui.VideoPan("public/images/honda.mp4").setId("hondaVideo").setVisible(false),
-            new zebkit.ui.VideoPan("public/images/bmw.mp4").setId("bmwVideo").setVisible(false),
-            new zebkit.ui.Label("Select a tree item to watch video").properties({
-                constraints: "usePsSize",
-                id    : "label",
-                color : "orange"
-            })
-        )
-    ).setGripperLoc(150));
+    eval(zebkit.import("ui", "layout"));
 
-    z.find("#tree").bind(function selected(src) {
-        z.findAll("zebkit.ui.VideoPan", function(vp) {
-            vp.pause();
-            vp.setVisible(false);
-        });
+    var root = (new zCanvas("designer", 400, 300)).root;
+    root.properties({
+        layout : new BorderLayout(4, 4),
+        padding: 8,
+        kids: {
+            center: new BorderPan("Designer panel", new Panel({
+                padding: 6,
+                kids: [
+                    new zebkit.ui.designer.ShaperPan(new Checkbox("Check-box").properties({
+                        value:true,
+                        location: [10, 10]
+                    })),
 
-        if (src.selected !== null && src.selected.value.id != null) {
-            z.find("#label").setVisible(false);
-            z.find("#"+src.selected.value.id+"Video").setVisible(true).play();
-        } else {
-            z.find("#label").setVisible(true);
+                    new zebkit.ui.designer.ShaperPan(new Button("Button").properties({
+                        value:true,
+                        location: [190, 50]
+                    })),
+
+                    new zebkit.ui.designer.ShaperPan(new TextField("Text Field").properties({
+                        size : [120, 60],
+                        location: [30, 100]
+                    }))
+                ]
+            })),
+
+            bottom: new Button("Align", [
+                function fire() {
+                    this.$super();
+                    var y = 10, c = root.findAll("zebkit.ui.designer.ShaperPan");
+                    for(var i=0; i < c.length; i++)  {
+                        c[i].toPreferredSize();
+                        c[i].setLocation(10, y);
+                        y += c[i].height + 5;
+                    }
+                }
+            ])
         }
     });
 });
@@ -118,7 +117,7 @@ zebkit.ready(function() {
 });
 
 zebkit.ready(function() {
-    eval(zebkit.Import("ui", "layout"));
+    eval(zebkit.import("ui", "layout"));
 
     var ZebkitTextRender = zebkit.Class(TextRender, [
         function(t, reflection) {
@@ -272,7 +271,7 @@ zebkit.ready(function() {
     var gmap = null;
     function initMap() {
         zebkit.ready(function() {
-            eval(zebkit.Import("ui"));
+            eval(zebkit.import("ui"));
 
             var c = new zCanvas("sampleGoogleMap", 400, 400);
             var map = new HtmlElement();
@@ -299,7 +298,7 @@ zebkit.ready(function() {
                 zoom: 8
             });
 
-            var combo = c.find(".zebkit.ui.Combo"); 
+            var combo = c.find("~zebkit.ui.Combo"); 
             combo.select(1);
             combo.bind(function(src) {
                 gmap.setMapTypeId(google.maps.MapTypeId[src.getValue()]);    
@@ -329,7 +328,7 @@ root.pointerPressed = function(e) {
 
 <script>
 zebkit.ready(function() {
-    eval(zebkit.Import("ui"));
+    eval(zebkit.import("ui"));
     var zcan = new zCanvas("customShapeSample", 550, 250);
     var root = new Panel(new zebkit.layout.FlowLayout("center", "center", "vertical", 16));
     zcan.root.setLayout(new zebkit.layout.FlowLayout(16));
@@ -542,17 +541,17 @@ Find below run zebkit application that has been created by the JSON description 
     style="padding:0px;background-color:black;border-color:black;">
 
 ```js
-eval(zebkit.Import("ui", "layout"));
+eval(zebkit.import("ui", "layout"));
 
 var root = new zCanvas(300,300).root;
 root.setLayout(new StackLayout());
 
-zebkit.util.Bag().load(
-    "simpleapp.json",
-    function() {
-       root.add(this.root);
-    }
-);
+zebkit.util.Bag()
+.load("simpleapp.json")
+.than(function(b) {
+    root.add(b.root);
+});
+    
 ```
 
 </td></tr></table>
@@ -561,16 +560,14 @@ zebkit.util.Bag().load(
 
 <script>
 zebkit.ready(function() {
-   eval(zebkit.Import("ui"));
+   eval(zebkit.import("ui"));
    var root = new zCanvas("jsonSample", 300, 300).root;
    root.setLayout(new zebkit.layout.StackLayout());
 
    var bag = new zebkit.util.Bag();
-
-   bag.load("public/js/simpleapp.json",
-    function() {
-        root.add(this.root);
-    });
+   bag.load("public/js/simpleapp.json").than(function(bag) {
+        root.add(bag.root);
+   });    
 });
 </script>
 
@@ -580,7 +577,7 @@ zebkit.ready(function() {
 
 <script type="text/javascript">
     zebkit.ready(function() {
-       eval(zebkit.Import("ui","layout","ui.grid","ui.tree","ui.designer"));
+       eval(zebkit.import("ui","layout","ui.grid","ui.tree","ui.designer"));
    
        var root = new zCanvas("sampleRichSet", 650, 750).root;
        root.setLayout(new RasterLayout(true));
@@ -633,7 +630,7 @@ zebkit.ready(function() {
    
        tabs.add("Scroll panel", new ScrollPan(new ImagePan("public/images/flowers2.jpg")).setAutoHide(true));
        tabs.add("Split panel", new SplitPan(
-           new ImagePan("public/images/flowers3.jpg").setPadding(8), 
+           new ImagePan("public/images/flowers3.png").setPadding(8), 
            new SplitPan(
                new ImagePan("public/images/flowers.jpg").setPadding(8),
                new ImagePan("public/images/landscape.jpg").setPadding(8), 
@@ -760,13 +757,13 @@ zebkit.ready(function() {
 
 <br/>
 
-**Fast and responsive UI components** that can handle tons of data. For instance find below grid component that keeps **10.000.000 (10 millions)** dynamically generated cells!  
-
+**Fast and responsive UI components** that can handle tons of data. For instance find below grid component that keeps **10.000.000 (10 millions)** dynamically generated cells! Pay attention the grid can show more than HTML5 Canvas precision can render without visual effects. Zebkit provides a solution for fixing HTML5 precision problem. The solution has to be applied separately.
+ 
 {% include zsample.html canvas_id='sampleBigGrid' title='10.000.000 cells' %}
 
 <script type="text/javascript">
     zebkit.ready(function() {
-        eval(zebkit.Import("ui","layout","ui.grid"));
+        eval(zebkit.import("ui","layout","ui.grid"));
         var grid = new Grid(1000000, 10);
         grid.defXAlignment = "center";
         var titles = [];
@@ -790,36 +787,13 @@ zebkit.ready(function() {
 
 <br/>
 
-**Layout management** Zebkit uses rules to order UI components intead of usin  absolute location and precise UI component sizes. New rules that are called layout managers can be easily developed for specific needs. 
-
-   * Border Layout:
+**Layout management** Zebkit uses rules to order UI components as a better alternative to absolute UI components positioning and sizing. This approach is more general and adaptable to the world of different devices, screens and resolutions.  
 
 {% include zsample.html canvas_id='layoutSample1' title='Border layout' %}
 
-   * List layout
-
-{% include zsample.html canvas_id='layoutSample2' title='List layout' %}
-
-   * Percentage layout
-
-{% include zsample.html canvas_id='layoutSample3' title='Percentage layout' %}
-
-   * Flow layout
-
-{% include zsample.html canvas_id='layoutSample4' title='Flow layout' %}
-
-   * Grid layout
-
-{% include zsample.html canvas_id='layoutSample5' title='Grid layout' %}
-
-
 <script type='text/javascript'>
 zebkit.ready(function() {
-    eval(zebkit.Import("ui", "layout"));
-
-    var PAN = zebkit.Class(Panel, []);
-    PAN.padding = 8;
-    PAN.border = "plain";
+    eval(zebkit.import("ui", "layout"));
 
     // Border layout
     var r = new zCanvas("layoutSample1", 500, 400).root;
@@ -834,244 +808,5 @@ zebkit.ready(function() {
             "bottom": new Button("BOTTOM")
         }
     }).setPreferredSize(300, -1));
-
-    // List layout
-    var r = new zCanvas("layoutSample2", 700, 320).root;
-    r.setLayout(new zebkit.layout.GridLayout(2, 2).setPadding(8));
-    r.add(new PAN({
-        layout : new ListLayout(8),
-        kids   : [
-            new Button("Stretched Item 1"),
-            new Button("Stretched Item 2"),
-            new Button("Stretched Item 3")
-        ]
-    }).setPreferredSize(320, -1));
-
-    r.add(new PAN({
-        layout : new ListLayout("center", 8),
-        kids   : [
-            new Button("Center aligned item 1"),
-            new Button("Center aligned item 2"),
-            new Button("Center aligned item 3")
-        ]
-    }).setPreferredSize(320, -1));
-
-    r.add(new PAN({
-        layout : new ListLayout("left", 8),
-        kids   : [
-            new Button("Left aligned item 1"),
-            new Button("Left aligned item 2"),
-            new Button("Left aligned item 3")
-        ]
-    }));
-
-    r.add(new PAN({
-        layout : new ListLayout("right", 8),
-        kids   : [
-            new Button("Right aligned item 1"),
-            new Button("Right aligned item 2"),
-            new Button("Right aligned item 3")
-        ]
-    }));
-
-    // percentage layout
-    var r = new zCanvas("layoutSample3", 700, 220).root;
-    r.setLayout(new zebkit.layout.GridLayout(2, 2).setPadding(8));
-    r.add(new PAN({
-        layout : new PercentLayout(),
-        kids   : {
-           20: new Button("20%"),
-           30: new Button("30%"),
-           50: new Button("50%")
-        }
-    }).setPreferredSize(320, -1));
-
-    r.add(new PAN({
-        layout : new PercentLayout("horizontal", 2, false),
-        kids   : {
-           20: new Button("20%"),
-           30:  new Button("30%"),
-           50: new Button("50%")
-        }
-    }).setPreferredSize(320, -1));
-
-    r.add(new PAN({
-        layout : new PercentLayout("vertical", 2, false),
-        kids   : {
-           20: new Button("20%"),
-           30:  new Button("30%"),
-           50: new Button("50%")
-        }
-    }));
- 
-    r.add(new PAN({
-        layout : new PercentLayout("vertical", 2, true),
-        kids   : {
-           20: new Button("20%"),
-           30: new Button("30%"),
-           50: new Button("50%")
-        }
-    }));
-
-    // Flow layout 
-    var r = new zCanvas("layoutSample4", 700, 930).root;
-    r.setLayout(new GridLayout(9, 1).setPadding(8));
-
-    r.add(new PAN({
-        layout : new FlowLayout("center", "center", "vertical", 4),
-        kids   : [
-           new Button("VCentered"),
-           new Button("VCentered"),
-           new Button("VCentered")
-        ]
-    }).setPreferredSize(650, -1));
-
-    r.add(new PAN({
-        layout : new FlowLayout("center", "center", "horizontal", 4),
-        kids   : [
-           new Button("HCentered"),
-           new Button("HCentered"),
-           new Button("HCentered")
-        ]
-    }));
-
-    r.add(new PAN({
-        layout : new FlowLayout("left", "center", "horizontal", 4),
-        kids   : [
-           new Button("Left-Center-Hor"),
-           new Button("Left-Center-Hor"),
-           new Button("Left-Center-Hor")
-        ]
-    }));
-
-    r.add(new PAN({
-        layout : new FlowLayout("right", "center", "horizontal", 4),
-        kids   : [
-           new Button("Right-Center-Hor"),
-           new Button("Right-Center-Hor"),
-           new Button("Right-Center-Hor")
-        ]
-    }));
-
-    r.add(new PAN({
-        layout : new FlowLayout("right", "top", "horizontal", 4),
-        kids   : [
-           new Button("Right-Top-Hor"),
-           new Button("Right-Top-Hor"),
-           new Button("Right-Top-Hor")
-        ]
-    }));
-
-    r.add(new PAN({
-        layout : new FlowLayout("left", "top", "horizontal", 4),
-        kids   : [
-           new Button("Left-Top-Hor"),
-           new Button("Left-Top-Hor"),
-           new Button("Left-Top-Hor")
-        ]
-    }));
-
-    r.add(new PAN({
-        layout : new FlowLayout("left", "top", "vertical", 4),
-        kids   : [
-           new Button("Left-Top-Ver"),
-           new Button("Left-Top-Ver"),
-           new Button("Left-Top-Ver")
-        ]
-    }));
-
-    r.add(new PAN({
-        layout : new FlowLayout("right", "top", "vertical", 4),
-        kids   : [
-           new Button("Right-Top-Ver"),
-           new Button("Right-Top-Ver"),
-           new Button("Right-Top-Ver")
-        ]
-    }));
- 
-    r.add(new PAN({
-        layout : new FlowLayout("right", "bottom", "vertical", 4),
-        kids   : [
-           new Button("Right-Bottom-Ver"),
-           new Button("Right-Bottom-Ver"),
-           new Button("Right-Bottom-Ver")
-        ]
-    }));
-
-    var r = new zCanvas("layoutSample5", 700, 600).root;
-    r.setLayout(new GridLayout(4, 2).setPadding(8));
-
-    r.add(new PAN({
-        layout : new zebkit.layout.GridLayout(2,2),
-        kids   : [
-            new zebkit.ui.Button("1x1"),
-            new zebkit.ui.Button("1x2"),
-            new zebkit.ui.Button("2x1"),
-            new zebkit.ui.Button("2x2")
-        ]
-    }).setPreferredSize(320, 200));
-
-    r.add(new PAN({
-        layout : new zebkit.layout.GridLayout(2,2, true).setPadding(8),
-        kids   : [
-            new zebkit.ui.Button("1x1"),
-            new zebkit.ui.Button("1x2"),
-            new zebkit.ui.Button("2x1"),
-            new zebkit.ui.Button("2x2")
-        ]
-    }));
-
-    r.add(new PAN({
-        layout : new zebkit.layout.GridLayout(2,2, true, true).setPadding(8),
-        kids   : [
-            new zebkit.ui.Button("1x1"),
-            new zebkit.ui.Button("1x2"),
-            new zebkit.ui.Button("2x1"),
-            new zebkit.ui.Button("2x2")
-        ]
-    }));
-
-    var ctr2 = new zebkit.layout.Constraints("center", "bottom");
-    var ctr3 = new zebkit.layout.Constraints("center", "center");
-    ctr2.setPadding(8);
-    r.add(new PAN({
-        layout : new zebkit.layout.GridLayout(2,2).setPadding(8),
-        kids   : [
-            new zebkit.ui.Button("1x1 bottom component").setConstraints(ctr2),
-            new zebkit.ui.Button("1x2\nnew line\nnew line"),
-            new zebkit.ui.Button("Centered").setConstraints(ctr3),
-            new zebkit.ui.Button("2x2\n2x2\n2x2")
-        ]
-    }));
-
-    var ctr = new zebkit.layout.Constraints();
-    ctr.ax = "left"; ctr.ay = "top" ;
-    r.add(new PAN({
-        layout : new zebkit.layout.GridLayout(2,2,true, true).setPadding(8),
-        kids   : [
-            new zebkit.ui.Button("1x1").setConstraints(ctr),
-            new zebkit.ui.Button("1x2").setConstraints(ctr),
-            new zebkit.ui.Button("2x1").setConstraints(ctr),
-            new zebkit.ui.Button("2x2").setConstraints(ctr)
-        ]
-    }).setPreferredSize(-1, 150));
-
-    var ctr1 = new zebkit.layout.Constraints();
-    var ctr2 = new zebkit.layout.Constraints();
-    var ctr3 = new zebkit.layout.Constraints();
-    var ctr4 = new zebkit.layout.Constraints();
-    ctr1.ax = "left"; ctr1.ay = "top" ;
-    ctr2.ax = "stretch"; ctr2.ay = "top" ;
-    ctr3.ax = "center"; ctr3.ay = "stretch" ;
-    ctr4.ax = "stretch"; ctr4.ay = "stretch";
-    r.add(new PAN({
-        layout : new zebkit.layout.GridLayout(2,2,true,true).setPadding(8),
-        kids   : [
-            new zebkit.ui.Button("1x1").setConstraints(ctr1),
-            new zebkit.ui.Button("1x2").setConstraints(ctr2),
-            new zebkit.ui.Button("2x1").setConstraints(ctr3),
-            new zebkit.ui.Button("2x2").setConstraints(ctr4)
-        ]
-    }));
 });
 </script>

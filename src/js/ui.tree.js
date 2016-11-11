@@ -1,6 +1,6 @@
 zebkit.package("ui.tree", function(pkg, Class) {
 
-var ui = zebkit("ui");
+var ui = zebkit.ui;
 
 /**
  * Tree UI components and all related to the component classes and interfaces.
@@ -34,8 +34,8 @@ var ui = zebkit("ui");
             ]
         });
 
- * @module ui.tree
- * @main
+ * @class zebkit.ui.tree
+ * @access package
  */
 
 //  tree node metrics:
@@ -332,14 +332,14 @@ pkg.BaseTree = Class(ui.Panel, [
          * @param  {zebkit.data.Item} root an tree model item
          * @return {Object} a structure that keeps an item toggle location
          * and size:
-
-                {
-                    x: {Integer},
-                    y: {Integer},
-                    width: {Integer},
-                    height: {Integer}
-                }
-
+         *
+         *     {
+         *         x: {Integer},
+         *         y: {Integer},
+         *         width: {Integer},
+         *         height: {Integer}
+         *     }
+         *
          * @method getToggleBounds
          * @protected
          */
@@ -369,12 +369,12 @@ pkg.BaseTree = Class(ui.Panel, [
          * item wants to have.
          * @param  {zebkit.data.Item} root an tree model item
          * @return {Object} a structure that keeps an item preferred size:
-
-                {
-                    width: {Integer},
-                    height: {Integer}
-                }
-
+         *
+         *     {
+         *          width: {Integer},
+         *          height: {Integer}
+         *     }
+         *
          * @method getItemPreferredSize
          * @protected
          */
@@ -386,7 +386,7 @@ pkg.BaseTree = Class(ui.Panel, [
          * An abstract method that a concrete tree component implementations should
          * override. The method has to render the given tree node of the specified
          * tree model item at the given location
-         * @param  {2DContext} g a graphical context
+         * @param  {CanvasRenderingContext2D} g a graphical context
          * @param  {zebkit.data.Item} root a tree model item to be rendered
          * @param  {zebkit.ui.tree.$IM} node a tree node metrics
          * @param  {Ineteger} x a x location where the tree node has to be rendered
@@ -531,14 +531,14 @@ pkg.BaseTree = Class(ui.Panel, [
          * @param  {zebkit.data.Item} root an tree model item
          * @return {Object} a structure that keeps an item icon location
          * and size:
-
-                {
-                    x: {Integer},
-                    y: {Integer},
-                    width: {Integer},
-                    height: {Integer}
-                }
-
+         *
+         *     {
+         *         x: {Integer},
+         *         y: {Integer},
+         *         width: {Integer},
+         *         height: {Integer}
+         *     }
+         *
          * @method getToggleBounds
          * @protected
          */
@@ -733,7 +733,7 @@ pkg.BaseTree = Class(ui.Panel, [
 
         /**
          * Paint children items of the given root tree item.
-         * @param  {2DContext} g a graphical context
+         * @param  {CanvasRenderingContext2D} g a graphical context
          * @param  {zebkit.data.Item} root a root tree item
          * @param  {Integer} index an index
          * @return {Boolean}
@@ -842,9 +842,6 @@ pkg.BaseTree = Class(ui.Panel, [
 
                 if (this.selected != null && this.isVerVisible(this.selected)) {
                     var m = this.getItemMetrics(this.selected);
-
-                    console.log("select -> repaint() " + m.x + "," + m.y + ", " + this.scrollManager.getSX() + "," + this.scrollManager.getSY() + "," + m.width + "," + m.height) ;
-
                     this.repaint(m.x + this.scrollManager.getSX(),
                                  m.y + this.scrollManager.getSY(),
                                  m.width, m.height);
@@ -871,6 +868,7 @@ pkg.BaseTree = Class(ui.Panel, [
          * @param  {Boolean} b  true if all items have to be in opened
          * state and false otherwise
          * @method toggleAll
+         * @chainable
          */
         this.toggleAll = function (root,b){
             var model = this.model;
@@ -880,12 +878,14 @@ pkg.BaseTree = Class(ui.Panel, [
                     this.toggleAll(root.kids[i], b);
                 }
             }
+            return this;
         };
 
         /**
          * Toggle the given tree item
          * @param  {zebkit.data.Item} item an item to be toggled
          * @method toggle
+         * @chainable
          */
         this.toggle = function(item){
             if (item.kids.length > 0){
@@ -905,6 +905,7 @@ pkg.BaseTree = Class(ui.Panel, [
 
                 this.repaint();
             }
+            return this;
         };
 
         this.itemInserted = function (model,item){
@@ -924,7 +925,7 @@ pkg.BaseTree = Class(ui.Panel, [
             this.vrp();
         };
 
-        this.itemModified = function (model,item){
+        this.itemModified = function (model, item, prevValue){
             var node = this.getIM(item);
             // invalidate an item metrics
             if (node != null) {
@@ -1006,6 +1007,7 @@ pkg.BaseTree = Class(ui.Panel, [
      * Set tree component connector lines color
      * @param {String} c a color
      * @method setLineColor
+     * @chainable
      */
     function setLineColor(c){
         this.lnColor = c;
@@ -1019,6 +1021,7 @@ pkg.BaseTree = Class(ui.Panel, [
      * @param {Integer} gx horizontal gap
      * @param {Integer} gy vertical gap
      * @method setGaps
+     * @chainable
      */
     function setGaps(gx, gy){
         if (gx != this.gapx || gy != this.gapy){
@@ -1032,15 +1035,15 @@ pkg.BaseTree = Class(ui.Panel, [
     /**
      * Set the number of views to customize rendering of different visual elements of the tree
      * UI component. The following decorative elements can be customized:
-
-    - **"close" ** - closed tree item icon view
-    - **"open" **  - opened tree item icon view
-    - **"leaf" **  - leaf tree item icon view
-    - **"on" **    - toggle on view
-    - **"off" **   - toggle off view
-    - **"iselect" **   - a view to express an item selection when tree component doesn't hold focus
-    - **"aselect" **   - a view to express an item selection when tree component holds focus
-
+     *
+     *   - **"close"** - closed tree item icon view
+     *   - **"open"**  - opened tree item icon view
+     *   - **"leaf"**  - leaf tree item icon view
+     *   - **"on"**    - toggle on view
+     *   - **"off"**   - toggle off view
+     *   - **"iselect"**   - a view to express an item selection when tree component doesn't hold focus
+     *   - **"aselect"**   - a view to express an item selection when tree component holds focus
+     *
      * For instance:
 
         // build tree UI component
@@ -1061,6 +1064,7 @@ pkg.BaseTree = Class(ui.Panel, [
 
      * @param {Object} v dictionary of tree component decorative elements views
      * @method setViews
+     * @chainable
      */
     function setViews(v) {
         // setting to 0 prevents exception when on/off view is not defined
@@ -1084,6 +1088,7 @@ pkg.BaseTree = Class(ui.Panel, [
      * Set the given tree model to be visualized with the UI component.
      * @param {zebkit.data.TreeModel|Object} d a tree model
      * @method setModel
+     * @chainable
      */
     function setModel(d){
         if (this.model != d) {
@@ -1113,6 +1118,7 @@ pkg.BaseTree = Class(ui.Panel, [
 
 /**
  * Default tree editor provider
+ * @constructor
  * @class zebkit.ui.tree.DefEditors
  */
 pkg.DefEditors = Class([
@@ -1164,7 +1170,7 @@ pkg.DefEditors = Class([
          */
         this.shouldStartEdit = function(src,e){
             return  e.id === "pointerDoubleClicked" ||
-                   (e.id === "keyPressed" && e.code === ui.KeyEvent.ENTER);
+                   (e.id === "keyPressed" && e.code === "Enter");
         };
     }
 ]);
@@ -1177,6 +1183,21 @@ pkg.DefEditors = Class([
  * @param {String} [font] the tree item text font
  */
 pkg.DefViews = Class([
+    function(color, font) {
+        /**
+         * Default tree item render
+         * @attribute render
+         * @readOnly
+         * @type {zebkit.ui.StringRender}
+         */
+        this.render = new ui.StringRender("");
+
+        zebkit.properties(this, this.clazz);
+
+        if (color != null) this.setColor(color);
+        if (font  != null) this.setFont(font);
+    },
+
     function $prototype() {
         /**
          * Get a view for the given model item of the UI tree component
@@ -1197,6 +1218,7 @@ pkg.DefViews = Class([
          * Set the default view provider text render font
          * @param {zebkit.ui.Font} f a font
          * @method setFont
+         * @chainable
          */
         this.setFont = function(f) {
             this.render.setFont(f);
@@ -1207,25 +1229,11 @@ pkg.DefViews = Class([
          * Set the default view provider text render color
          * @param {String} c a color
          * @method setColor
+         * @chainable
          */
         this.setColor = function(c) {
             this.render.setColor(c);
             return this;
-        };
-
-        this[''] = function(color, font) {
-            /**
-             * Default tree item render
-             * @attribute render
-             * @readOnly
-             * @type {zebkit.ui.StringRender}
-             */
-            this.render = new ui.StringRender("");
-
-            zebkit.properties(this, this.clazz);
-
-            if (color != null) this.setColor(color);
-            if (font  != null) this.setFont(font);
         };
     }
 ]);
@@ -1271,10 +1279,10 @@ pkg.Tree = Class(pkg.BaseTree, [
         };
 
         this.childKeyPressed = function(e){
-            if (e.code === ui.KeyEvent.ESCAPE) {
+            if (e.code === "Escape") {
                 this.stopEditing(false);
             } else {
-                if (e.code === ui.KeyEvent.ENTER &&
+                if (e.code === "Enter" &&
                        ((zebkit.instanceOf(e.source, ui.TextField) === false) ||
                         (zebkit.instanceOf(e.source.view.target, zebkit.data.SingleLineTxt))))
                 {
@@ -1357,7 +1365,7 @@ pkg.Tree = Class(pkg.BaseTree, [
 
         this.keyTyped = function(e){
             if (this.selected != null){
-                switch(e.ch) {
+                switch(e.key) {
                     case '+': if (this.isOpen(this.selected) === false) {
                         this.toggle(this.selected);
                     } break;
@@ -1371,15 +1379,15 @@ pkg.Tree = Class(pkg.BaseTree, [
         this.keyPressed = function(e){
             var newSelection = null;
             switch(e.code) {
-                case ui.KeyEvent.DOWN    :
-                case ui.KeyEvent.RIGHT   : newSelection = this.findNext(this.selected);break;
-                case ui.KeyEvent.UP      :
-                case ui.KeyEvent.LEFT    : newSelection = this.findPrev(this.selected);break;
-                case ui.KeyEvent.HOME    : if (e.ctrlKey) this.select(this.model.root);break;
-                case ui.KeyEvent.END     : if (e.ctrlKey) this.select(this.findLast(this.model.root));break;
-                case ui.KeyEvent.PAGEDOWN: if (this.selected != null) this.select(this.nextPage(this.selected, 1));break;
-                case ui.KeyEvent.PAGEUP  : if (this.selected != null) this.select(this.nextPage(this.selected,  -1));break;
-                //!!!!case ui.KeyEvent.ENTER: if(this.selected != null) this.toggle(this.selected);break;
+                case "ArrowDown" :
+                case "ArrowRight": newSelection = this.findNext(this.selected);break;
+                case "ArrowUp"   :
+                case "ArrowLeft" : newSelection = this.findPrev(this.selected);break;
+                case "Home"      : if (e.ctrlKey) this.select(this.model.root);break;
+                case "End"       : if (e.ctrlKey) this.select(this.findLast(this.model.root));break;
+                case "PageDown"  : if (this.selected != null) this.select(this.nextPage(this.selected, 1));break;
+                case "PageUp"    : if (this.selected != null) this.select(this.nextPage(this.selected,  -1));break;
+                //!!!!case "Enter": if(this.selected != null) this.toggle(this.selected);break;
             }
             if (newSelection != null) this.select(newSelection);
             this.se(this.selected, e);
@@ -1472,6 +1480,7 @@ pkg.Tree = Class(pkg.BaseTree, [
     function toggle(item) {
         this.stopEditing(false);
         this.$super(item);
+        return this;
     },
 
     function itemInserted(target,item){
@@ -1504,6 +1513,7 @@ pkg.Tree = Class(pkg.BaseTree, [
      * have to be visualized.
      * @param {zebkit.ui.tree.DefViews} p a view provider
      * @method setViewProvider
+     * @chainable
      */
     function setViewProvider(p){
         if (this.provider != p) {
@@ -1520,6 +1530,7 @@ pkg.Tree = Class(pkg.BaseTree, [
      * Set the given tree model to be visualized with the UI component.
      * @param {zebkit.data.TreeModel|Object} d a tree model
      * @method setModel
+     * @chainable
      */
     function setModel(d){
         this.stopEditing(false);
@@ -1598,7 +1609,7 @@ pkg.CompTree = Class(pkg.BaseTree, [
 
         this.Combo = Class(ui.Combo, [
             function keyPressed(e) {
-                if (e.code != ui.KeyEvent.UP && e.code != ui.KeyEvent.DOWN) {
+                if (e.code !== "ArrowUp" && e.code !== "ArrowDown") {
                     this.$super(e);
                 }
             }
@@ -1622,7 +1633,7 @@ pkg.CompTree = Class(pkg.BaseTree, [
             }
 
             return mi;
-        }
+        };
     },
 
     function $prototype() {
@@ -1635,7 +1646,7 @@ pkg.CompTree = Class(pkg.BaseTree, [
 
         this.childKeyTyped = function(e) {
             if (this.selected != null){
-                switch(e.ch) {
+                switch(e.key) {
                     case '+': if (this.isOpen(this.selected) === false) {
                         this.toggle(this.selected);
                     } break;
@@ -1653,9 +1664,9 @@ pkg.CompTree = Class(pkg.BaseTree, [
 
         this.childKeyPressed = function(e) {
             if (this.isSelectable === true){
-                var newSelection = (e.code === ui.KeyEvent.DOWN) ? this.findNext(this.selected)
-                                                                 : (e.code === ui.KeyEvent.UP) ? this.findPrev(this.selected)
-                                                                                               : null;
+                var newSelection = (e.code === "ArrowDown") ? this.findNext(this.selected)
+                                                            : (e.code === "ArrowUp") ? this.findPrev(this.selected)
+                                                                                     : null;
                 if (newSelection != null) {
                     this.select(newSelection);
                 }
@@ -1669,9 +1680,6 @@ pkg.CompTree = Class(pkg.BaseTree, [
                     var item = zebkit.data.TreeModel.findOne(this.model.root,
                                                             zebkit.layout.getDirectChild(this,
                                                                                         e.source));
-
-                    console.log("childPointerPressed()  " + item);
-
                     if (item != null) this.select(item);
                 }
                 finally {
@@ -1817,7 +1825,4 @@ pkg.CompTree = Class(pkg.BaseTree, [
     }
 ]);
 
-/**
- * @for
- */
 });

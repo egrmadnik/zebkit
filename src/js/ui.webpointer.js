@@ -25,8 +25,8 @@ var PI4                      = Math.PI/4,  // used to calculate touch event gamm
     RMOUSE = "rmouse";
 
 /**
- * Mouse and touch screen input event class. The input event is
- * triggered by a mouse or touch screen.
+ * Mouse and touch screen input event class. The input event is triggered by a mouse or
+ * touch screen.
  * @param {zebkit.ui.Panel} source a source of the mouse input event
  * @param {Integer} ax an absolute (relatively to a canvas where the source
  * UI component is hosted) mouse pointer x coordinate
@@ -120,7 +120,7 @@ pkg.PointerEvent = Class(zebkit.util.Event, [
                     target     : pe.target,
                     pressure   : pe.pressure,
                     pointerType: pe.stub.pointerType
-                }
+                };
             }
             return touches;
         };
@@ -333,8 +333,7 @@ pkg.PointerEventUnifier = Class([
                             // using gamma we can figure out direction
                             if (gamma > -PI4) {
                                 d = (gamma < PI4) ? "right" : (gamma < PI4_3 ? "bottom" : "left");
-                            }
-                            else {
+                            } else {
                                 d = (gamma > -PI4_3) ? "top" : "left";
                             }
 
@@ -358,13 +357,11 @@ pkg.PointerEventUnifier = Class([
                             if (mp.isDragged === false || dx !== 0 || dy !== 0) {
                                 this.destination.$pointerDragged(stub);
                             }
-                        }
-                        finally {
+                        } finally {
                             mp.isDragged = true;
                         }
                     }
-                }
-                else {
+                } else {
                     mp.$adapter.$DRAG(id, e, stub);
                 }
             }
@@ -386,15 +383,13 @@ pkg.PointerEventUnifier = Class([
                 // fire dragged or clicked
                 if (mp.isDragged === true) {
                     destination.$pointerDragEnded(stub);
-                }
-                else {
+                } else {
                     if ($lastPointerReleased != null &&
                         $lastPointerReleased.identifier === id &&
                         (new Date().getTime() - $lastPointerReleased.time) <= pkg.doubleClickDelta)
                     {
                         destination.$pointerDoubleClicked(stub);
-                    }
-                    else {
+                    } else {
                         if (mp.group === stub.touchCounter) {  // TODO: temporary solution
                             destination.$pointerClicked(stub);
                         }
@@ -404,8 +399,7 @@ pkg.PointerEventUnifier = Class([
                 // always complete pointer pressed with appropriate
                 // release event
                 destination.$pointerReleased(stub);
-            }
-            finally {
+            } finally {
                 // clear handled pressed and dragged state
                 if (stub.touchCounter > 0) stub.touchCounter--;
                 $lastPointerReleased = $pointerPressedEvents[id];
@@ -683,8 +677,7 @@ pkg.PointerEventUnifier = Class([
             // this code prevent mouse over for first touch on iOS and Android
             if ($this.$touchedAt(e.pageX, e.pageY, 0)) {
                 e.preventDefault();
-            }
-            else {
+            } else {
                 var id = e.button === 0 ? LMOUSE : RMOUSE,
                     mp = $pointerPressedEvents[id];
 
@@ -704,8 +697,7 @@ pkg.PointerEventUnifier = Class([
                         $enteredElement = element;
                         destination.$pointerEntered(ME_STUB);
                     }
-                }
-                else {
+                } else {
                     // remove any previously registered listener if
                     //  -- a mouse button has been pressed
                     //  -- a mouse button has been pressed on the canvas we have entered
@@ -763,8 +755,7 @@ pkg.PointerEventUnifier = Class([
                         destination.$pointerExited(ME_STUB);
                     }
                 }
-            }
-            else {
+            } else {
                 // if a button has been pressed but the mouse cursor is outside of
                 // the canvas, for a time being start listening mouse moved events
                 // of Window to emulate mouse moved events in canvas
@@ -843,8 +834,7 @@ pkg.PointerEventUnifier = Class([
                     $this.$MMOVE(e);
                 }
             }, false);
-        }
-        else {
+        } else {
             function isIn(t, id) {
                 for(var i = 0; i < t.length; i++) {
                     if (t[i].identifier == id) return true;

@@ -1,11 +1,12 @@
 /**
- * Collection of variouse data models.
- * @module data
- * @main
- * @requires zebkit, util
+ * Collection of various data models. The models are widely used by zebkit UI
+ * components as part of model-view-controller approach, but the package doesn't depend on
+ * zebkit UI and can be used independently.
+ * @class zebkit.data
+ * @access package
  */
 
-(function(pkg, Class) {
+zebkit.package("data", function(pkg, Class) {
 
 pkg.descent = function descent(a, b) {
     if (a == null) return 1;
@@ -18,10 +19,9 @@ pkg.ascent = function ascent(a, b) {
 };
 
 /**
- * Text model class
+ * Abstract text model class
  * @class zebkit.data.TextModel
- * @abstract
-*/
+ */
 
 /**
  * Get the given string line stored in the model
@@ -49,8 +49,7 @@ pkg.ascent = function ascent(a, b) {
  */
 
 /**
- * Write the given string in the text model starting from the
- * specified offset
+ * Write the given string in the text model starting from the specified offset
  * @method write
  * @param  {String} s a string to be written into the text model
  * @param  {Integer} offset an offset starting from that the passed
@@ -95,8 +94,6 @@ pkg.ascent = function ascent(a, b) {
  */
 pkg.TextModel = Class([
     function $clazz() {
-        // hack to detect text model class
-        this.isTextModel = true;
         this.Listeners = zebkit.util.ListenersClass("textUpdated");
     }
 ]);
@@ -121,6 +118,13 @@ pkg.Text = Class(pkg.TextModel, [
     },
 
     function $prototype() {
+        /**
+         * Text length
+         * @attribute textLength
+         * @private
+         * @readOnly
+         * @type {Integer}
+         */
         this.textLength = 0;
 
         /**
@@ -147,6 +151,13 @@ pkg.Text = Class(pkg.TextModel, [
             return [];
         };
 
+        /**
+         * Calculate an offset in the text the first character of the specified line.
+         * @param  {Integer} line a line index
+         * @return {Integer} an offset
+         * @protected
+         * @method  calcLineOffset
+         */
         this.calcLineOffset = function(line) {
             var off = 0;
             for(var i = 0; i < line; i++){
@@ -176,6 +187,13 @@ pkg.Text = Class(pkg.TextModel, [
             return this.textLength;
         };
 
+        /**
+         * Remove number of text lines starting form the specified line
+         * @param  {Integer} start a starting line to remove text lines
+         * @param  {Integer} [size]  a number of lines to be removed. If the
+         * argument is not passed number equals 1
+         * @method removeLines
+         */
         this.removeLines = function(start, size) {
             if (start < 0 || start >= this.lines.length) {
                 throw new RangeError(start);
@@ -209,6 +227,12 @@ pkg.Text = Class(pkg.TextModel, [
             this._.textUpdated(this, false, off, olen, start, size);
         };
 
+        /**
+         * Insert number of lines starting from the given starting line
+         * @param  {Integer} startLine a starting line to insert lines
+         * @param  {String}  [lines]*  string lines to inserted
+         * @method  insertLines
+         */
         this.insertLines = function(startLine) {
             if (startLine < 0 || startLine > this.lines.length) {
                 throw new RangeError(startLine);
@@ -313,12 +337,19 @@ pkg.Text = Class(pkg.TextModel, [
             }
             return false;
         };
+    },
 
-        this[''] = function(s){
-            this.lines = [ new this.clazz.Line("") ];
-            this._ = new this.clazz.Listeners();
-            this.setValue(s == null ? "" : s);
-        };
+    function(s) {
+        /**
+         * Array of lines
+         * @attribute lines
+         * @type {zebkit.data.Text.Line[]}
+         * @private
+         * @readOnly
+         */
+        this.lines = [ new this.clazz.Line("") ];
+        this._ = new this.clazz.Listeners();
+        this.setValue(s == null ? "" : s);
     }
 ]);
 
@@ -340,7 +371,6 @@ pkg.SingleLineTxt = Class(pkg.TextModel, [
          * @default -1
          * @readOnly
          */
-
         this.$lineTags = function(i) {
             return this;
         };
@@ -458,13 +488,14 @@ pkg.SingleLineTxt = Class(pkg.TextModel, [
          *  @param {String} text a text
          *  @return {Boolean} return true if the text is valid otherwise return false
          */
-        this[''] = function (s, max) {
-            this.maxLen = max == null ? -1 : max;
-            this.buf = "";
-            this.extra = 0;
-            this._ = new this.clazz.Listeners();
-            this.setValue(s == null ? "" : s);
-        };
+    },
+
+    function (s, max) {
+        this.maxLen = max == null ? -1 : max;
+        this.buf = "";
+        this.extra = 0;
+        this._ = new this.clazz.Listeners();
+        this.setValue(s == null ? "" : s);
     }
 ]);
 
@@ -475,6 +506,12 @@ pkg.SingleLineTxt = Class(pkg.TextModel, [
 
       // create list model that contains three integer elements
       var l = new zebkit.data.ListModel([1,2,3]);
+      l.bind(function elementInserted(list, element, index) {
+          // handle list item inserted event
+          ...
+      })
+      ...
+      l.add(10)
 
  * @constructor
  * @class zebkit.data.ListModel
@@ -639,11 +676,11 @@ pkg.ListModel = Class([
         this.indexOf = function(o){
             return this.d.indexOf(o);
         };
+    },
 
-        this[''] = function() {
-            this._ = new this.clazz.Listeners();
-            this.d = (arguments.length === 0) ? [] : arguments[0];
-        };
+    function() {
+        this._ = new this.clazz.Listeners();
+        this.d = (arguments.length === 0) ? [] : arguments[0];
     }
 ]);
 
@@ -655,75 +692,94 @@ pkg.ListModel = Class([
  * @constructor
  */
 pkg.Item = Class([
-    function $prototype() {
-        this[''] = function(v) {
-            /**
-             * Array of children items of the item element
-             * @attribute kids
-             * @type {Array}
-             * @default []
-             * @readOnly
-             */
-            this.kids = [];
+    function(v) {
 
-            /**
-             * Value stored with this item
-             * @attribute value
-             * @type {Object}
-             * @default null
-             * @readOnly
-             */
-            this.value = v;
+        /**
+         * Array of children items of the item element
+         * @attribute kids
+         * @type {Array}
+         * @default []
+         * @readOnly
+         */
+        this.kids = [];
 
-            /**
-             * Reference to a parent item
-             * @attribute parent
-             * @type {zebkit.data.Item}
-             * @default undefined
-             * @readOnly
-             */
-        };
+        /**
+         * Value stored with this item
+         * @attribute value
+         * @type {Object}
+         * @default null
+         * @readOnly
+         */
+        this.value = v;
+
+        /**
+         * Reference to a parent item
+         * @attribute parent
+         * @type {zebkit.data.Item}
+         * @default undefined
+         * @readOnly
+         */
     }
 ]);
 
 /**
  * Tree model class. The class is simple and handy way to keep hierarchical structure.
- * @constructor
+ *
  * @param  {zebkit.data.Item|Object} [r] a root item. As the argument you can pass "zebkit.data.Item" or
- * a JavaType object. In the second case you can describe the tree as follow:
+ * a JavaScript object. In the second case you can describe the tree as it is shown in example below:
+ * @example
 
      // create tree model initialized with tree structure passed as
-     // special formated JavaScript object
-     var tree = new zebkit.data.TreeModel({ value:"Root",
-                                          kids: [
-                                              "Root kid 1",
-                                              {
-                                                value: "Root kid 2",
-                                                kids:  [ "Kid of kid 2"]
-                                              }
-                                          ]});
+     // special formated JavaScript object. The tree will look as follow:
+     //  "Root"
+     //    |
+     //    +--- "Root kid 1"
+     //    +--- "Root kid 2"
+     //            |
+     //            +--- "Kid of kid 2"
+     var tree = new zebkit.data.TreeModel({
+        value:"Root",
+        kids: [
+            "Root kid 1",
+            {
+                value: "Root kid 2",
+                kids:  [ "Kid of kid 2"]
+            }
+        ]
+     });
+     ...
+     // reg item modified events handler
+     tree.bind(function itemModified(tree, item, prevValue) {
+         // catch item value modification
+         ...
+     });
+
+     // item value has to be updated via tree model API
+     tree.setValue(tree.root.kids[0], "new value");
 
  * @class zebkit.data.TreeModel
+ * @constructor
  */
 
 /**
  * Fired when the tree model item value has been updated.
 
-    tree.bind(function itemModified(src, item) {
-        ...
-    });
+     tree.bind(function itemModified(src, item, prevValue) {
+         ...
+     });
 
  * @event itemModified
  * @param {zebkit.data.TreeModel} src a tree model that triggers the event
  * @param {zebkit.data.Item}  item an item whose value has been updated
+ * @param {Object} prevValue a previous value the item has had
  */
 
 /**
  * Fired when the tree model item has been removed
 
-    tree.bind(function itemRemoved(src, item) {
-       ...
-    });
+     tree.bind(function itemRemoved(src, item) {
+        ...
+     });
 
  * @event itemRemoved
  * @param {zebkit.data.TreeModel} src a tree model that triggers the event
@@ -731,19 +787,59 @@ pkg.Item = Class([
  */
 
 /**
- * Fired when the tree model item has been inserted into the model) {
-       ...
-    });
+ * Fired when the tree model item has been inserted into the model)
+
+     tree.bind(function itemInserted(src, item) {{
+        ...
+     });
 
  * @event itemInserted
  * @param {zebkit.data.TreeModel} src a tree model that triggers the event
  * @param {zebkit.data.Item}  item an item that has been inserted into the tree model
  */
-
 pkg.TreeModel = Class([
     function $clazz() {
         this.Listeners = zebkit.util.ListenersClass("itemModified", "itemRemoved", "itemInserted");
 
+        /**
+         * Create tree model item hierarchy by the given JavaScript object.
+         * @param  {Object} r
+         * @return {zebkit.data.Item} a built items hierarchy
+         * @example
+         *
+         *      // create the following items hierarchy:
+         *      //  "Root"
+         *      //    +--- "Kid 1"
+         *      //    |      +--- "Kid 1.1"
+         *      //    |      |       +--- "Kid 1.1.1"
+         *      //    |      +--- "Kid 2.2"
+         *      //    +--- "Kid 2"
+         *      //    |        +--- "Kid 2.1"
+         *      //    |        +--- "Kid 2.2"
+         *      //    |        +--- "Kid 2.3"
+         *      //    +--- "Kid 3"
+         *      //
+         *      var rootItem = zebkit.data.TreeModel.create({
+         *          value : "Root",
+         *          kids  : [
+         *              {   value : "Kid 1"
+         *                  kids  : [
+         *                      {  value: "Kid 1.1",
+         *                         kids : "Kid 1.1.1"
+         *                      },
+         *                      "Kid 2.2"
+         *                  ]
+         *              },
+         *              {   value: "Kid 2",
+         *                  kids : ["Kid 2.1", "Kid 2.2", "Kid 2.3"]
+         *              },
+         *              "Kid 3"
+         *          ]
+         *      });
+         *
+         * @static
+         * @method create
+         */
         this.create = function(r, p) {
             var item = new pkg.Item(r.hasOwnProperty("value")? r.value : r);
             item.parent = p;
@@ -755,6 +851,14 @@ pkg.TreeModel = Class([
             return item;
         };
 
+        /**
+         * Find the first tree item (starting from the specified root item) whose value equals the given value.
+         * @param  {zebkit.data.Item} root a root item of the tree
+         * @param  {Object} value a value to evaluate
+         * @return {zebkit.data.Item} a found tree item
+         * @static
+         * @method findOne
+         */
         this.findOne = function(root, value) {
             var res = null;
             pkg.TreeModel.find(root, value, function(item) {
@@ -764,6 +868,39 @@ pkg.TreeModel = Class([
             return res;
         };
 
+        /**
+         * Find all items (starting from the specified root item) whose value equals the given value.
+         * @param  {zebkit.data.Item} root a root item of the tree
+         * @param  {Object} value a value to evaluate
+         * @param  {Function} [cb] a callback method that is called for every tree item whose value matches
+         * the specified one. The method gets the found item as its argument. The method can return true
+         * if the tree traversing has to be interrupted.
+         * @return {Array} a list of all found item whose value matches the specified one. The array is returned
+         * only if no callback method has been passed to the method.
+         * @example
+         *
+         *      // create tree items
+         *      var rootItem = zebkit.data.TreeModel.create({
+         *          value: "Root",
+         *          kids : [ "Kid 1", "Kid 2", "Kid 1", "Kid 3", "Kid 1" ]
+         *      });
+         *
+         *      // find all items that have its value set to "Kid 1" and return
+         *      // it as array
+         *      var items = zebkit.data.TreeModel.find(rootItem, "Kid 1");
+         *
+         *      // find the first two "Kid 1" item in the tree using callback
+         *      var items = [];
+         *      zebkit.data.TreeModel.find(rootItem, "Kid 1", function(item) {
+         *          items.push(item);
+         *
+         *          // stop the tree traversing as soon as we found two items
+         *          return items.length > 1;
+         *      });
+         *
+         * @static
+         * @method find
+         */
         this.find = function(root, value, cb) {
             if (cb == null) {
                 var res = [];
@@ -790,6 +927,12 @@ pkg.TreeModel = Class([
     },
 
     function $prototype() {
+        /**
+         * Iterate over tree hierarchy starting from its root element
+         * @param  {zebkit.data.Item} r a root element to start traversing the tree model
+         * @param  {Function} f a callback function that is called for every tree item traversed item.
+         * The callback gets tree model and the item as its arguments
+         */
         this.iterate = function(r, f) {
             var res = f.call(this, r);
             if (res === 1 || res === 2) return r;
@@ -804,11 +947,12 @@ pkg.TreeModel = Class([
          * Update a value of the given tree model item with the new one
          * @method setValue
          * @param  {zebkit.data.Item} item an item whose value has to be updated
-         * @param  {[type]} v   a new item value
+         * @param  {Object} v   a new item value
          */
         this.setValue = function(item, v){
+            var prev = item.value;
             item.value = v;
-            this._.itemModified(this, item);
+            this._.itemModified(this, item, prev);
         };
 
         /**
@@ -855,22 +999,19 @@ pkg.TreeModel = Class([
         this.remove = function(item){
             if (item == this.root) {
                 this.root = null;
-            }
-            else {
+            } else {
                 if (item.kids != null) {
                     for(var i = item.kids.length - 1; i >= 0; i--) {
                         this.remove(item.kids[i]);
                     }
                 }
-
                 item.parent.kids.splice(item.parent.kids.indexOf(item), 1);
             }
 
-            // preserve refernce to parent when we call a listener
+            // preserve reference to parent when we call a listener
             try {
                 this._.itemRemoved(this, item);
-            }
-            catch(e) {
+            } catch(e) {
                 item.parent = null;
                 throw e;
             }
@@ -887,86 +1028,139 @@ pkg.TreeModel = Class([
                 this.remove(item.kids[i]);
             }
         };
+    },
 
-        this[''] = function(r) {
-            if (arguments.length === 0) r = new pkg.Item();
+    function(r) {
+        if (arguments.length === 0) r = new pkg.Item();
 
-            /**
-             * Reference to the tree model root item
-             * @attribute root
-             * @type {zebkit.data.Item}
-             * @readOnly
-             */
-            this.root = zebkit.instanceOf(r, pkg.Item) ? r : pkg.TreeModel.create(r);
-            this.root.parent = null;
-            this._ = new this.clazz.Listeners();
-        };
+        /**
+         * Reference to the tree model root item
+         * @attribute root
+         * @type {zebkit.data.Item}
+         * @readOnly
+         */
+        this.root = zebkit.instanceOf(r, pkg.Item) ? r : pkg.TreeModel.create(r);
+        this.root.parent = null;
+        this._ = new this.clazz.Listeners();
     }
 ]);
 
 /**
  *  Matrix model class.
  *  @constructor
- *  @param  {Array of Array} [data] the given data
+ *  @param  {Array} [data] the given data as two dimensional array
  *  @param  {Integer} [rows] a number of rows
  *  @param  {Integer} [cols] a number of columns
  *  @class zebkit.data.Matrix
+ *  @example
+ *
+ *      // create matrix with 10 rows and 5 columns
+ *      var matrix = zebkit.data.Matrix(10, 5);
+ *
+ *      matrix.get(0,0);
+ *      matrix.put(0,0, "Cell [0,0]");
+ *
+ *  @example
+ *
+ *      // create matrix with 3 rows and 5 columns
+ *      var matrix = zebkit.data.Matrix([
+ *          [ 0, 1, 2, 3, 4 ],  // row 0
+ *          [ 0, 1, 2, 3, 4 ],  // row 1
+ *          [ 0, 1, 2, 3, 4 ],  // row 2
+ *          [ 0, 1, 2, 3, 4 ],  // row 3
+ *          [ 0, 1, 2, 3, 4 ]   // row 4
+ *      ]);
+ *
+ *  @example
+ *
+ *      // create matrix with 0 rows and 0 columns
+ *      var matrix = zebkit.data.Matrix();
+ *
+ *      // setting value for cell (2, 4) will change
+ *      // matrix size to 2 rows and 3 columns
+ *      matrix.put(2, 4, "Cell [row = 2, col = 4]");
+ */
+
+/**
+ * Fired when the matrix model size (number of rows or columns) is changed.
+
+      matrix.bind(function matrixResized(src, pr, pc) {
+          ...
+      });
+
+ * @event matrixResized
+ * @param {zebkit.data.Matrix} src a matrix that triggers the event
+ * @param {Integer}  pr a previous number of rows
+ * @param {Integer}  pc a previous number of columns
+ */
+
+/**
+ * Fired when the matrix model cell has been updated.
+
+      matrix.bind(function cellModified(src, row, col, old) {
+         ...
+      });
+
+ * @event cellModified
+ * @param {zebkit.data.Matrix} src a matrix that triggers the event
+ * @param {Integer}  row an updated row
+ * @param {Integer}  col an updated column
+ * @param {Object}  old a previous cell value
+ */
+
+/**
+ * Fired when the matrix data has been re-ordered.
+
+      matrix.bind(function matrixSorted(src, sortInfo) {
+         ...
+      });
+
+ * @event matrixSorted
+ * @param {zebkit.data.Matrix} src a matrix that triggers the event
+ * @param {Object}  sortInfo a new data order info. The information
+ * contains:
+ *
+ *      {
+ *         func: sortFunction,
+ *         name: sortFunctionName,
+ *         col : sortColumn
+ *      }
+ *
+ */
+
+/**
+ * Fired when a row has been inserted into the matrix.
+
+      matrix.bind(function matrixRowInserted(src, rowIndex) {
+         ...
+      });
+
+ * @event matrixColInserted
+ * @param {zebkit.data.Matrix} src a matrix that triggers the event
+ * @param {Integer}  rowIndex a row that has been inserted
+ * contains:
+ */
+
+/**
+ * Fired when a column has been inserted into the matrix.
+
+      matrix.bind(function matrixColInserted(src, colIndex) {
+         ...
+      });
+
+ * @event matrixColInserted
+ * @param {zebkit.data.Matrix} src a matrix that triggers the event
+ * @param {Integer}  colIndex a column that has been inserted
+ * contains:
  */
 pkg.Matrix = Class([
     function $clazz() {
         this.Listeners = zebkit.util.ListenersClass("matrixResized", "cellModified",
-                                                   "matrixSorted", "matrixRowInserted",
-                                                   "matrixColInserted");
+                                                    "matrixSorted",  "matrixRowInserted",
+                                                    "matrixColInserted");
     },
 
     function $prototype() {
-        /**
-         * Fired when the matrix model size (number of rows or columns) is changed.
-
-         matrix.bind(function matrixResized(src, pr, pc) {
-            ...
-         });
-
-         * @event matrixResized
-         * @param {zebkit.data.Matrix} src a matrix that triggers the event
-         * @param {Integer}  pr a previous number of rows
-         * @param {Integer}  pc a previous number of columns
-         */
-
-         /**
-          * Fired when the matrix model cell has been updated.
-
-          matrix.bind(function cellModified(src, row, col, old) {
-             ...
-          });
-
-          * @event cellModified
-          * @param {zebkit.data.Matrix} src a matrix that triggers the event
-          * @param {Integer}  row an updated row
-          * @param {Integer}  col an updated column
-          * @param {Object}  old a previous cell value
-          */
-
-          /**
-           * Fired when the matrix data has been re-ordered.
-
-           matrix.bind(function matrixSorted(src, sortInfo) {
-              ...
-           });
-
-           * @event matrixSorted
-           * @param {zebkit.data.Matrix} src a matrix that triggers the event
-           * @param {Object}  sortInfo a new data order info. The information
-           * contains:
-           *
-           *      {
-           *         func: sortFunction,
-           *         name: sortFunctionName,
-           *         col : sortColumn
-           *      }
-           *
-           */
-
         /**
          * Get a matrix model cell value at the specified row and column
          * @method get
@@ -1150,8 +1344,7 @@ pkg.Matrix = Class([
                     this.objs.splice(row, 0, undefined);
                     this._.matrixRowInserted(this, row + i);
                 }
-            }
-            else {
+            } else {
                 for(var i = 0; i < count; i++) {
                     this._.matrixRowInserted(this, row + i);
                 }
@@ -1208,40 +1401,44 @@ pkg.Matrix = Class([
                                         func: f,
                                         name: zebkit.$FN(f).toLowerCase() });
         };
+    },
 
-        this[''] = function() {
-            /**
-             * Number of rows in the matrix model
-             * @attribute rows
-             * @type {Integer}
-             * @readOnly
-             */
+    function() {
+        /**
+         * Number of rows in the matrix model
+         * @attribute rows
+         * @type {Integer}
+         * @readOnly
+         */
 
-            /**
-             * Number of columns in the matrix model
-             * @attribute cols
-             * @type {Integer}
-             * @readOnly
-             */
+        /**
+         * Number of columns in the matrix model
+         * @attribute cols
+         * @type {Integer}
+         * @readOnly
+         */
 
-            this._ = new this.clazz.Listeners();
-            if (arguments.length === 1) {
-                this.objs = arguments[0];
-                this.cols = (this.objs.length > 0) ? this.objs[0].length : 0;
-                this.rows = this.objs.length;
-            } else {
-                this.objs = [];
-                this.rows = this.cols = 0;
-                if (arguments.length > 1) {
-                    this.setRowsCols(arguments[0], arguments[1]);
-                }
+        /**
+         * The multi-dimensional embedded arrays to host matrix data
+         * @attribute objs
+         * @type {Array}
+         * @readOnly
+         * @private
+         */
+
+        this._ = new this.clazz.Listeners();
+        if (arguments.length === 1) {
+            this.objs = arguments[0];
+            this.cols = (this.objs.length > 0) ? this.objs[0].length : 0;
+            this.rows = this.objs.length;
+        } else {
+            this.objs = [];
+            this.rows = this.cols = 0;
+            if (arguments.length > 1) {
+                this.setRowsCols(arguments[0], arguments[1]);
             }
-        };
+        }
     }
 ]);
 
-/**
- * @for
- */
-
-})(zebkit("data"), zebkit.Class);
+});

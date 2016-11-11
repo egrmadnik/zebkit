@@ -1,5 +1,5 @@
 zebkit.package("ui.vk", function(pkg, Class) {
-    var ui = zebkit("ui");
+    var ui = zebkit.ui;
 
     pkg.$vk = null;
 
@@ -7,8 +7,8 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
     /**
      * Virtual keyboard implementation
-     * @module  ui.vk
-     * @main
+     * @class  ui.vk
+     * @access package
      */
     pkg.VKLayout = Class(zebkit.layout.Layout, [
         function $prototype () {
@@ -497,8 +497,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
                 this.$sticked = false;
                 this.$getSuper("_pointerReleased").call(this, e);
                 this.fireVkReleased(this.code, this.ch, this.mask);
-            }
-            else {
+            } else {
                 this.$super(e);
                 this.fireVkPressed(this.code, this.ch, this.mask);
                 if (this.mask !== 0) {
@@ -529,30 +528,30 @@ zebkit.package("ui.vk", function(pkg, Class) {
                 "on" : new pkg.ShiftKeyArrow(),
                 "off": new pkg.ShiftKeyArrow()
             },
-            code : ui.KeyEvent.SHIFT,
+            code : "Shift",
             mask : ui.KeyEvent.M_SHIFT
         },
 
         left: {
-            code : ui.KeyEvent.LEFT,
+            code : "ArrowLeft",
             view : new pkg.ArrowView("left"),
             firePeriod: 150
         },
 
         right: {
-            code : ui.KeyEvent.RIGHT,
+            code : "ArrowRight",
             view : new pkg.ArrowView("right"),
             period: 150
         },
 
         up: {
-            code : ui.KeyEvent.UP,
+            code : "ArrowUp",
             view : new pkg.ArrowView("top"),
             period: 150
         },
 
         down: {
-            code : ui.KeyEvent.DOWN,
+            code : "ArrowDown",
             view : new pkg.ArrowView("bottom"),
             period: 150
         },
@@ -588,7 +587,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
         },
 
         backspace: {
-            code: ui.KeyEvent.BSPACE,
+            code: "Backspace",
             label: "<=",
             view2: ui.$view(function(g, x, y, w, h, d) {
                 g.setColor("black");
@@ -665,9 +664,9 @@ zebkit.package("ui.vk", function(pkg, Class) {
             return { width: w, height: h };
         }
     ]),
-    KE = new ui.KeyEvent();
 
-    KE.type = "vkb";
+    KE = new ui.KeyEvent();
+    KE.device = "vkeyboard";
 
     pkg.VKeys = Class(pkg.VKey, [
         function $clazz () {
@@ -766,15 +765,18 @@ zebkit.package("ui.vk", function(pkg, Class) {
             this.$counter = 0;
             this.hideKeysPopupPan();
             this.$super(e);
-            this.$pressed = zebkit.util.task(this.showKeysPopupPan, this).run(700, 700);
+
+            var $this = this;
+            this.$pressed = ui.$tasks.run(new function(t) {
+                $this.showKeysPopupPan(t);
+            }, 700, 700);
         },
 
         function fireVkTyped(code, ch, mask) {
             if (this.keysPopupPan == null) {
                 ch = this.$counter > 0 ? this.altCh : this.ch;
                 this.$super(ch.charCodeAt(0), ch, mask);
-            }
-            else {
+            } else {
                 if (this.keysPopupPan.parent == null) {
                     this.$super(code, ch, mask);
                 }
@@ -946,30 +948,29 @@ zebkit.package("ui.vk", function(pkg, Class) {
                 this._.vkMaskUpdated(vkey, om, nm);
             };
 
-            this.vkPressed = function (vk, code, ch, mask) {
+            this.vkPressed = function (vk, code, key, mask) {
                 if (mask != 0) {
                     this.onMask(mask, vk);
                 }
 
-                KE.ch = ch;
+                KE.key = key;
                 KE.code = code;
                 KE.$setMask(mask);
                 this.getCanvas().$keyPressed(KE);
             };
 
-            this.vkTyped = function (vk, code, ch, mask) {
-                var ch = this.isShiftOn() ? ch.toUpperCase() : ch;
-                KE.ch = ch;
+            this.vkTyped = function (vk, code, key, mask) {
+                KE.key = this.isShiftOn() ? key.toUpperCase() : key;
                 KE.code = code;
                 KE.$setMask(mask);
                 this.getCanvas().$keyTyped(KE);
             };
 
-            this.vkReleased = function(vk, code, ch, mask) {
+            this.vkReleased = function(vk, code, key, mask) {
                 if (mask != 0) {
                     this.offMask(mask, vk);
                 }
-                KE.ch = ch;
+                KE.key = key;
                 KE.code = code;
                 KE.$setMask(mask);
                 this.getCanvas().$keyReleased(KE);
@@ -1094,13 +1095,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
     });
 
 
-    ui.$loadThemeResource("ui.vk.json", function(e) {
-        if (e != null) {
-            console.log("VK JSON loading failed: " + (e.stack ? e.stack : e));
-        }
+    ui.$loadThemeResource(pkg, "ui.vk.json").catch(function(e) {
+        console.log("VK JSON loading failed: " + (e.stack ? e.stack : e));
     });
-
-    /**
-     * @for
-     */
 });

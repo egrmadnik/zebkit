@@ -1,7 +1,9 @@
 zebkit.package("ui", function(pkg, Class) {
 
 /**
- * @module  ui.html
+ * WEB based HTML components wrapped with as zebkit components.
+ * @class  zebkit.ui.html
+ * @access package
  */
 pkg.HtmlFocusableElement = Class(pkg.HtmlElement, [
     function $prototype() {
@@ -17,7 +19,7 @@ pkg.HtmlFocusableElement = Class(pkg.HtmlElement, [
  * @constructor
  * @param {String} text a text the text input component has to be filled with
  * @param {String} element an input element name
- * @class zebkit.ui.HtmlTextInput
+ * @class zebkit.ui.html.HtmlTextInput
  * @extends zebkit.ui.HtmlElement
  */
 pkg.HtmlTextInput = Class(pkg.HtmlFocusableElement, [
@@ -37,12 +39,14 @@ pkg.HtmlTextInput = Class(pkg.HtmlFocusableElement, [
          * Set the text
          * @param {String} t a text
          * @method setValue
+         * @chainable
          */
         this.setValue = function(t) {
             if (this.element.value !== t) {
                 this.element.value = t;
                 this.vrp();
             }
+            return this;
         };
     },
 
@@ -58,9 +62,9 @@ pkg.HtmlTextInput = Class(pkg.HtmlFocusableElement, [
  * HTML input text element wrapper class. The class wraps standard HTML text field
  * and represents it as zebkit UI component.
  * @constructor
- * @class zebkit.ui.HtmlTextField
+ * @class zebkit.ui.html.HtmlTextField
  * @param {String} [text] a text the text field component has to be filled with
- * @extends zebkit.ui.HtmlTextInput
+ * @extends zebkit.ui.html.HtmlTextInput
  */
 pkg.HtmlTextField = Class(pkg.HtmlTextInput, [
     function(text) {
@@ -74,8 +78,8 @@ pkg.HtmlTextField = Class(pkg.HtmlTextInput, [
  * element and represents it as zebkit UI component.
  * @constructor
  * @param {String} [text] a text the text area component has to be filled with
- * @class zebkit.ui.HtmlTextArea
- * @extends zebkit.ui.HtmlTextInput
+ * @class zebkit.ui.html.HtmlTextArea
+ * @extends zebkit.ui.html.HtmlTextInput
  */
 pkg.HtmlTextArea = Class(pkg.HtmlTextInput, [
     function setResizeable(b) {
@@ -89,10 +93,11 @@ pkg.HtmlTextArea = Class(pkg.HtmlTextInput, [
 ]);
 
 /**
- * [description]
- * @param  {[type]} text  [description]
- * @param  {zebkit}  href)
- * @return {[type]}       [description]
+ * HTML Link component
+ * @param  {String} text  a text of link
+ * @param  {String} href an href of the link
+ * @extends zebkit.ui.HtmlElement
+ * @class zebkit.ui.html.HtmlLink
  */
 pkg.HtmlLink = Class(pkg.HtmlElement, [
     function(text, href) {
@@ -107,7 +112,4 @@ pkg.HtmlLink = Class(pkg.HtmlElement, [
     }
 ]);
 
-/**
- * @for
- */
 });

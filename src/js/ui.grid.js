@@ -1,6 +1,6 @@
 zebkit.package("ui.grid", function(pkg, Class) {
 
-var ui = zebkit("ui");
+var ui = zebkit.ui;
 
 //      ---------------------------------------------------
 //      | x |    col0 width     | x |   col2 width    | x |
@@ -12,8 +12,8 @@ var ui = zebkit("ui");
  * The package contains number of classes and interfaces to implement
  * UI Grid component. The grid allows developers to visualize matrix
  * model, customize the model data editing and rendering.
- * @module ui.grid
- * @main
+ * @class zebkit.ui.grid
+ * @access package
  */
 
 pkg.CellsVisibility = function() {
@@ -30,6 +30,7 @@ pkg.CellsVisibility = function() {
 /**
  *  Interface that describes a grid component metrics
  *  @class zebkit.ui.grid.Metrics
+ *  @interface zebkit.ui.grid.Metrics
  */
 pkg.Metrics = zebkit.Interface([
     "abstract",
@@ -139,19 +140,19 @@ pkg.Metrics = zebkit.Interface([
  * @constructor
  */
 pkg.DefViews = Class([
-    function $prototype() {
-        this[''] = function(render){
-            /**
-             * Default render that is used to paint grid content.
-             * @type {zebkit.ui.StringRender}
-             * @attribute render
-             * @readOnly
-             * @protected
-             */
-            this.render = (render == null ? new ui.StringRender("") : render);
-            zebkit.properties(this, this.clazz);
-        };
+    function(render){
+        /**
+         * Default render that is used to paint grid content.
+         * @type {zebkit.ui.StringRender}
+         * @attribute render
+         * @readOnly
+         * @protected
+         */
+        this.render = (render == null ? new ui.StringRender("") : render);
+        zebkit.properties(this, this.clazz);
+    },
 
+    function $prototype() {
         /**
          * Set the default view provider text render font
          * @param {zebkit.ui.Font} f a font
@@ -268,6 +269,14 @@ pkg.DefViews = Class([
  * @class zebkit.ui.grid.DefEditors
  */
 pkg.DefEditors = Class([
+    function() {
+        this.textEditor     = new this.clazz.TextField("", 150);
+        this.boolEditor     = new this.clazz.Checkbox(null);
+        this.selectorEditor = new this.clazz.Combo();
+
+        this.editors    = {};
+    },
+
     function $clazz() {
         this.TextField = Class(ui.TextField, []);
         this.Checkbox  = Class(ui.Checkbox,  []);
@@ -307,14 +316,6 @@ pkg.DefEditors = Class([
     },
 
     function $prototype() {
-        this[''] = function() {
-            this.textEditor     = new this.clazz.TextField("", 150);
-            this.boolEditor     = new this.clazz.Checkbox(null);
-            this.selectorEditor = new this.clazz.Combo();
-
-            this.editors    = {};
-        };
-
         /**
          * Fetch an edited value from the given UI editor component.
          * @param  {zebkit.ui.grid.Grid} grid a target grid component
@@ -391,7 +392,7 @@ pkg.DefEditors = Class([
          * @method shouldCancel
          */
         this.shouldCancel = function(grid,row,col,e){
-            return e.id === "keyPressed" && ui.KeyEvent.ESCAPE === e.code;
+            return e.id === "keyPressed" && "Escape" === e.code;
         };
 
         /**
@@ -404,7 +405,7 @@ pkg.DefEditors = Class([
          * @method shouldFinish
          */
         this.shouldFinish = function(grid,row,col,e){
-            return e.id === "keyPressed" && ui.KeyEvent.ENTER === e.code;
+            return e.id === "keyPressed" && "Enter" === e.code;
         };
     }
 ]);
@@ -428,7 +429,7 @@ pkg.DefEditors = Class([
  * @event captionResized
  * @param  {zebkit.ui.grid.BaseCaption} caption a caption
  * @param  {Integer} rowcol a row or column that has been resized
- * @param  {Integer} pwh a a previous row or column size
+ * @param  {Integer} pwh a previous row or column size
  */
 
 pkg.BaseCaption = Class(ui.Panel, [
@@ -755,10 +756,12 @@ pkg.GridCaption = Class(pkg.BaseCaption, [
 
         this.setFont = function(f) {
             this.render.setFont(f);
+            return this;
         };
 
         this.setColor = function(c) {
             this.render.setColor(c);
+            return this;
         };
 
         this.recalc = function(){
@@ -798,6 +801,7 @@ pkg.GridCaption = Class(pkg.BaseCaption, [
          * @param  {String|zebkit.ui.View|zebkit.ui.Panel} title a title of the given grid caption cell.
          * Can be a string or zebkit.ui.View or zebkit.ui.Panel class instance
          * @method putTitle
+         * @chainable
          */
         this.putTitle = function(rowcol, title){
             var prev = this.titles[rowcol] != null ? this.titles[rowcol] : {};
@@ -810,6 +814,7 @@ pkg.GridCaption = Class(pkg.BaseCaption, [
                 this.titles[rowcol] = prev;
                 this.vrp();
             }
+            return this;
         };
 
         this.setTitleAlignments = function(rowcol, xa, ya){
@@ -821,6 +826,7 @@ pkg.GridCaption = Class(pkg.BaseCaption, [
                 this.titles[rowcol] = t;
                 this.repaint();
             }
+            return this;
         };
 
         this.setTitleBackground = function(i, v) {
@@ -830,6 +836,7 @@ pkg.GridCaption = Class(pkg.BaseCaption, [
             t.bg = v;
             this.titles[i] = t;
             this.repaint();
+            return this;
         };
 
         this.getCaptionPS = function(rowcol) {
@@ -1041,6 +1048,7 @@ pkg.CompGridCaption = Class(pkg.BaseCaption, [
              * Set the caption icon
              * @param {String|Image} path a path to an image or image object
              * @method setIcon
+             * @chainable
              */
             function setIcon(path) {
                 this.iconPan.setImage(path);
@@ -1127,6 +1135,7 @@ pkg.CompGridCaption = Class(pkg.BaseCaption, [
          * @param  {String|zebkit.ui.Panel|zebkit.ui.View} title a title of the given grid caption cell.
          * Can be a string or zebkit.ui.View or zebkit.ui.Panel class instance
          * @method putTitle
+         * @chainable
          */
         this.putTitle = function(rowcol, t) {
             // add empty titles
@@ -1149,6 +1158,8 @@ pkg.CompGridCaption = Class(pkg.BaseCaption, [
             } else {
                 this.add(t);
             }
+
+            return this;
         };
 
         /**
@@ -1156,6 +1167,7 @@ pkg.CompGridCaption = Class(pkg.BaseCaption, [
          * @param {Integer} col a column
          * @param {Boolean} b true if the column has to be sortable
          * @method setSortable
+         * @chainable
          */
         this.setSortable = function(col, b) {
             var c = this.kids[col];
@@ -1943,6 +1955,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
              * @param {Boolean} hor true if horizontal lines have to be painted
              * @param {Boolean} ver true if vertical lines have to be painted
              * @method setDrawLines
+             * @chainable
              */
             this.setDrawLines = function(hor, ver){
                 if (this.drawVerLines != hor || this.drawHorLines != ver) {
@@ -1950,6 +1963,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
                     this.drawVerLines = ver;
                     this.repaint();
                 }
+                return this;
             };
 
             /**
@@ -1958,6 +1972,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
              * case navigation happens over cell.
              * @param {String} mode a navigation mode ("row" pr "cell")
              * @method setNavigationMode
+             * @chainable
              */
             this.setNavigationMode = function(mode) {
                 if (mode.toLowerCase() === "row") {
@@ -1985,6 +2000,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
                         throw new Error("Unsupported position marker mode");
                     }
                 }
+                return this;
             };
 
             this.getLines = function() {
@@ -2024,16 +2040,16 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
             };
 
             this.keyPressed = function(e){
-                if (this.position != null){
+                if (this.position != null) {
                     switch(e.code) {
-                        case ui.KeyEvent.LEFT    : this.position.seek(-1); break;
-                        case ui.KeyEvent.UP      : this.position.seekLineTo("up"); break;
-                        case ui.KeyEvent.RIGHT   : this.position.seek(1); break;
-                        case ui.KeyEvent.DOWN    : this.position.seekLineTo("down");break;
-                        case ui.KeyEvent.PAGEUP  : this.position.seekLineTo("up", this.pageSize(-1));break;
-                        case ui.KeyEvent.PAGEDOWN: this.position.seekLineTo("down", this.pageSize(1));break;
-                        case ui.KeyEvent.END     : if (e.ctrlKey) this.position.setOffset(this.getLines() - 1);break;
-                        case ui.KeyEvent.HOME    : if (e.ctrlKey) this.position.setOffset(0);break;
+                        case "ArrowLeft"   : this.position.seek(-1); break;
+                        case "ArrowUp"     : this.position.seekLineTo("up"); break;
+                        case "ArrowRight"  : this.position.seek(1); break;
+                        case "ArrowDown"   : this.position.seekLineTo("down");break;
+                        case "PageUp"      : this.position.seekLineTo("up", this.pageSize(-1));break;
+                        case "PageDown"    : this.position.seekLineTo("down", this.pageSize(1));break;
+                        case "End"         : if (e.ctrlKey) this.position.setOffset(this.getLines() - 1);break;
+                        case "Home"        : if (e.ctrlKey) this.position.setOffset(0);break;
                     }
 
                     this.$se(this.position.currentLine, this.position.currentCol, e);
@@ -2056,6 +2072,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
              * @param  {Integer} r1 the first row to be repainted
              * @param  {Integer} r2 the last row to be repainted
              * @method repaintRows
+             * @chainable
              */
             this.repaintRows = function (r1,r2){
                 if (r1 < 0) r1 = r2;
@@ -2074,6 +2091,8 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
 
                     this.repaint(0, y1 + this.scrollManager.getSY(), this.width, y2 - y1);
                 }
+
+                return this;
             };
 
             /**
@@ -2180,6 +2199,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
             /**
              * Clear grid row or rows selection
              * @method clearSelect
+             * @chainable
              */
             this.clearSelect = function (){
                 if (this.selectedIndex >= 0) {
@@ -2188,6 +2208,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
                     this._.rowSelected(this, -1, 0, false);
                     this.repaintRows(-1, prev);
                 }
+                return this;
             };
 
             /**
@@ -2197,6 +2218,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
              * @param  {boolean} [b] a selection status. true if the parameter
              * has not been specified
              * @method select
+             * @chainable
              */
             this.select = function (row, b){
                 if (b == null) b = true;
@@ -2208,6 +2230,8 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
                         this._.rowSelected(this, row, 1, b);
                     }
                 }
+
+                return this;
             };
 
             this.laidout = function () {
@@ -2258,7 +2282,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
 
             /**
              * Paint vertical and horizontal grid component lines
-             * @param  {2DContext} g a HTML5 canvas 2D context
+             * @param  {CanvasRenderingContext2D} g a HTML5 canvas 2D context
              * @method paintNet
              * @protected
              */
@@ -2313,7 +2337,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
 
             /**
              * Paint grid data
-             * @param  {2DContext} g a HTML5 canvas 2d context
+             * @param  {CanvasRenderingContext2D} g a HTML5 canvas 2d context
              * @method paintData
              * @protected
              */
@@ -2599,9 +2623,11 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
              * @param {Integer} row a grid row
              * @param {Integer} h   a height of the grid row
              * @method setRowHeight
+             * @chainable
              */
             this.setRowHeight = function(row,h){
                 this.setRowsHeight(row, 1, h);
+                return this;
             };
 
             /**
@@ -2610,6 +2636,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
              * @param {Integer} [len] number of rows whose height has to be set
              * @param {Integer} h  a height
              * @method setRowsHeight
+             * @chainable
              */
             this.setRowsHeight = function(row, len, h) {
                 if (this.isUsePsMetric === false){
@@ -2619,28 +2646,33 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
                         len = this.getGridRows();
                     }
 
-                    if (len === 0) return;
+                    if (len !== 0) {
+                        this.validateMetric();
+                        var b = false;
+                        for(var i=row; i < row + len; i++) {
+                            if (this.rowHeights[i] != h) {
+                                this.psHeight_ += (h - this.rowHeights[i]);
+                                this.rowHeights[i] = h;
+                                b = true;
+                            }
+                        }
 
-                    this.validateMetric();
-                    var b = false;
-                    for(var i=row; i < row + len; i++) {
-                        if (this.rowHeights[i] != h) {
-                            this.psHeight_ += (h - this.rowHeights[i]);
-                            this.rowHeights[i] = h;
-                            b = true;
+                        if (b === true) {
+                            this.stopEditing(false);
+                            this.cachedHeight = this.getTop() + this.getBottom() + this.psHeight_ +
+                                                ((this.topCaption != null && this.topCaption.isVisible === true) ? this.topCaption.getPreferredSize().height : 0);
+
+                            if (this.parent != null) {
+                                this.parent.invalidate();
+                            }
+
+                            this.iRowVisibility(0);
+                            this.invalidateLayout();
+                            this.repaint();
                         }
                     }
 
-                    if (b === true) {
-                        this.stopEditing(false);
-                        this.cachedHeight = this.getTop() + this.getBottom() + this.psHeight_ +
-                                            ((this.topCaption != null && this.topCaption.isVisible === true) ? this.topCaption.getPreferredSize().height : 0);
-
-                        if (this.parent != null) this.parent.invalidate();
-                        this.iRowVisibility(0);
-                        this.invalidateLayout();
-                        this.repaint();
-                    }
+                    return this;
                 }
             };
 
@@ -2650,9 +2682,11 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
              * @param {Integer} column a grid column
              * @param {Integer} w   a width of the grid column
              * @method setColWidth
+             * @chainable
              */
             this.setColWidth = function (col,w){
-                this.setColsWidth(col,1,w);
+                this.setColsWidth(col, 1, w);
+                return this;
             };
 
             /**
@@ -2661,8 +2695,9 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
              * @param {Integer} [len] number of columns whose height has to be set
              * @param {Integer} w  a width
              * @method setColsHeight
+             * @chainable
              */
-            this.setColsWidth = function (col,len, w){
+            this.setColsWidth = function(col, len, w){
                 if (this.isUsePsMetric === false){
                     if (arguments.length === 1) {
                         w   = arguments[0];
@@ -2670,27 +2705,31 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
                         len = this.getGridCols();
                     }
 
-                    if (len === 0) return;
+                    if (len !== 0)  {
+                        this.validateMetric();
+                        var b = false;
+                        for(var i=col; i < col + len; i++) {
+                            if (this.colWidths[i] != w){
+                                this.psWidth_ += (w - this.colWidths[i]);
+                                this.colWidths[i] = w;
+                                b = true;
+                            }
+                        }
 
-                    this.validateMetric();
-                    var b = false;
-                    for(var i=col; i < col + len; i++) {
-                        if (this.colWidths[i] != w){
-                            this.psWidth_ += (w - this.colWidths[i]);
-                            this.colWidths[i] = w;
-                            b = true;
+                        if (b === true) {
+                            this.stopEditing(false);
+                            this.cachedWidth = this.getRight() + this.getLeft() +
+                                               this.psWidth_ + ((this.leftCaption != null && this.leftCaption.isVisible === true) ? this.leftCaption.getPreferredSize().width : 0);
+                            if (this.parent != null) {
+                                this.parent.invalidate();
+                            }
+                            this.iColVisibility(0);
+                            this.invalidateLayout();
+                            this.repaint();
                         }
                     }
 
-                    if (b === true) {
-                        this.stopEditing(false);
-                        this.cachedWidth = this.getRight() + this.getLeft() +
-                                           this.psWidth_ + ((this.leftCaption != null && this.leftCaption.isVisible === true) ? this.leftCaption.getPreferredSize().width : 0);
-                        if (this.parent != null) this.parent.invalidate();
-                        this.iColVisibility(0);
-                        this.invalidateLayout();
-                        this.repaint();
-                    }
+                    return this;
                 }
             };
 
@@ -2737,24 +2776,28 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
              * cell editing.
              * @param {Object} p an editor provider
              * @method setEditorProvider
+             * @chainable
              */
             this.setEditorProvider = function(p){
                 if (p != this.editors){
                     this.stopEditing(true);
                     this.editors = p;
                 }
+                return this;
             };
 
             /**
              * Force to size grid columns and rows according to its preferred size
              * @param {Boolean} b use true to use preferred size
              * @method setUsePsMetric
+             * @chainable
              */
             this.setUsePsMetric = function(b){
                 if (this.isUsePsMetric != b){
                     this.isUsePsMetric = b;
                     this.vrp();
                 }
+                return this;
             };
 
             this.setPosition = function(p){
@@ -2770,12 +2813,14 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
                      * @type {zebkit.util.Position}
                      */
                     this.position = p;
-                    if(this.position != null){
+                    if (this.position != null) {
                         this.position.bind(this);
                         this.position.setMetric(this);
                     }
                     this.repaint();
                 }
+
+                return this;
             };
 
             /**
@@ -2784,12 +2829,14 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
              * aligned, colored
              * @param {Object} p a view provider
              * @method setViewProvider
+             * @chainable
              */
             this.setViewProvider = function(p){
                 if (this.provider != p){
                     this.provider = p;
                     this.vrp();
                 }
+                return this;
             };
 
             /**
@@ -2799,6 +2846,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
              * instance of  matrix model or an array that contains
              * model rows as embedded arrays.
              * @method setModel
+             * @chainable
              */
             this.setModel = function(d){
                 if (d != this.model) {
@@ -2820,15 +2868,19 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
 
                     this.vrp();
                 }
+
+                return this;
             };
 
             /**
              * Set the given top, left, right, bottom cell paddings
              * @param {Integer} p a top, left, right and bottom cell paddings
              * @method setCellPadding
+             * @chainable
              */
             this.setCellPadding = function (p){
                 this.setCellPaddings(p,p,p,p);
+                return this;
             };
 
             /**
@@ -2838,6 +2890,7 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
              * @param {Integer} b a bottom cell padding
              * @param {Integer} r a rightcell padding
              * @method setCellPaddings
+             * @chainable
              */
             this.setCellPaddings = function (t,l,b,r){
                 if (t != this.cellInsetsTop    || l != this.cellInsetsLeft ||
@@ -2849,12 +2902,15 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
                     this.cellInsetsRight = r;
                     this.vrp();
                 }
+
+                return this;
             };
 
             /**
              * Set the given color to render the grid vertical and horizontal lines
              * @param {String} c a color
              * @method setLineColor
+             * @chainable
              */
             this.setLineColor = function (c){
                 if (c != this.lineColor){
@@ -2863,18 +2919,21 @@ pkg.Grid = Class(ui.Panel, zebkit.util.Position.Metric, pkg.Metrics, ui.$ViewsSe
                         this.repaint();
                     }
                 }
+                return this;
             };
 
             /**
              * Set the given grid lines size
              * @param {Integer} s a size
              * @method setLineSize
+             * @chainable
              */
             this.setLineSize = function (s){
                 if (s != this.lineSize){
                     this.lineSize = s;
                     this.vrp();
                 }
+                return this;
             };
 
             /**
@@ -3292,9 +3351,5 @@ pkg.GridStretchPan = Class(ui.Panel, [
         this.$super();
     }
 ]);
-
-/**
- * @for
- */
 
 });

@@ -1,8 +1,8 @@
 zebkit.package("ui", function(pkg, Class) {
 
-    var path = zebkit()['zebkit.json'];  // fetch json configuration
+    var path = zebkit.config['zebkit.json'];  // fetch json configuration
     if (typeof path === "undefined") {
-        var theme = zebkit()['zebkit.theme']; // fetch theme name
+        var theme = zebkit.config['zebkit.theme']; // fetch theme name
         if (typeof theme === "undefined") {
             theme = "base";
         }
@@ -15,12 +15,8 @@ zebkit.package("ui", function(pkg, Class) {
     }
 
     if (path != null) {
-        zebkit.busy();
-        pkg.load(path, function(e) {
-            if (e != null) {
-                console.log("Config JSON loading failed:" + (e.stack != null ? e.stack : e));
-            }
-            zebkit.ready();
+        pkg.load(path).catch(function(e) {
+            console.log("Config JSON loading failed:" + (e.stack != null ? e.stack : e));
         });
     }
 

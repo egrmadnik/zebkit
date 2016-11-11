@@ -1,7 +1,7 @@
 zebkit.package("ui", function(pkg, Class) {
 
 /**
- * @module ui
+ * @for zebkit.ui
 */
 
 /**
@@ -9,16 +9,23 @@ zebkit.package("ui", function(pkg, Class) {
  * concrete list component implementation. The list component
  * visualizes list data model (zebkit.data.ListModel).
  * @class  zebkit.ui.BaseList
+ * @constructor
+ * @param {zebkit.data.ListModel|Array} [m] a list model that should be passed as an instance
+ * of zebkit.data.ListModel or as an array.
+ * @param {Boolean} [b] true if the list navigation has to be triggered by
+ * pointer cursor moving
  * @extends {zebkit.ui.Panel}
+ * @uses {zebkit.util.Position.Metric}
+ * @uses {zebkit.ui.$ViewsSetterMix}
  */
 
 /**
  * Fire when a list item has been selected:
-
-        list.bind(function selected(src, prev) {
-            ...
-        });
-
+ *
+ *     list.bind(function selected(src, prev) {
+ *         ...
+ *     });
+ *
  * @event selected
  * @param {zebkit.ui.BaseList} src a list that triggers the event
  * @param {Integer|Object} prev a previous selected index, return null if the selected item has been re-selected
@@ -241,7 +248,7 @@ pkg.BaseList = Class(pkg.Panel, zebkit.util.Position.Metric, pkg.$ViewsSetterMix
         /**
          * Draw the given list view element identified by the given id
          * on the given list item.
-         * @param  {2DGraphics} g     a graphical context
+         * @param  {CanvasRenderingContext2D} g     a graphical context
          * @param  {String}     id    a view id
          * @param  {Integer}    index a list item index
          * @protected
@@ -262,7 +269,7 @@ pkg.BaseList = Class(pkg.Panel, zebkit.util.Position.Metric, pkg.$ViewsSetterMix
         /**
          * Draw the given list view element identified by the given id
          * at the specified location.
-         * @param  {2DGraphics} g     a graphical context
+         * @param  {CanvasRenderingContext2D} g     a graphical context
          * @param  {String}     id    a view id
          * @param  {Integer}    x a x coordinate the view has to be drawn
          * @param  {Integer}    y a y coordinate the view has to be drawn
@@ -372,25 +379,25 @@ pkg.BaseList = Class(pkg.Panel, zebkit.util.Position.Metric, pkg.$ViewsSetterMix
             if (this.model != null && this.model.count() > 0){
                 var po = this.position.offset;
                 switch(e.code) {
-                    case pkg.KeyEvent.END:
+                    case "End":
                         if (e.ctrlKey) {
                             this.position.setOffset(this.position.metrics.getMaxOffset());
                         } else {
                             this.position.seekLineTo("end");
                         }
                         break;
-                    case pkg.KeyEvent.HOME:
+                    case "Home":
                         if (e.ctrlKey) this.position.setOffset(0);
                         else this.position.seekLineTo("begin");
                         break;
-                    case pkg.KeyEvent.RIGHT    : this.position.seek(1); break;
-                    case pkg.KeyEvent.DOWN     : this.position.seekLineTo("down"); break;
-                    case pkg.KeyEvent.LEFT     : this.position.seek(-1);break;
-                    case pkg.KeyEvent.UP       : this.position.seekLineTo("up");break;
-                    case pkg.KeyEvent.PAGEUP   : this.position.seek(this.pageSize(-1));break;
-                    case pkg.KeyEvent.PAGEDOWN : this.position.seek(this.pageSize(1));break;
-                    case pkg.KeyEvent.SPACE    :
-                    case pkg.KeyEvent.ENTER    : this.$select(this.position.offset); break;
+                    case "ArrowRight": this.position.seek(1); break;
+                    case "ArrowDown" : this.position.seekLineTo("down"); break;
+                    case "ArrowLeft" : this.position.seek(-1);break;
+                    case "ArrowUp"   : this.position.seekLineTo("up");break;
+                    case "PageUp"    : this.position.seek(this.pageSize(-1));break;
+                    case "PageDown"  : this.position.seek(this.pageSize(1));break;
+                    case "Space"     :
+                    case "Enter"     : this.$select(this.position.offset); break;
                 }
             }
         };
@@ -412,7 +419,7 @@ pkg.BaseList = Class(pkg.Panel, zebkit.util.Position.Metric, pkg.$ViewsSetterMix
          * @method keyTyped
          */
         this.keyTyped = function (e){
-            var i = this.lookupItem(e.ch);
+            var i = this.lookupItem(e.key);
             if (i >= 0) this.$select(i);
         };
 
@@ -511,8 +518,9 @@ pkg.BaseList = Class(pkg.Panel, zebkit.util.Position.Metric, pkg.$ViewsSetterMix
          * track virtual cursor.
          * @param {zebkit.util.Position} c a position
          * @method setPosition
+         * @chainable
          */
-        this.setPosition = function(c){
+        this.setPosition = function(c) {
             if (c != this.position) {
                 if (this.position != null) {
                     this.position.unbind(this);
@@ -522,6 +530,8 @@ pkg.BaseList = Class(pkg.Panel, zebkit.util.Position.Metric, pkg.$ViewsSetterMix
                 this.position.setMetric(this);
                 this.repaint();
             }
+
+            return this;
         };
 
         /**
@@ -531,6 +541,7 @@ pkg.BaseList = Class(pkg.Panel, zebkit.util.Position.Metric, pkg.$ViewsSetterMix
          * says which view has to be used for the given list model data. The function
          * has to satisfy the following method signature: "function(list, modelItem, index)"
          * @method setViewProvider
+         * @chainable
          */
         this.setViewProvider = function (v){
             if (this.provider != v){
@@ -638,15 +649,14 @@ pkg.BaseList = Class(pkg.Panel, zebkit.util.Position.Metric, pkg.$ViewsSetterMix
     /**
      * Sets the views for the list visual elements. The following elements are
      * supported:
-
-        - "select" -  a selection view element
-        - "top.marker" - a position marker view element that is rendered  on top of list item
-        - "marker" - a position marker view element
-
+     *
+     *   - "select" -  a selection view element
+     *   - "top.marker" - a position marker view element that is rendered  on top of list item
+     *   - "marker" - a position marker view element
+     *
      * @param {Object} views view elements
      * @method setViews
      */
-
     function focused(){
         this.$super();
         this.repaint();
@@ -717,28 +727,29 @@ pkg.List = Class(pkg.BaseList, [
          * @param {String} [c] a color to render list item text
          */
         this.ViewProvider = Class([
+            function(f, c) {
+                /**
+                 * Reference to text render that is used to paint a list items
+                 * @type {zebkit.ui.StringRender}
+                 * @attribute text
+                 * @readOnly
+                 */
+
+                this.text = new pkg.StringRender("");
+                zebkit.properties(this, this.clazz);
+                if (f != null) this.text.setFont(f);
+                if (c != null) this.text.setColor(c);
+            },
+
             function $prototype() {
-                this[''] = function(f, c) {
-                    /**
-                     * Reference to text render that is used to paint a list items
-                     * @type {zebkit.ui.StringRender}
-                     * @attribute text
-                     * @readOnly
-                     */
-
-                    this.text = new pkg.StringRender("");
-                    zebkit.properties(this, this.clazz);
-                    if (f != null) this.text.setFont(f);
-                    if (c != null) this.text.setColor(c);
-                };
-
-
                 this.setColor = function(c) {
                     this.text.setColor(c);
+                    return this;
                 };
 
                 this.setFont = function(f) {
                     this.text.setFont(f);
+                    return this;
                 };
 
                 /**
@@ -778,12 +789,14 @@ pkg.List = Class(pkg.BaseList, [
          * Set the left, right, top and bottom a list item paddings
          * @param {Integer} g a left, right, top and bottom a list item paddings
          * @method setItemGap
+         * @chainable
          */
         this.setItemGap = function(g){
             if (this.gap != g){
                 this.gap = g;
                 this.vrp();
             }
+            return this;
         };
 
         this.paint = function(g){
@@ -979,7 +992,6 @@ pkg.List = Class(pkg.BaseList, [
         this.$super();
     },
 
-
     function drawView(g,id,v,x,y,w,h) {
         this.$super(g, id, v, x, y, this.width - this.getRight() - x, h);
     },
@@ -1004,6 +1016,7 @@ pkg.List = Class(pkg.BaseList, [
 
 
  * @class zebkit.ui.CompList
+ * @constructor
  * @extends zebkit.ui.BaseList
  * @param {zebkit.data.ListModel|Array} [model] a list model that should be passed as an instance
  * of zebkit.data.ListModel or as an array.
@@ -1081,6 +1094,8 @@ pkg.CompList = Class(pkg.BaseList, [
             } else {
                 throw new Error("Invalid comp list model");
             }
+
+            return this;
         };
     },
 
@@ -1091,6 +1106,7 @@ pkg.CompList = Class(pkg.BaseList, [
             }
             this.$super(c);
         }
+        return this;
     },
 
     function setLayout(layout){
@@ -1238,6 +1254,7 @@ pkg.Combo = Class(pkg.Panel, [
          * UI panel class that is used to implement combo box content area
          * @class  zebkit.ui.Combo.ContentPan
          * @extends {zebkit.ui.Panel}
+         * @constructor
          */
         this.ContentPan = Class(pkg.Panel, [
             function $prototype() {
@@ -1278,6 +1295,8 @@ pkg.Combo = Class(pkg.Panel, [
          * Combo box list pad component class
          * @extends zebkit.ui.ScrollPan
          * @class  zebkit.ui.Combo.ComboPadPan
+         * @constructor
+         * @param {zebkit.ui.Panel} c a target component
          */
         this.ComboPadPan = Class(pkg.ScrollPan, [
             function $prototype() {
@@ -1292,7 +1311,7 @@ pkg.Combo = Class(pkg.Panel, [
                  * @readOnly
                  */
                 this.childKeyPressed = function(e){
-                    if (e.code === pkg.KeyEvent.ESCAPE && this.parent != null){
+                    if (e.code === "Escape" && this.parent != null){
                         this.removeMe();
                         if (this.owner != null) this.owner.requestFocus();
                     }
@@ -1312,6 +1331,7 @@ pkg.Combo = Class(pkg.Panel, [
         /**
          * Read-only content area combo box component panel class
          * @extends zebkit.ui.Combo.ContentPan
+         * @constructor
          * @class  zebkit.ui.Combo.ReadonlyContentPan
          */
         this.ReadonlyContentPan = Class(this.ContentPan, [
@@ -1341,6 +1361,7 @@ pkg.Combo = Class(pkg.Panel, [
                         this.calcPsByContent = b;
                         this.vrp();
                     }
+                    return this;
                 };
 
                 this.calcPreferredSize = function(l) {
@@ -1356,12 +1377,12 @@ pkg.Combo = Class(pkg.Panel, [
                     if (this.calcPsByContent === true) this.invalidate();
                 };
             }
-
         ]);
 
         /**
          * Editable content area combo box component panel class
          * @class zebkit.ui.Combo.EditableContentPan
+         * @constructor
          * @extends zebkit.ui.Combo.ContentPan
          */
 
@@ -1503,15 +1524,17 @@ pkg.Combo = Class(pkg.Panel, [
          * @param  {Integer} i an index of a list element to be selected
          * as the combo box value
          * @method select
+         * @chainable
          */
         this.select = function(i) {
             this.list.select(i);
+            return this;
         };
 
-        // !!!
-        // TODO: this method has been added to support selectedIndex property setter
+        // This method has been added to support selectedIndex property setter
         this.setSelectedIndex = function(i) {
             this.select(i);
+            return this;
         };
 
         /**
@@ -1520,7 +1543,7 @@ pkg.Combo = Class(pkg.Panel, [
          * @method  setValue
          */
         this.setValue = function(v) {
-            this.list.setValue(v);
+            return this.list.setValue(v);
         };
 
         /**
@@ -1560,6 +1583,7 @@ pkg.Combo = Class(pkg.Panel, [
         /**
          * Hide combo drop down list
          * @method hidePad
+         * @chainable
          */
         this.hidePad = function (){
             var d = this.getCanvas();
@@ -1567,11 +1591,13 @@ pkg.Combo = Class(pkg.Panel, [
                 this.winpad.removeMe();
                 this.requestFocus();
             }
+            return this;
         };
 
         /**
          * Show combo drop down list
          * @method showPad
+         * @chainable
          */
         this.showPad = function(){
             var canvas = this.getCanvas();
@@ -1616,6 +1642,8 @@ pkg.Combo = Class(pkg.Panel, [
                 if (this.padShown != null) {
                     this.padShown(true);
                 }
+
+                return this;
             }
         };
 
@@ -1623,6 +1651,7 @@ pkg.Combo = Class(pkg.Panel, [
          * Bind the given list component to the combo box component.
          * @param {zebkit.ui.BaseList} l a list component
          * @method setList
+         * @chainable
          */
         this.setList = function(l){
             if (this.list != l) {
@@ -1660,11 +1689,11 @@ pkg.Combo = Class(pkg.Panel, [
             if (this.list.model != null) {
                 var index = this.list.selectedIndex;
                 switch(e.code) {
-                    case pkg.KeyEvent.ENTER: this.showPad(); break;
-                    case pkg.KeyEvent.LEFT :
-                    case pkg.KeyEvent.UP   : if (index > 0) this.list.select(index - 1); break;
-                    case pkg.KeyEvent.DOWN :
-                    case pkg.KeyEvent.RIGHT: if (this.list.model.count() - 1 > index) this.list.select(index + 1); break;
+                    case "Enter"     : this.showPad(); break;
+                    case "ArrowLeft" :
+                    case "ArrowUp"   : if (index > 0) this.list.select(index - 1); break;
+                    case "ArrowDown" :
+                    case "ArrowRight": if (this.list.model.count() - 1 > index) this.list.select(index + 1); break;
                 }
             }
         };
@@ -1682,18 +1711,21 @@ pkg.Combo = Class(pkg.Panel, [
          * Set the given combo box selection view
          * @param {zebkit.ui.View} c a view
          * @method setSelectionView
+         * @chainable
          */
         this.setSelectionView = function (c){
             if (c != this.selectionView) {
                 this.selectionView = pkg.$view(c);
                 this.repaint();
             }
+            return this;
         };
 
         /**
          * Set the maximal height of the combo box pad element.
          * @param {Integer} h a maximal combo box pad size
          * @method setMaxPadHeight
+         * @chainable
          */
         this.setMaxPadHeight = function(h){
             if (this.maxPadHeight != h) {
@@ -1867,9 +1899,5 @@ pkg.Combo = Class(pkg.Panel, [
         this.$super(p);
     }
 ]);
-
-/**
- * @for
- */
 
 });

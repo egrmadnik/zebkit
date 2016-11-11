@@ -1,6 +1,7 @@
 ---
 layout: page
-title: Zebkit easy OOP
+tags: menu
+title: Easy OOP
 ---
 
 <br/>
@@ -110,7 +111,7 @@ var Mix2 = zebkit.Interface([
 var A = zebkit.Class(Mix1, [...]);
 
 // Declare class B that mixes "Mix1" and "Mix2" interfaces methods
-var B = zebkit.Class(Mix1, Mix2 [...]);
+var B = zebkit.Class(Mix1, Mix2, [...]);
 
 // Instances of A and B classes have  got mixed methods
 var a = new A(), b = new B();
@@ -180,10 +181,10 @@ B.staticMethod == A.staticMethod;// true
 ```
 
 
-**Packages and namespaces** It is recommended to use package system zebkit provides. The packages are organized as hierarchy (the same way Java does it) and they are accessible from predefined _"zebkit"_ global namespace using dot notation. A new namespaces with own packages hierarchy definition is also possible.
+**Packaging** It is recommended to use package system zebkit provides. The packages are organized as hierarchy (the same way Java does it). Packages are accessible from predefined _"zebkit"_ global package with using dot notation. The main rules you should follow:
 
-   * Declare a package variables and classes safely with _"zebkit.package(...)"
-   * A new global namespace can be declared via _"zebkit.namespace(...)"_ method.
+   * Declare a package variables and classes safely with _"zebkit.package(...)"_ method
+   * Safely access to packages stuff with _"zebkit.require(...)"_ method
    * Use dot notation to access package stuff 
 
 ```js
@@ -195,26 +196,16 @@ zebkit.package("test", function() {
 // Access "v" from package "test"
 zebkit.test.v; // "Hello 1"
 
-//Alternative way to access the variable 
-zebkit("test").v; // "Hello 1"
-
-//Define own namespace and package there
-var ns = zebkit.namespace("MyNS");
-ns.package("test", function() {
-    this.v = "Hello 2";
-});
-ns.test.v; // "Hello 2"
-
-// Alternative way to access namespace variables and methods 
-namespace("myNS").test.v; // "Hello 2"
+// It is recommended to access a package stuff with "require(...)"
+// method, since a package can do some initialization stuff 
+// asynchronously 
+zebkit.require("test", function(test) {
+   test.v // "Hello 1" 
+}); 
 ```
 
 
-**Import package stuff in your scope** Not always handy to access classes and variables by pointing full path to its (_"zebkit.ui.grid.Grid"__). Zebkit helps importing fields from the given package(s) into a local scope by using zebkit.Import(...) that should be used in combination with JS "eval()" method.  Import has no effect for fields whose name start from "$" character. 
-
-   * Wrap zebkit code with _"zebkit.ready(...)"_  
-   * Package fields are reachable via dot notation
-   * _"zebkit.Import()"_ helps to import package stuff in current scope 
+**Import package stuff in your scope** Not always handy to access classes and variables by pointing full path to its (_"zebkit.ui.grid.Grid"_). Zebkit helps importing fields from the given package(s) into a local scope by using _zebkit.import()__ method that should be used in combination with JS "eval()" standard method. Pay attention that using JS "eval()" method is bad practice. It is recommended to use _"zebkit.require(...)"_ method where it is possible.
 
 ```js
 // Define variables in "test" package 
@@ -227,12 +218,14 @@ zebkit.package("test", function() {
 // Use zebkit.ready() to write zebkit code safely 
 zebkit.ready(function() {
     // Import fields from "test" package into current scope 
-    eval(zebkit.Import("test"));
+    eval(zebkit.import("test"));
   
     // Now access variables directly
     variable; // "Hello 1"
     new A();  // new instance of class zebkit.test.A
   
+    // variables whose names start from '$' character 
+    // are not imported
     $variable;// undefined
 });
 ```

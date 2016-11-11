@@ -1,12 +1,12 @@
 zebkit.package("ui.designer", function(pkg, Class) {
 
-var ui = zebkit("ui");
+var ui = zebkit.ui;
 
 /**
  * The package contains number of UI components that can be helpful to
  * make visual control of an UI component size and location
- * @module  ui.designer
- * @main
+ * @class  zebkit.ui.designer
+ * @access package
  */
 
 var CURSORS = {
@@ -22,6 +22,13 @@ var CURSORS = {
     none        : ui.Cursor.DEFAULT
 };
 
+/**
+ * A designer border view. The border view visually indicates areas
+ * of border with different size possibilities.
+ * @constructor
+ * @class zebkit.ui.designer.ShaperBorder
+ * @extends {zebkit.ui.View}
+ */
 pkg.ShaperBorder = Class(ui.View, [
     function $prototype() {
         this.color = "blue";
@@ -160,7 +167,6 @@ pkg.ShaperPan = Class(ui.Panel, [
          * @default 12
          */
 
-
         /**
          * Minimal possible width or controlled component
          * @attribute minWidth
@@ -184,8 +190,8 @@ pkg.ShaperPan = Class(ui.Panel, [
          */
         this.keyPressed = function(e) {
             if (this.kids.length > 0){
-                var dx = (e.code === ui.KeyEvent.LEFT ? -1 : (e.code === ui.KeyEvent.RIGHT ? 1 : 0)),
-                    dy = (e.code === ui.KeyEvent.UP   ? -1 : (e.code === ui.KeyEvent.DOWN  ? 1 : 0)),
+                var dx = (e.code === "ArrowLeft" ? -1 : (e.code === "ArrowRight" ? 1 : 0)),
+                    dy = (e.code === "ArrowUp"   ? -1 : (e.code === "ArrowDown"  ? 1 : 0)),
                     w  = this.width  + dx,
                     h  = this.height + dy,
                     x  = this.x + dx,
@@ -331,6 +337,14 @@ pkg.ShaperPan = Class(ui.Panel, [
     }
 ]);
 
+/**
+ * Special tree model implementation that represent zebkit UI component
+ * hierarchy as a simple tree model.
+ * @param  {zebkit.ui.Panel} target a root UI component
+ * @constructor
+ * @class zebkit.ui.designer.FormTreeModel
+ * @extends {zebkit.data.TreeModel}
+ */
 pkg.FormTreeModel = Class(zebkit.data.TreeModel, [
     function $prototype() {
         this.buildModel = function(comp, root){
@@ -372,7 +386,4 @@ pkg.FormTreeModel = Class(zebkit.data.TreeModel, [
     }
 ]);
 
-/**
- * @for
- */
 });

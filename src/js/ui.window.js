@@ -1,25 +1,90 @@
 zebkit.package("ui", function(pkg, Class) {
 
+/**
+ * Window component event
+ * @constructor
+ * @class zebkit.ui.WinEvent
+ * @extends {zebkit.util.Event}
+ */
 pkg.WinEvent = Class(zebkit.util.Event, [
     function $prototype() {
-        this.isShown = this.isActive = false;
+        /**
+         * Indicates if the window has been shown
+         * @attribute isShown
+         * @type {Boolean}
+         * @readOnly
+         */
+        this.isShown = false;
+
+        /**
+         * Indicates if the window has been activated
+         * @attribute isActive
+         * @type {Boolean}
+         * @readOnly
+         */
+         this.isActive = false;
+
+        /**
+         * Layer the source window belongs to
+         * @type {zebkit.ui.Panel}
+         * @attribute layer
+         * @readOnly
+         */
         this.layer = null;
 
+        /**
+         * Fill the event with parameters
+         * @param  {zebkit.ui.Panel}  src  a source window
+         * @param  {zebkit.ui.Panel}  layer  a layer the window belongs to
+         * @param  {Boolean} isActive boolean flag that indicates the window status
+         * @param  {Boolean} isShown  boolean flag that indicates the window visibility
+         * @chainable
+         * @method  $fillWidth
+         */
         this.$fillWith = function(src, layer, isActive, isShown) {
             this.source = src;
-            this.layer = layer;
+
+            this.layer    = layer;
             this.isActive = isActive;
-            this.isShown = isShown;
+            this.isShown  = isShown;
             return this;
         };
     }
 ]);
 
+/**
+ * Menu event class
+ * @constructor
+ * @class zebkit.ui.MenuEvent
+ * @extends {zebkit.util.Event}
+ */
 pkg.MenuEvent = Class(zebkit.util.Event, [
     function $prototype() {
+        /**
+         * Index of selected menu item
+         * @type {Integer}
+         * @attribute index
+         * @readOnly
+         */
         this.index = -1;
-        this.item  = null;
 
+        /**
+         * Selected menu item component
+         * @type {zebkit.ui.Panel}
+         * @attribute item
+         * @readOnly
+         */
+        this.item = null;
+
+        /**
+         * Fill menu event with specified parameters
+         * @param  {zebkit.ui.Menu} src a source of the menu event
+         * @param  {Integer} index an index of selected menu item
+         * @param  {zebkit.ui.Panel} item a selected menu item
+         * @protected
+         * @chainable
+         * @method $fillWith
+         */
         this.$fillWith = function(src, index, item) {
             this.source = src;
             this.index = index;
@@ -48,8 +113,8 @@ var WIN_EVENT  = new pkg.WinEvent(),
             }
         }
 
- * @api  zebkit.ui.showModalWindow()
- * @method showWindow
+ * @for  zebkit.ui
+ * @method showModalWindow
  */
 pkg.showModalWindow = function(context, win, listener) {
     pkg.showWindow(context, "modal", win, listener);
@@ -62,7 +127,7 @@ pkg.showModalWindow = function(context, win, listener) {
  * value is "info"
  * @param  {zebkit.ui.Panel} win a component to be shown as the window
  * @param  {Object} [listener] a window listener
-
+```JavaScript
         {
             winActivated : function(e) {
                ...
@@ -72,8 +137,8 @@ pkg.showModalWindow = function(context, win, listener) {
               ...
             }
         }
-
- * @api  zebkit.ui.showWindow()
+```
+ * @for  zebkit.ui
  * @method showWindow
  */
 pkg.showWindow = function(context, type, win, listener) {
@@ -84,6 +149,14 @@ pkg.showWindow = function(context, type, win, listener) {
     return context.getCanvas().getLayer("win").addWin(type, win, listener);
 };
 
+
+/**
+ * Show the given popup menu.
+ * @param  {zebkit.ui.Panel} context  an UI component of zebkit hierarchy
+ * @param  {zebkit.ui.Menu}  menu a menu to be shown
+ * @for  zebkit.ui
+ * @method showPopupMenu
+ */
 pkg.showPopupMenu = function(context, menu) {
     context.getCanvas().getLayer("pop").add(menu);
 };
@@ -91,7 +164,7 @@ pkg.showPopupMenu = function(context, menu) {
 /**
  * Activate the given window or a window the specified component belongs
  * @param  {zebkit.ui.Panel} win an UI component to be activated
- * @api zebkit.ui.activateWindow()
+ * @for zebkit.ui
  * @method activateWindow
  */
 pkg.activateWindow = function(win) {
@@ -194,9 +267,9 @@ pkg.WinLayer = Class(pkg.CanvasLayer, [
         };
 
         this.layerKeyPressed = function(e){
-            if (this.kids.length > 0        &&
-                e.code === pkg.KeyEvent.TAB &&
-                e.shiftKey                     )
+            if (this.kids.length > 0 &&
+                e.code === "Tab"     &&
+                e.shiftKey              )
             {
                 if (this.activeWin == null) {
                     this.activate(this.kids[this.kids.length - 1]);
@@ -211,25 +284,6 @@ pkg.WinLayer = Class(pkg.CanvasLayer, [
                 return true;
             }
             return false;
-        };
-
-        // TODO: the method never called since focus has been re-worked
-        this.elementFocusLost = function(src) {
-            if (this.activeWin != null && this.getWinType(this.activeWin) === "mdi") {
-                this.$prevActiveWin = this.activeWin;
-                this.activate(null);
-            }
-        };
-
-        // TODO: the method never called since focus has been re-worked
-        this.elementFocusGained = function(src) {
-            if (this.$prevActiveWin != null &&
-                this.$prevActiveWin.isVisible === true &&
-                this.$prevActiveWin.parent === this)
-            {
-                this.activate(this.$prevActiveWin);
-            }
-            this.$prevActiveWin = null;
         };
 
         /**
@@ -262,7 +316,8 @@ pkg.WinLayer = Class(pkg.CanvasLayer, [
             }
 
             if (c != this.activeWin) {
-                var old = this.activeWin;
+                var old  = this.activeWin,
+                    type = null;
                 if (c == null) {
                     var type = this.winsTypes[this.activeWin];
                     if (type === "modal") {
@@ -454,12 +509,11 @@ pkg.WinLayer = Class(pkg.CanvasLayer, [
 ]);
 
 /**
- * Window UI component class. Implements window like UI component.
- * The window component has a header, status bar and content areas. The header component
- * is usually placed at the top of window, the status bar component is placed at the bottom and
- * the content component at places the central part of the window. Also the window defines
- * corner UI component that is supposed to be used to resize the window. The window implementation
- * provides the following possibilities:
+ * Window UI component class. Implements window like UI component. The window component has a header,
+ * status bar and content areas. The header component is usually placed at the top of window, the
+ * status bar component is placed at the bottom and the content component at places the central part
+ * of the window. Also the window defines corner UI component that is supposed to be used to resize
+ * the window. The window implementation provides the following possibilities:
 
     - Move window by dragging the window on its header
     - Resize window by dragging the window corner element
@@ -537,9 +591,12 @@ pkg.Window = Class(pkg.StatePan, [
 
         this.pointerDragged = function(e){
             if (this.action > 0) {
+                var container = null;
+
                 if (this.action !== MOVE_ACTION){
-                    var container = this.getWinContainer(),
-                        nw = this.dx + container.width,
+                    container = this.getWinContainer();
+
+                    var nw = this.dx + container.width,
                         nh = this.dy + container.height;
 
                     if (nw > this.minSize && nh > this.minSize) {
@@ -552,7 +609,7 @@ pkg.Window = Class(pkg.StatePan, [
                 this.px = e.absX;
                 this.py = e.absY;
                 if (this.action === MOVE_ACTION){
-                    var container = this.getWinContainer();
+                    container = this.getWinContainer();
                     container.setLocation(this.dx + container.x, this.dy + container.y);
                 }
             }
@@ -629,14 +686,32 @@ pkg.Window = Class(pkg.StatePan, [
             return this.prevW != -1;
         };
 
+        /**
+         * Create a caption component
+         * @return {zebkit.ui.Panel} a zebkit caption component
+         * @method createCaptionPan
+         * @protected
+         */
         this.createCaptionPan = function() {
             return new this.clazz.CaptionPan();
         };
 
+        /**
+         * Create a content component
+         * @return {zebkit.ui.Panel} a content component
+         * @method createContentPan
+         * @protected
+         */
         this.createContentPan = function() {
             return new this.clazz.ContentPan();
         };
 
+        /**
+         * Create a caption title label
+         * @return {zebkit.ui.Label} a caption title label
+         * @method createTitle
+         * @protected
+         */
         this.createTitle = function() {
             return new this.clazz.TitleLab();
         };
@@ -652,6 +727,7 @@ pkg.Window = Class(pkg.StatePan, [
         /**
          * Make the window sizable or not sizeable
          * @param {Boolean} b a sizeable state of the window
+         * @chainable
          * @method setSizeable
          */
         this.setSizeable = function(b){
@@ -667,9 +743,10 @@ pkg.Window = Class(pkg.StatePan, [
         /**
          * Maximize the window
          * @method maximize
+         * @chainable
          */
         this.maximize = function(){
-            if(this.prevW < 0){
+            if (this.prevW < 0){
                 var d    = this.getCanvas(),
                     cont = this.getWinContainer(),
                     left = d.getLeft(),
@@ -684,11 +761,13 @@ pkg.Window = Class(pkg.StatePan, [
                                d.width  - left - d.getRight(),
                                d.height - top - d.getBottom());
             }
+            return this;
         };
 
         /**
          * Restore the window size
          * @method restore
+         * @chainable
          */
         this.restore = function(){
             if (this.prevW >= 0){
@@ -696,14 +775,17 @@ pkg.Window = Class(pkg.StatePan, [
                                                  this.prevW, this.prevH);
                 this.prevW = -1;
             }
+            return this;
         };
 
         /**
          * Close the window
          * @method close
+         * @chainable
          */
         this.close = function() {
             this.getWinContainer().removeMe();
+            return this;
         };
 
         /**
@@ -822,6 +904,13 @@ pkg.Window = Class(pkg.StatePan, [
     }
 ]);
 
+/**
+ * Class that wrapped window component with own HTML Canvas
+ * @param  {zebkit.ui.Window} target a window component. If target is not defined it will be instantiated
+ * automatically
+ * @constructor
+ * @class zebkit.ui.HtmlWinCanvas
+ */
 pkg.HtmlWinCanvas = Class(pkg.HtmlCanvas, [
     function $prototype() {
         this.winOpened = function(e) {
@@ -836,6 +925,12 @@ pkg.HtmlWinCanvas = Class(pkg.HtmlCanvas, [
     function(target) {
         this.$super();
 
+        /**
+         * Target window
+         * @attribute target
+         * @type {zebkit.ui.Window}
+         * @readOnly
+         */
         this.target = (target == null ? new pkg.Window() : target);
 
         var $this = this;
@@ -849,25 +944,27 @@ pkg.HtmlWinCanvas = Class(pkg.HtmlCanvas, [
 ]);
 
 /**
- * Menu item panel class. The component holds menu item content like
- * caption, icon, sub-menu sign elements. The area of the component
- * is split into three parts: left, right and center. Central part
- * keeps content, left side keeps checked sign element
- * and the right side keeps sub-menu sign element.
- * @param  {String|zebkit.ui.Panel} caption a menu item caption string
- * or component. Caption string can encode the item id, item icon and
- * item checked state. For instance:
-
-    - **"Menu Item [@menu_item_id]"** - triggers creation of menu item component
-      with "Menu Item" caption and "menu_item_id" id property value
-    - **"[x] Menu Item"** - triggers creation of checked menu item component
-      with checked on state
-    - **"@('mypicture.gif') Menu Item"** - triggers creation of menu item
-       component with "Menu Item" caption and loaded mypicture.gif icon
-
-        // create menu item with icon and "Item 1" title
-        var mi = new zebkit.ui.MenuItem("@('mypicture.gif') Item 1");
-
+ * Menu item panel class. The component holds menu item content like caption, icon, sub-menu
+ * sign elements. The area of the component is split into three parts: left, right and center.
+ * Central part keeps content, left side keeps checked sign element and the right side keeps
+ * sub-menu sign element.
+ * @param  {String|zebkit.ui.Panel} caption a menu item caption string or component. Caption
+ * string can encode the item id, item icon and item checked state. For instance:
+ *
+ *   - **"Menu Item [@menu_item_id]"** - triggers creation of menu item component
+ *     with "Menu Item" caption and "menu_item_id" id property value
+ *   - **"[x] Menu Item"** - triggers creation of checked menu item component
+ *     with checked on state
+ *   - **"@('mypicture.gif') Menu Item"** - triggers creation of menu item
+ *      component with "Menu Item" caption and loaded mypicture.gif icon
+ *
+ * @example
+ *
+ *
+ *     // create menu item with icon and "Item 1" title
+ *     var mi = new zebkit.ui.MenuItem("@('mypicture.gif') Item 1");
+ *
+ *
  * @class zebkit.ui.MenuItem
  * @extends {zebkit.ui.Panel}
  * @constructor
@@ -917,6 +1014,7 @@ pkg.MenuItem = Class(pkg.Panel, [
          * Set the menu item icon.
          * @param {String|Image} img a path to an image or image object
          * @method setIcon
+         * @chainable
          */
         this.setIcon = function(img) {
             this.getContent().setImage(img);
@@ -927,6 +1025,7 @@ pkg.MenuItem = Class(pkg.Panel, [
          * Set the menu item caption.
          * @param {String} caption a caption
          * @method setCaption
+         * @chainable
          */
         this.setCaption = function(caption) {
             this.getContent().setCaption(caption);
@@ -1042,12 +1141,14 @@ pkg.MenuItem = Class(pkg.Panel, [
          * Set the menu item checked state
          * @param {Boolean} b a checked state
          * @method setCheckState
+         * @chainable
          */
         this.setCheckState = function(b) {
             if (this.manager == null) {
                 this.setCheckManager(new pkg.SwitchManager());
             }
             this.manager.setValue(this, b);
+            return this;
         };
 
         /**
@@ -1063,6 +1164,7 @@ pkg.MenuItem = Class(pkg.Panel, [
          * Set the menu item checked state manager.
          * @param {zebkit.ui.SwitchManager|zebkit.ui.Group} man a switch manager
          * @method setCheckManager
+         * @chainable
          */
         this.setCheckManager = function(man) {
             if (this.manager != man) {
@@ -1072,6 +1174,7 @@ pkg.MenuItem = Class(pkg.Panel, [
                 this.manager = man;
                 this.manager.install(this);
             }
+            return this;
         };
     },
 
@@ -1170,18 +1273,7 @@ pkg.MenuItem = Class(pkg.Panel, [
  *
  * @class zebkit.ui.Menu
  * @constructor
- * @param {Object} [list] use special notation to define a menu
-
-        {
-            'Menu Item 1': null,   // menu item 1 without a sub menu
-            'Menu Item 2': null,   // menu item 2 without a sub menu
-            '-':null,              // decorative line element
-            'Menu Item 3': {       // menu item 3 with a sub menu defined
-                "[x] Checkable menu item":null, // checkable menu item
-                "Sub item 1":null
-            }
-        }
-
+ * @param {Object} [list] menu items description
  * @extends {zebkit.ui.CompList}
  */
 pkg.Menu = Class(pkg.CompList, [
@@ -1289,6 +1381,7 @@ pkg.Menu = Class(pkg.CompList, [
          * has to be attached
          * @param {zebkit.ui.Menu} m a sub menu to be attached
          * @method setMenuAt
+         * @chainable
          */
         this.setMenuAt = function (i, m){
             if (m == this) {
@@ -1440,7 +1533,7 @@ pkg.Menu = Class(pkg.CompList, [
      * @method keyPressed
      */
     function keyPressed(e){
-        if (e.code === pkg.KeyEvent.ESCAPE) {
+        if (e.code === "Escape") {
             if (this.parent != null) {
                 var p = this.$parentMenu;
                 this.$canceled(this);
@@ -1523,8 +1616,10 @@ pkg.Menu = Class(pkg.CompList, [
 
     function fireSelected(prev) {
         if (this.parent != null) {
+            var sub = null;
+
             if (this.selectedIndex >= 0) {
-                var sub = this.getMenuAt(this.selectedIndex);
+                sub = this.getMenuAt(this.selectedIndex);
                 if (sub != null) { // handle sub menu here
                     if (sub.parent != null) {
                         // hide menu since it has been already shown
@@ -1556,7 +1651,7 @@ pkg.Menu = Class(pkg.CompList, [
                                                           this.kids[this.selectedIndex]));
             } else if (prev >= 0) {
                 // hide child menus if null item has been selected
-                var sub = this.getMenuAt(prev);
+                sub = this.getMenuAt(prev);
                 if (sub != null && sub.parent != null) {
                     // hide menu since it has been already shown
                     sub.$hideMenu();
@@ -1747,13 +1842,13 @@ pkg.PopupLayer = Class(pkg.CanvasLayer, [
             var p = e.source.$parentMenu;
             if (p != null) {
                 switch (e.code) {
-                    case pkg.KeyEvent.RIGHT :
+                    case "ArrowRight" :
                         if (p.selectedIndex < p.model.count() - 1) {
                             p.requestFocus();
                             p.position.seekLineTo("down");
                         }
                         break;
-                    case pkg.KeyEvent.LEFT :
+                    case "ArrowLeft" :
                         if (p.selectedIndex > 0) {
                             p.requestFocus();
                             p.position.seekLineTo("up");
@@ -1866,8 +1961,8 @@ pkg.PopupLayer = Class(pkg.CanvasLayer, [
 ]);
 
 /**
- * Tooltip UI component. The component can be used as a tooltip that
- * shows specified content in figured border.
+ * Tooltip UI component. The component can be used as a tooltip that shows specified content in
+ * figured border.
  * @class  zebkit.ui.Tooltip
  * @param  {zebkit.util.Panel|String} a content component or test label to be shown in tooltip
  * @constructor
@@ -1880,15 +1975,15 @@ pkg.Tooltip = Class(pkg.Panel, [
         this.ImageLabel = Class(pkg.ImageLabel, []);
 
         this.TooltipBorder = Class(pkg.View, [
+            function(col, size) {
+                if (arguments.length > 0) this.color = col;
+                if (arguments.length > 1) this.size  = size;
+                this.gap = 2 * this.size;
+            },
+
             function $prototype() {
                 this.color = "black";
                 this.size = 2;
-
-                this[''] = function(col, size) {
-                    if (arguments.length > 0) this.color = col;
-                    if (arguments.length > 1) this.size  = size;
-                    this.gap = 2 * this.size;
-                };
 
                 this.paint = function (g,x,y,w,h,d) {
                     if (this.color != null) {
@@ -1907,7 +2002,6 @@ pkg.Tooltip = Class(pkg.Panel, [
                     y += this.size;
 
                     var w2   = (w/2 + 0.5) | 0,
-                        h3   = (h/3 + 0.5) | 0,
                         w3_8 = ((3 * w)/8 + 0.5) | 0,
                         h2_3 = ((2 * h)/3 + 0.5) | 0,
                         h3   = (h/3 + 0.5) | 0,
@@ -1928,7 +2022,7 @@ pkg.Tooltip = Class(pkg.Panel, [
     },
 
     function setColor() {
-        // TODO: BUG, stack oeverflow
+        // TODO: BUG, stack overflow
         this.properties("//*", {
             color: arguments
         });
@@ -1936,7 +2030,7 @@ pkg.Tooltip = Class(pkg.Panel, [
     },
 
     function setFont() {
-        // TODO: BUG, stack oeverflow
+        // TODO: BUG, stack overflow
         this.properties("//*", {
             font: arguments
         });
@@ -2134,12 +2228,16 @@ pkg.PopupManager = Class(pkg.Manager, [
          */
         this.pointerEntered = function(e) {
             if (this.$target == null && (e.source.tooltip != null || e.source.getTooltip != null)) {
-                var c = e.source;
+                var c = e.source, $this = this;
                 this.$target = c;
                 this.$targetTooltipLayer = c.getCanvas().getLayer(pkg.WinLayer.ID);
                 this.$tooltipX = e.x;
                 this.$tooltipY = e.y;
-                this.$toolTask = zebkit.util.task(this).run(this.showTooltipIn, this.showTooltipIn);
+                this.$toolTask = pkg.$tasks.run(
+                    this,
+                    this.showTooltipIn,
+                    this.showTooltipIn
+                );
             }
         };
 
@@ -2172,7 +2270,7 @@ pkg.PopupManager = Class(pkg.Manager, [
                 // wake up task try showing a tooltip
                 // at the new location
                 if (this.$toolTask != null) {
-                    this.$toolTask.run(this.showTooltipIn);
+                    this.$toolTask.resume(this.showTooltipIn);
                 }
             }
         };
@@ -2236,7 +2334,7 @@ pkg.PopupManager = Class(pkg.Manager, [
         };
 
         this.winActivated = function(e) {
-            // this method is called for only for mdi window
+            // this method is called only for mdi window
             // consider every deactivation of a mdi window as
             // a signal to stop showing tooltip
             if (e.isActive === false && this.$tooltip != null)  {
@@ -2316,7 +2414,4 @@ pkg.PopupManager = Class(pkg.Manager, [
     }
 ]);
 
-/**
- * @for
- */
 });

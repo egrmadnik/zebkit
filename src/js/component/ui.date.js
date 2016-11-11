@@ -1,5 +1,12 @@
 zebkit.package("ui.date", function(pkg, Class) {
-    var ui = zebkit("ui");
+    var ui = zebkit.ui;
+
+    /**
+     * The package contains number of classes to implement
+     * UI date related component like calendar, date field etc.
+     * @class ui.date
+     * @access package
+     */
 
     pkg.compareDates = function(d1, d2) {
         if (arguments.length === 2 && d1 === d2) {
@@ -19,8 +26,7 @@ zebkit.package("ui.date", function(pkg, Class) {
             day1   = d1.getDate();
             month1 = d1.getMonth();
             year1  = d1.getFullYear();
-        }
-        else {
+        } else {
             day1   = arguments[0];
             month1 = arguments[1];
             year1  = arguments[2];
@@ -32,8 +38,7 @@ zebkit.package("ui.date", function(pkg, Class) {
             day2   = d2.getDate();
             month2 = d2.getMonth();
             year2  = d2.getFullYear();
-        }
-        else {
+        } else {
             day2   = arguments[i];
             month2 = arguments[i + 1];
             year2  = arguments[i + 2];
@@ -52,12 +57,6 @@ zebkit.package("ui.date", function(pkg, Class) {
         return -1;
     };
 
-    /**
-     * The package contains number of classes to implement
-     * UI date related component like calendar, date field etc.
-     * @module ui.date
-     * @main
-     */
 
     Date.prototype.daysInMonth = function() {
         return new Date(this.getFullYear(), this.getMonth() + 1, 0).getDate();
@@ -480,7 +479,7 @@ zebkit.package("ui.date", function(pkg, Class) {
         },
 
         function keyPressed(e) {
-            if (e.code != ui.KeyEvent.ENTER) {
+            if (e.code !== "Enter") {
                 return this.$super(e);
             }
 
@@ -556,8 +555,8 @@ zebkit.package("ui.date", function(pkg, Class) {
             this.YearField = Class(ui.TextField, [
                 function keyPressed(e) {
                     switch (e.code) {
-                        case ui.KeyEvent.UP  : if (this.fireNextYear != null) this.fireNextYear(); break;
-                        case ui.KeyEvent.DOWN: if (this.firePrevYear != null) this.firePrevYear(); break;
+                        case "ArrowUp"  : if (this.fireNextYear != null) this.fireNextYear(); break;
+                        case "ArrowDown": if (this.firePrevYear != null) this.firePrevYear(); break;
                         default: return this.$super(e);
                     }
                 }
@@ -905,9 +904,9 @@ zebkit.package("ui.date", function(pkg, Class) {
 
     var PopupCalendarMix = zebkit.Interface([
         function childKeyPressed(e) {
-            if (e.code === ui.KeyEvent.ENTER) this.showCalendar(e.source);
+            if (e.code === "Enter") this.showCalendar(e.source);
             else {
-                if (e.code === ui.KeyEvent.BSPACE);
+                if (e.code === "Backspace");
             }
         },
 
@@ -925,7 +924,7 @@ zebkit.package("ui.date", function(pkg, Class) {
                     },
 
                     function childKeyPressed(e){
-                        if (e.code === ui.KeyEvent.ESCAPE) {
+                        if (e.code === "Escape") {
                             $this.hideCalendar();
                         }
                     }
@@ -1108,7 +1107,7 @@ zebkit.package("ui.date", function(pkg, Class) {
 
             this.minDateField = new this.clazz.MinDateTextField([
                 function keyPressed(e) {
-                    if (e.code === ui.KeyEvent.RIGHT && this.position.offset === this.getMaxOffset()) {
+                    if (e.code === "ArrowRight" && this.position.offset === this.getMaxOffset()) {
                         $this.maxDateField.position.setOffset(0);
                         $this.maxDateField.requestFocus();
                     }
@@ -1118,7 +1117,7 @@ zebkit.package("ui.date", function(pkg, Class) {
 
             this.maxDateField = new this.clazz.MaxDateTextField([
                 function keyPressed(e) {
-                    if (e.code === ui.KeyEvent.LEFT && this.position.offset === 0) {
+                    if (e.code === "ArrowLeft" && this.position.offset === 0) {
                         $this.minDateField.requestFocus();
                     }
                     this.$super(e);
@@ -1158,9 +1157,7 @@ zebkit.package("ui.date", function(pkg, Class) {
         }
     ]);
 
-    ui.$loadThemeResource(pkg, "ui.date.json", function(e) {
-        if (e != null) {
-            console.log("" + (e.stack ? e.stack : e));
-        }
+    ui.$loadThemeResource(pkg, "ui.date.json").catch(function(e) {
+        console.log("" + (e.stack ? e.stack : e));
     });
 });

@@ -1,7 +1,7 @@
 zebkit.package("ui", function(pkg, Class) {
 
 /**
- * @module ui
+ * @for zebkit.ui
  */
 
 /**
@@ -13,6 +13,7 @@ zebkit.package("ui", function(pkg, Class) {
     - Native WEB clipboard
     - Basic text navigation
     - Read-only mode
+    - Left or right text alignment
 
  * @constructor
  * @param {String|zebkit.data.TextModel|zebkit.ui.TextRender} [txt] a text the text field component
@@ -24,9 +25,18 @@ zebkit.package("ui", function(pkg, Class) {
  */
 pkg.TextField = Class(pkg.Label, [
     function $clazz() {
+        /**
+         * Text field hint text render
+         * @constructor
+         * @class zebkit.ui.TextField.HintRender
+         * @extends {zebkit.ui.StringRender}
+         */
         this.HintRender = Class(pkg.StringRender, []);
     },
 
+    /**
+     * @for zebkit.ui.TextField
+     */
     function $prototype() {
         this.vkMode = "indirect";
         this.startLine = this.startCol = this.endLine = this.endCol = this.curX = 0;
@@ -52,6 +62,12 @@ pkg.TextField = Class(pkg.Label, [
         this.blinkMe        = true;
         this.blinkMeCounter = 0;
 
+        /**
+         * Cursor type
+         * @attribute cursorType
+         * @type {String}
+         * @default zebkit.ui.Cursor.TEXT;
+         */
         this.cursorType = pkg.Cursor.TEXT;
 
         /**
@@ -84,6 +100,7 @@ pkg.TextField = Class(pkg.Label, [
          * use -1 to disable cursor blinking. If the argument is not passed the default (500ms)
          * blinking period will be applied.
          * @method setBlinking
+         * @chainable
          */
         this.setBlinking = function(period) {
             if (arguments.length === 0) {
@@ -97,7 +114,13 @@ pkg.TextField = Class(pkg.Label, [
             return this;
         };
 
-        this.setTextAlign = function(a) {
+        /**
+         * Set the text algnment.
+         * @method setTextAlignment
+         * @param {String} a a text alignment. Use "left" or "right" as the parameter value
+         * @chainable
+         */
+        this.setTextAlignment = function(a) {
             if (this.textAlign != a) {
                 this.textAlign = a;
                 this.vrp();
@@ -125,8 +148,7 @@ pkg.TextField = Class(pkg.Label, [
                         if (off <= start) {
                             start += size;
                             end += size;
-                        }
-                        else {
+                        } else {
                             // if offset of an inserted text if greater than start of
                             // a selection but less or equals to end of the selection
                             // we have to correct insertion offset to start (since the
@@ -143,8 +165,7 @@ pkg.TextField = Class(pkg.Label, [
 
                     this.endOff = this.startOff = -1; // clear selection
                     this.position.inserted(off, size);
-                }
-                else {
+                } else {
                     this.position.removed(off, size);
                 }
             }
@@ -165,8 +186,7 @@ pkg.TextField = Class(pkg.Label, [
             x -= this.scrollManager.getSX();
             if (this.textAlign === "left") {
                 x -= this.getLeft();
-            }
-            else {
+            } else {
                 x -= (this.width - this.view.getPreferredSize().width - this.getRight());
             }
 
@@ -206,8 +226,7 @@ pkg.TextField = Class(pkg.Label, [
             col += d;
             if (col < 0 && line > 0) {
                 return { row: line - 1, col : t.getLine(line - 1).length };
-            }
-            else {
+            } else {
                 if (col > ln.length && line < t.getLines() - 1) return { row : line + 1, col : 0 };
             }
 
@@ -216,12 +235,10 @@ pkg.TextField = Class(pkg.Label, [
                 if (b) {
                     if (d > 0) {
                         if (zebkit.util.isLetter(ln[col])) return { row:line, col:col };
-                    }
-                    else {
+                    } else {
                         if (!zebkit.util.isLetter(ln[col])) return { row : line, col: col + 1 };
                     }
-                }
-                else  {
+                } else  {
                     b = d > 0 ? !zebkit.util.isLetter(ln[col]) : zebkit.util.isLetter(ln[col]);
                 }
             }
@@ -262,6 +279,11 @@ pkg.TextField = Class(pkg.Label, [
             }
         };
 
+        /**
+         * Start selection.
+         * @protected
+         * @method  startSelection
+         */
         this.startSelection = function() {
             if (this.startOff < 0 && this.position != null){
                 var pos = this.position;
@@ -272,31 +294,63 @@ pkg.TextField = Class(pkg.Label, [
         };
 
         this.keyTyped = function(e) {
-            if (this.isEditable === true && e.ctrlKey === false && e.metaKey === false) {
-                this.write(this.position.offset, e.ch);
+            if (this.isEditable === true &&
+                e.ctrlKey === false &&
+                e.metaKey === false &&
+                e.key !== '\t')
+            {
+                this.write(this.position.offset, e.key);
             }
         };
 
+        /**
+         * Select all text.
+         * @method  selectAll
+         * @chainable
+         */
         this.selectAll = function() {
             this.select(0, this.getMaxOffset());
+            return this;
         };
 
-        this.selectAll_command = function() {
-            this.selectAll();
-        };
+        /**
+         * Shortcut event handler
+         * @param  {java.ui.ShortcutEvent} e a shortcut event
+         * @method shortcutFired
+         */
+        this.shortcutFired = function(e) {
+            if (e.shortcut === "SELECTALL") {
+                this.selectAll();
+            } else {
+                var d  = (e.shortcut === "PREVWORDSELECT" || e.shortcut === "PREVWORD") ? -1 : 1;
 
-        this.nextWord_command = function(b, d) {
-            if (b) this.startSelection();
-            var p = this.findNextWord(this.view.target, this.position.currentLine,
-                                                        this.position.currentCol, d);
-            if (p != null) {
-                this.position.setRowCol(p.row, p.col);
+                if (e.shortcut === "PREVWORDSELECT" ||
+                    e.shortcut === "NEXTWORDSELECT" ||
+                    e.shortcut === "NEXTPAGESELECT" ||
+                    e.shortcut === "PREVPAGESELECT"   )
+                {
+                    this.startSelection();
+                }
+
+                switch (e.shortcut) {
+                    case "UNDO"          : this.undo(); break;
+                    case "REDO"          : this.redo(); break;
+                    case "NEXTPAGESELECT":
+                    case "NEXTPAGE"      :  this.position.seekLineTo("down", this.pageSize()); break;
+                    case "PREVPAGESELECT":
+                    case "PREVPAGE"      :  this.position.seekLineTo("up", this.pageSize()); break;
+                    case "NEXTWORDSELECT":
+                    case "PREVWORDSELECT":
+                    case "PREVWORD":
+                    case "NEXTWORD" : {
+                        var p = this.findNextWord(this.view.target, this.position.currentLine,
+                                                                    this.position.currentCol, d);
+                        if (p != null) {
+                            this.position.setRowCol(p.row, p.col);
+                        }
+                    } break;
+                }
             }
-        };
-
-        this.nextPage_command = function(b, d) {
-            if (b) this.startSelection();
-            this.position.seekLineTo(d === 1 ? "down" : "up", this.pageSize());
         };
 
         this.keyPressed = function(e) {
@@ -310,35 +364,47 @@ pkg.TextField = Class(pkg.Label, [
                 }
 
                 switch(e.code) {
-                    case pkg.KeyEvent.DOWN : position.seekLineTo("down");break;
-                    case pkg.KeyEvent.UP   : position.seekLineTo("up");break;
-                    case pkg.KeyEvent.LEFT : foff *= -1;
-                    case pkg.KeyEvent.RIGHT:
+                    case "ArrowDown" : position.seekLineTo("down"); break;
+                    case "ArrowUp"   : position.seekLineTo("up"); break;
+                    case "ArrowLeft" : foff *= -1;
+                    case "ArrowRight":
                         if (e.ctrlKey === false && e.metaKey === false) {
                             position.seek(foff);
                         }
                         break;
-                    case pkg.KeyEvent.END:
+                    case "End":
                         if (e.ctrlKey) {
                             position.seekLineTo("down", this.getLines() - line - 1);
+                        } else {
+                            position.seekLineTo("end");
                         }
-                        else position.seekLineTo("end");
                         break;
-                    case pkg.KeyEvent.HOME:
-                        if (e.ctrlKey) position.seekLineTo("up", line);
-                        else position.seekLineTo("begin");
+                    case "Home":
+                        if (e.ctrlKey) {
+                            position.seekLineTo("up", line);
+                        } else {
+                            position.seekLineTo("begin");
+                        }
                         break;
-                    case pkg.KeyEvent.DELETE:
+                    case "PageDown" :
+                        position.seekLineTo("down", this.pageSize());
+                        break;
+                    case "PageUp" :
+                        position.seekLineTo("up", this.pageSize());
+                        break;
+                    case "Delete":
                         if (this.hasSelection() && this.isEditable === true) {
                             this.removeSelected();
-                        }
-                        else {
-                            if (this.isEditable === true) this.remove(position.offset, 1);
+                        } else {
+                            if (this.isEditable === true) {
+                                this.remove(position.offset, 1);
+                            }
                         } break;
-                    case pkg.KeyEvent.BSPACE:
+                    case "Backspace":
                         if (this.isEditable === true) {
-                            if (this.hasSelection()) this.removeSelected();
-                            else {
+                            if (this.hasSelection()) {
+                                this.removeSelected();
+                            } else {
                                 if (this.isEditable === true && position.offset > 0){
                                     position.seek(-1 * foff);
                                     this.remove(position.offset, 1);
@@ -364,8 +430,8 @@ pkg.TextField = Class(pkg.Label, [
          */
         this.isFiltered = function(e){
             var code = e.code;
-            return code === pkg.KeyEvent.SHIFT || code === pkg.KeyEvent.CTRL ||
-                   code === pkg.KeyEvent.TAB   || code === pkg.KeyEvent.ALT  ||
+            return code === "Shift" || code === "Control" ||
+                   code === "Tab"   || code === "Alt"     ||
                    e.altKey;
         };
 
@@ -398,6 +464,7 @@ pkg.TextField = Class(pkg.Label, [
          * Insert the specified text into the edited text at the given position
          * @param  {Integer} pos a start position of a removed text
          * @param  {String} s a text to be inserted
+         * @return {Boolean} true if repaint has been requested
          * @method write
          */
         this.write = function (pos,s) {
@@ -406,7 +473,9 @@ pkg.TextField = Class(pkg.Label, [
                 if (s.length < 10000) {
                     this.historyPos = (this.historyPos + 1) % this.history.length;
                     this.history[this.historyPos] = [1, pos, s.length];
-                    if (this.undoCounter < this.history.length) this.undoCounter++;
+                    if (this.undoCounter < this.history.length) {
+                        this.undoCounter++;
+                    }
                 }
 
                 if (this.view.target.write(s, pos)) {
@@ -423,8 +492,7 @@ pkg.TextField = Class(pkg.Label, [
                 var l = r.getLine(this.position.currentLine);
                 if (this.textAlign === "left") {
                     this.curX = r.font.charsWidth(l, 0, this.position.currentCol) + this.getLeft();
-                }
-                else {
+                } else {
                     this.curX = this.width - this.getRight() - this.view.getPreferredSize().width +
                                 r.font.charsWidth(l, 0, this.position.currentCol);
                 }
@@ -443,7 +511,7 @@ pkg.TextField = Class(pkg.Label, [
         /**
          * Draw the text field cursor
          * @protected
-         * @param  {2DContext} g a 2D context
+         * @param  {CanvasRenderingContext2D} g a 2D context
          * @method drawCursor
          */
         this.drawCursor = function (g) {
@@ -452,12 +520,13 @@ pkg.TextField = Class(pkg.Label, [
                 this.blinkMe              &&
                 this.hasFocus()              )
             {
-                if (this.textAlign === "left")
+                if (this.textAlign === "left") {
                     this.curView.paint(g, this.curX, this.curY,
                                           this.curW, this.curH, this);
-                else
+                } else {
                     this.curView.paint(g, this.curX - this.curW, this.curY,
                                           this.curW, this.curH, this);
+                }
             }
         };
 
@@ -485,6 +554,7 @@ pkg.TextField = Class(pkg.Label, [
          * @param  {Integer} startOffset a start position of a selected text
          * @param  {Integer} endOffset  an end position of a selected text
          * @method select
+         * @chainable
          */
         this.select = function (startOffset,endOffset){
             if (endOffset < startOffset ||
@@ -494,9 +564,10 @@ pkg.TextField = Class(pkg.Label, [
                 throw new Error("Invalid selection offsets");
             }
 
-            if (this.startOff != startOffset || endOffset != this.endOff){
-                if (startOffset === endOffset) this.clearSelection();
-                else {
+            if (this.startOff != startOffset || endOffset != this.endOff) {
+                if (startOffset === endOffset) {
+                    this.clearSelection();
+                } else {
                     this.startOff = startOffset;
                     var p = this.position.getPointByOffset(startOffset);
                     this.startLine = p[0];
@@ -508,6 +579,8 @@ pkg.TextField = Class(pkg.Label, [
                     this.repaint();
                 }
             }
+
+            return this;
         };
 
         /**
@@ -562,8 +635,7 @@ pkg.TextField = Class(pkg.Label, [
                         }
                         this.repaint(left, y1, this.width - left - this.getRight(), h);
                     }
-                }
-                else {
+                } else {
                     this.repaint();
                 }
             }
@@ -585,8 +657,8 @@ pkg.TextField = Class(pkg.Label, [
          * The hint is not-editable text that is shown in empty text field to help
          * a user to understand which input the text field expects.
          * @param {String|zebkit.ui.View|Function} hint a hint text, view or view render method
-         * @return {zebkit.ui.View} a hint view
          * @method setHint
+         * @chainable
          */
         this.setHint = function(hint) {
             this.hint = zebkit.isString(hint) ? new this.clazz.HintRender(hint) : pkg.$view(hint);
@@ -594,7 +666,12 @@ pkg.TextField = Class(pkg.Label, [
             return this;
         };
 
-        this.undo_command = function() {
+        /**
+         * Performs undo operation
+         * @method undo
+         * @chainable
+         */
+        this.undo = function() {
             if (this.undoCounter > 0) {
                 var h = this.history[this.historyPos];
 
@@ -610,9 +687,15 @@ pkg.TextField = Class(pkg.Label, [
 
                 this.repaint();
             }
+            return this;
         };
 
-        this.redo_command = function() {
+        /**
+         * Performs redo operation
+         * @method redo
+         * @chainable
+         */
+        this.redo = function() {
             if (this.redoCounter > 0) {
                 var h = this.history[(this.historyPos + 1) % this.history.length];
                 if (h[0] === 1) this.remove(h[1], h[2]);
@@ -620,6 +703,7 @@ pkg.TextField = Class(pkg.Label, [
                 this.redoCounter--;
                 this.repaint();
             }
+            return this;
         };
 
         /**
@@ -671,10 +755,10 @@ pkg.TextField = Class(pkg.Label, [
         this.focusGained = function (e){
             if (this.position.offset < 0) {
                 this.position.setOffset(this.textAlign === "left" || this.getLines() > 1 ? 0 : this.getMaxOffset());
-            }
-            else {
-                if (this.hint != null) this.repaint();
-                else {
+            } else {
+                if (this.hint != null) {
+                    this.repaint();
+                } else {
                     this.repaintCursor();
                 }
             }
@@ -682,8 +766,18 @@ pkg.TextField = Class(pkg.Label, [
             if (this.isEditable === true && this.blinkingPeriod > 0) {
                 this.blinkMeCounter = 0;
                 this.blinkMe = true;
-                this.blinkTask = zebkit.util.task(this).run(~~(this.blinkingPeriod/3),
-                                                           ~~(this.blinkingPeriod/3));
+
+                var $this = this;
+                this.blinkTask = pkg.$tasks.run(function() {
+                        $this.blinkMeCounter = ($this.blinkMeCounter + 1) % 3;
+                        if ($this.blinkMeCounter === 0) {
+                            $this.blinkMe = !$this.blinkMe;
+                            $this.repaintCursor();
+                        }
+                    },
+                    ~~(this.blinkingPeriod / 3),
+                    ~~(this.blinkingPeriod / 3)
+                );
             }
         };
 
@@ -702,6 +796,11 @@ pkg.TextField = Class(pkg.Label, [
             }
         };
 
+        /**
+         * Force text field cursor repainting.
+         * @method repaintCursor
+         * @protected
+         */
         this.repaintCursor = function() {
             if (this.curX > 0 && this.curW > 0 && this.curH > 0) {
                 this.repaint(this.curX + this.scrollManager.getSX(),
@@ -710,18 +809,10 @@ pkg.TextField = Class(pkg.Label, [
             }
         };
 
-        this.run = function() {
-            this.blinkMeCounter = (this.blinkMeCounter + 1) % 3;
-
-            if (this.blinkMeCounter === 0) {
-                this.blinkMe = !this.blinkMe;
-                this.repaintCursor();
-            }
-        };
-
         /**
          * Clear a text selection.
          * @method clearSelection
+         * @chainable
          */
         this.clearSelection = function() {
             if (this.startOff >= 0){
@@ -731,6 +822,7 @@ pkg.TextField = Class(pkg.Label, [
                     this.repaint();
                 }
             }
+            return this;
         };
 
         this.pageSize = function (){
@@ -753,6 +845,11 @@ pkg.TextField = Class(pkg.Label, [
             return this.getSelectedText();
         };
 
+        /**
+         * Cut selected text
+         * @return {String} a text that has been selected and cut
+         * @method  cut
+         */
         this.cut = function() {
             var t = this.getSelectedText();
             if (this.isEditable === true) this.removeSelected();
@@ -763,6 +860,7 @@ pkg.TextField = Class(pkg.Label, [
          * Set the specified cursor position controller
          * @param {zebkit.util.Position} p a position controller
          * @method setPosition
+         * @chainable
          */
         this.setPosition = function (p){
             if (this.position != p) {
@@ -775,6 +873,8 @@ pkg.TextField = Class(pkg.Label, [
                 }
                 this.invalidate();
             }
+
+            return this;
         };
 
         /**
@@ -782,6 +882,7 @@ pkg.TextField = Class(pkg.Label, [
          * cursor.
          * @param {zebkit.ui.View} v a cursor view
          * @method setCursorView
+         * @chainable
          */
         this.setCursorView = function (v){
             // TODO: cursor size should be set by property
@@ -799,6 +900,7 @@ pkg.TextField = Class(pkg.Label, [
          * @param {Integer} r a row of the text the height of the text field has to be adjusted
          * @param {Integer} c a column of the text the width of the text field has to be adjusted
          * @method setPSByRowsCols
+         * @chainable
          */
         this.setPSByRowsCols = function (r,c){
             var tr = this.view,
@@ -814,12 +916,15 @@ pkg.TextField = Class(pkg.Label, [
          * Control the text field editable state
          * @param {Boolean} b true to make the text field editable
          * @method setEditable
+         * @chainable
          */
         this.setEditable = function (b){
             if (b != this.isEditable){
                 this.isEditable = b;
                 if (b && this.blinkingPeriod > 0 && this.hasFocus()) {
-                    if (this.blinkTask != null) this.blinkTask.shutdown();
+                    if (this.blinkTask != null) {
+                        this.blinkTask.shutdown();
+                    }
                     this.blinkMe = true;
                 }
                 this.vrp();
@@ -837,8 +942,7 @@ pkg.TextField = Class(pkg.Label, [
             if (e.isAction()) {
                 if (e.shiftKey) {
                     this.startSelection();
-                }
-                else {
+                } else {
                     this.clearSelection();
                 }
 
@@ -851,6 +955,7 @@ pkg.TextField = Class(pkg.Label, [
          * Set selection color
          * @param {String} c a selection color
          * @method setSelectionColor
+         * @chainable
          */
         this.setSelectionColor = function (c){
             if (c != this.selectionColor){
@@ -881,16 +986,14 @@ pkg.TextField = Class(pkg.Label, [
                     this.view.paint(g, l, t,
                                     this.width  - l - r,
                                     this.height - t - this.getBottom(), this);
-                }
-                else {
+                } else {
                     this.view.paint(g, this.width - r - this.view.getPreferredSize().width, t,
                                        this.width  - l - r,
                                        this.height - t - this.getBottom(), this);
                 }
 
                 this.drawCursor(g);
-            }
-            catch(e) {
+            } catch(e) {
                 g.translate(-sx, -sy);
                 throw e;
             }
@@ -908,15 +1011,13 @@ pkg.TextField = Class(pkg.Label, [
             if (zebkit.isNumber(render)) {
                 maxCol = render;
                 this.$super(new pkg.TextRender(new zebkit.data.SingleLineTxt("", maxCol)));
-            }
-            else {
+            } else {
                 maxCol = -1;
                 this.$super(zebkit.isString(render) ? new pkg.TextRender(new zebkit.data.SingleLineTxt(render))
                                                    : (zebkit.instanceOf(render, zebkit.data.TextModel) ?  new pkg.TextRender(render)
                                                                                                      : render));
             }
-        }
-        else {
+        } else {
             // 2 arguments or zero arguments
             if (arguments.length === 0) {
                 maxCol = -1;
@@ -951,6 +1052,7 @@ pkg.TextField = Class(pkg.Label, [
      * Set the text content of the text field component
      * @param {String} s a text the text field component has to be filled
      * @method setValue
+     * @chainable
      */
     function setValue(s) {
         var txt = this.getValue();
@@ -988,6 +1090,7 @@ pkg.TextArea = Class(pkg.TextField, [
 /**
  * Password text field.
  * @class zebkit.ui.PassTextField
+ * @constructor
  * @param {String} txt password text
  * @param {Integer} [maxSize] maximal size
  * @param {Boolean} [showLast] indicates if last typed character should
@@ -1023,6 +1126,13 @@ pkg.PassTextField = Class(pkg.TextField, [
         }
     },
 
+    /**
+     * Set flag that indicates if the last password character has to be visible.
+     * @param {Boolean} b a boolean flag that says if last password character has
+     * to be visible.
+     * @method setShowLast
+     * @chainable
+     */
     function setShowLast(b) {
         if (this.showLast !== b) {
             this.view.showLast = b;
@@ -1031,9 +1141,5 @@ pkg.PassTextField = Class(pkg.TextField, [
         return this;
     }
 ]);
-
-/**
- * @for
- */
 
 });

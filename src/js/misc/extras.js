@@ -1,4 +1,4 @@
-(function(io, Class) {
+zebkit.package("io", function(io, Class) {
     var CDNAME = '';
 
     zebkit.getMethod = function(clazz, name) {
@@ -248,7 +248,4 @@
             return false;
         };
     };
-
-
-
-})(zebkit("io"), zebkit.Class);
+});

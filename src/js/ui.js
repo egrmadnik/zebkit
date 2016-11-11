@@ -1,7 +1,8 @@
 zebkit.package("ui", function(pkg, Class) {
 
 /**
- * @module  ui
+ * @class  zebkit.ui
+ * @access package
  */
 pkg.$ViewsSetterMix = zebkit.Interface([
     function $prototype() {
@@ -30,6 +31,19 @@ pkg.$ViewsSetterMix = zebkit.Interface([
     }
 ]);
 
+/**
+ * Shortcut to create a UI component by the given description. Depending on the description type
+ * the following components are created:
+ *
+ *    - **String** zebkit.ui.Label
+ *    - **Array** zebkit.ui.Combobox
+ *    - **2D Array** zebkit.ui.grid.Grid
+ *
+ * @method $component
+ * @protected
+ * @param  {Object} desc a description
+ * @return {zebkit.ui.Panel}  a created UI component
+ */
 pkg.$component = function(desc, instance) {
     if (zebkit.isString(desc)) {
         //  [x] Text
@@ -59,7 +73,7 @@ pkg.$component = function(desc, instance) {
                     img.setPreferredSize(w, h);
                 }
 
-                if (txt.length == 0) {
+                if (txt.length === 0) {
                     return img;
                 }
 
@@ -109,7 +123,6 @@ pkg.$component = function(desc, instance) {
         return v;
     }
 
-    // TODO: desc
     return desc;
 };
 
@@ -149,6 +162,12 @@ pkg.Line = Class(pkg.Panel, [
          */
         this.lineWidth = 1;
 
+        /**
+         * Set line color
+         * @param {String} c a color
+         * @method  setColor
+         * @chainable
+         */
         this.setColor = function(c) {
             this.setColors(c);
             return this;
@@ -159,6 +178,7 @@ pkg.Line = Class(pkg.Panel, [
          * lines to be painted.
          * @param {String} colors* colors
          * @method setLineColors
+         * @chainable
          */
         this.setColors = function() {
             this.colors = (arguments.length === 1) ? (Array.isArray(arguments[0]) ? arguments[0].slice(0)
@@ -232,12 +252,19 @@ pkg.Label = Class(pkg.ViewPan, [
          * Set the text field text model
          * @param  {zebkit.data.TextModel|String} m a text model to be set
          * @method setModel
+         * @chainable
          */
         this.setModel = function(m) {
             this.setView(zebkit.isString(m) ? new pkg.StringRender(m)
                                             : new pkg.TextRender(m));
+            return this;
         };
 
+        /**
+         * Get a text model
+         * @return {zebkit.data.TextModel} a text model
+         * @method getModel
+         */
         this.getModel = function() {
             return this.view != null ? this.view.target : null;
         };
@@ -317,7 +344,10 @@ pkg.Label = Class(pkg.ViewPan, [
             if (typeof r === "string" || r.constructor === String) {
                 this.setView(r.length === 0 || r.indexOf('\n') >= 0 ? new pkg.TextRender(new zebkit.data.Text(r))
                                                                     : new pkg.StringRender(r));
-            } else if (typeof r.clazz !== "undefined" && r.clazz.isTextModel === true) {
+            } else if (typeof r.clazz !== "undefined" &&
+                       r.getTextLength != null        &&    // a bit faster tnan instanceOf checking if
+                       r.getLines      != null           )  //  test if this is an instance of zebkit.data.TextModel
+            {
                 this.setView(new pkg.TextRender(r));
             } else {
                 this.setView(r);
@@ -361,6 +391,7 @@ pkg.ImageLabel = Class(pkg.Panel, [
          * Set the specified caption
          * @param {String} c an image label caption text
          * @method setCaption
+         * @chainable
          */
         this.setCaption = function(c) {
             var lab = this.getByConstraints("label");
@@ -373,6 +404,7 @@ pkg.ImageLabel = Class(pkg.Panel, [
          * Set the specified label image
          * @param {String|Image} p a path to an image of image object
          * @method setImage
+         * @chainable
          */
         this.setImage = function(p) {
             var lab = this.getByConstraints("image");
@@ -381,6 +413,12 @@ pkg.ImageLabel = Class(pkg.Panel, [
             return this;
         };
 
+        /**
+         * Set the caption font
+         * @param {zebkit.ui.Font} a font
+         * @method setFont
+         * @chainable
+         */
         this.setFont = function() {
             var lab = this.getByConstraints("label");
             if (lab != null) {
@@ -389,6 +427,12 @@ pkg.ImageLabel = Class(pkg.Panel, [
             return this;
         };
 
+        /**
+         * Set the caption color
+         * @param {String} a color
+         * @method setColor
+         * @chainable
+         */
         this.setColor = function (c) {
             var lab = this.getByConstraints("label");
             if (lab != null) {
@@ -397,10 +441,27 @@ pkg.ImageLabel = Class(pkg.Panel, [
             return this;
         };
 
+        /**
+         * Get caption component
+         * @return {zebkit.ui.Panel} a caption component
+         * @method getCaption
+         */
         this.getCaption = function () {
             return lab == null ? null : this.getByConstraints("label").getValue();
         };
 
+        /**
+         * Set the image alignment.
+         * @param {String} an alignment. Following values are possible:
+         *
+         *    - "left"
+         *    - "right"
+         *    - "top"
+         *    - "bottom"
+         *
+         * @method  setImgAlignment
+         * @chainable
+         */
         this.setImgAlignment = function(a) {
             var b   = false,
                 img = this.getByConstraints("image"),
@@ -443,6 +504,13 @@ pkg.ImageLabel = Class(pkg.Panel, [
             return this;
         };
 
+        /**
+         * Set image preferred size.
+         * @param {Integer} w a width and height if the second argument has not been specified
+         * @param {Integer} [h] a height
+         * @method setImgPreferredSize
+         * @chainable
+         */
         this.setImgPreferredSize = function (w, h) {
             if (arguments.length === 1) h = w;
             this.getByConstraints("image").setPreferredSize(w, h);
@@ -518,6 +586,7 @@ pkg.StatePan = Class(pkg.ViewPan, [
          * Current component state
          * @attribute state
          * @readOnly
+         * @default null
          * @type {Object}
          */
         this.state = null;
@@ -526,6 +595,7 @@ pkg.StatePan = Class(pkg.ViewPan, [
          * Set the component state
          * @param {Object} s a state
          * @method  setState
+         * @chainable
          */
         this.setState = function(s) {
             if (s !== this.state){
@@ -688,7 +758,7 @@ pkg.EvStatePan = Class(pkg.StatePan,  [
         this._keyPressed = function(e) {
             if (this.state !== PRESSED_OVER &&
                 this.state !== PRESSED_OUT  &&
-                (e.code === pkg.KeyEvent.ENTER || e.code === pkg.KeyEvent.SPACE))
+                (e.code === "Enter" || e.code === "Space"))
             {
                 this.setState(PRESSED_OVER);
             }
@@ -860,13 +930,27 @@ pkg.CompositeEvStatePan = Class(pkg.EvStatePan, [
          * @attribute canHaveFocus
          * @readOnly
          * @type {Boolean}
+         * @default true
          */
         this.canHaveFocus = true;
 
-
+        /**
+         * Indicates this composite component can make its children components
+         * event transparent.
+         * @attribute catchInput
+         * @readOnly
+         * @type {Boolean}
+         * @default true
+         */
         this.catchInput = true;
 
-
+        /**
+         * Component that has to be used as focus indicator anchor
+         * @attribute focusComponent
+         * @type {zebkit.ui.Panel}
+         * @default null
+         * @readOnly
+         */
         this.focusComponent = null;
 
         /**
@@ -885,13 +969,12 @@ pkg.CompositeEvStatePan = Class(pkg.EvStatePan, [
         };
 
         /**
-         * Set the view that has to be rendered as focus marker
-         * when the component gains focus.
+         * Set the view that has to be rendered as focus marker when the component gains focus.
          * @param  {String|zebkit.ui.View|Function} c a view.
          * The view can be a color or border string code or view
-         * or an implementation of zebkit.ui.View "paint(g,x,y,w,h,t)"
-         * method.
+         * or an implementation of zebkit.ui.View "paint(g,x,y,w,h,t)" method.
          * @method setFocusMarkerView
+         * @chainable
          */
         this.setFocusMarkerView = function (c){
             if (c != this.focusMarkerView){
@@ -907,7 +990,7 @@ pkg.CompositeEvStatePan = Class(pkg.EvStatePan, [
          * @method setCanHaveFocus
          */
         this.setCanHaveFocus = function(b){
-            if (this.canHaveFocus != b){
+            if (this.canHaveFocus != b) {
                 var fm = pkg.focusManager;
                 if (b === false && fm.focusOwner === this) {
                     fm.requestFocus(null);
@@ -918,12 +1001,11 @@ pkg.CompositeEvStatePan = Class(pkg.EvStatePan, [
         };
 
         /**
-         * Set the specified children component to be used as
-         * focus marker view anchor component. Anchor component
-         * is a component over that the focus marker view is
-         * painted.
-         * @param  {zebkit.ui.Panel} c  an anchor component
+         * Set the specified children component to be used as focus marker view anchor component.
+         * Anchor component is a component over that the focus marker view is painted.
+         * @param  {zebkit.ui.Panel} c an anchor component
          * @method setFocusAnchorComponent
+         * @chainable
          */
         this.setFocusAnchorComponent = function(c) {
             if (this.focusComponent != c) {
@@ -950,6 +1032,12 @@ pkg.CompositeEvStatePan = Class(pkg.EvStatePan, [
     }
 ]);
 
+/**
+ * Special interface that provides set of method for state components to implement repeatable
+ * state.
+ * @class zebkit.ui.ButtonRepeatMix
+ * @interface zebkit.ui.ButtonRepeatMix
+ */
 pkg.ButtonRepeatMix = zebkit.Interface([
     function $prototype() {
         /**
@@ -972,17 +1060,14 @@ pkg.ButtonRepeatMix = zebkit.Interface([
          */
         this.firePeriod = -1;
 
-        this.startIn = 400;
-
         /**
-         * The method is executed for a button that is configured
-         * to repeat fire events.
-         * @method run
-         * @protected
+         * Indicates a time the repeat state events have to start in
+         * @attribute startIn
+         * @type {Integer}
+         * @readOnly
+         * @default 400
          */
-        this.run = function() {
-            if (this.state === PRESSED_OVER) this.fire();
-        };
+        this.startIn = 400;
 
         /**
          * Set the mode the button has to fire events. Button can fire
@@ -1018,12 +1103,20 @@ pkg.ButtonRepeatMix = zebkit.Interface([
         if (n === PRESSED_OVER) {
             if (this.isFireByPress === true){
                 this.fire();
+
                 if (this.firePeriod > 0) {
-                    this.repeatTask = zebkit.util.task(this.run, this).run(this.startIn, this.firePeriod);
+                    var $this = this;
+                    this.repeatTask = pkg.$tasks.run(function() {
+                            if ($this.state === PRESSED_OVER) {
+                                $this.fire();
+                            }
+                        },
+                        this.startIn,
+                        this.firePeriod
+                    );
                 }
             }
-        }
-        else {
+        } else {
             if (this.firePeriod > 0 && this.repeatTask != null) {
                 this.repeatTask.shutdown();
             }
@@ -1035,12 +1128,44 @@ pkg.ButtonRepeatMix = zebkit.Interface([
     }
 ]);
 
+/**
+ * Arrow button component. The component use arrow views as its icon.
+ * @class zebkit.ui.ArrowButton
+ * @constructor
+ * @param  {String} direction an arrow icon direction. Use "left", "right", "top", "bottom" as
+ * the parameter value.
+ * @extends {zebkit.ui.EvStatePan}
+ * @uses {zebkit.ui.ButtonRepeatMix}
+ */
+
+ /**
+  * Fired when a button has been pressed
+
+         var b = new zebkit.ui.ArrowButton("left");
+         b.bind(function (src) {
+             ...
+         });
+
+  * Button can be adjusted in respect how it generates the pressed event. Event can be
+  * triggered by pressed or clicked even. Also event can be generated periodically if
+  * the button is kept in pressed state.
+  * @event arrowPressed
+  * @param {zebkit.ui.ArrowButton} src a button that has been pressed
+  */
+
 pkg.ArrowButton = Class(pkg.EvStatePan, pkg.ButtonRepeatMix, [
     function $clazz() {
         this.ArrowView = Class(pkg.ArrowView, []);
     },
 
     function $prototype() {
+        /**
+         * Arrow icon view direction
+         * @attribute direction
+         * @type {String}
+         * @default "left"
+         * @readOnly
+         */
         this.direction = "left";
 
         this.setArrowDirection = function(d) {
@@ -1121,6 +1246,7 @@ pkg.ArrowButton = Class(pkg.EvStatePan, pkg.ButtonRepeatMix, [
  *  @param {String|zebkit.ui.Panel|zebkit.ui.View} [t] a button label.
  *  The label can be a simple text or an UI component.
  *  @extends zebkit.ui.CompositeEvStatePan
+ *  @uses  zebkit.ui.ButtonRepeatMix
  */
 
 /**
@@ -1160,6 +1286,12 @@ pkg.Button = Class(pkg.CompositeEvStatePan, pkg.ButtonRepeatMix, [
     },
 
     function $prototype() {
+        /**
+         * Indicates the component can have focus
+         * @attribute canHaveFocus
+         * @type {Boolean}
+         * @default true
+         */
         this.canHaveFocus = true;
     },
 
@@ -1202,6 +1334,10 @@ pkg.Button = Class(pkg.CompositeEvStatePan, pkg.ButtonRepeatMix, [
  * @param {zebkit.ui.Checkbox} ui  an UI component that triggers the event
  */
 pkg.SwitchManager = Class([
+    function() {
+        this._ = new zebkit.util.Listeners();
+    },
+
     function $prototype() {
         this.value = false;
 
@@ -1220,6 +1356,7 @@ pkg.SwitchManager = Class([
          * @param  {zebkit.ui.Checkbox} o an ui component
          * @param  {Boolean} b  a boolean state
          * @method setValue
+         * @chainable
          */
         this.setValue = function(o, b) {
             if (this.getValue(o) != b){
@@ -1229,6 +1366,12 @@ pkg.SwitchManager = Class([
             return this;
         };
 
+        /**
+         * Toggle the current state
+         * @param  {zebkit.ui.Checkbox} o an ui component
+         * @method toggle
+         * @chainable
+         */
         this.toggle = function(o) {
             this.setValue(o, !this.getValue(o));
             return this;
@@ -1262,10 +1405,6 @@ pkg.SwitchManager = Class([
          * @method uninstall
          */
         this.uninstall = function(o) {};
-
-        this[''] = function() {
-            this._ = new zebkit.util.Listeners();
-        };
     }
 ]);
 
@@ -1310,7 +1449,7 @@ pkg.Group = Class(pkg.SwitchManager, [
                 this.updated(this.selected, true);
             }
             return this;
-        }
+        };
 
         this.clearSelected = function() {
             if (this.selected !== null) {
@@ -1318,11 +1457,15 @@ pkg.Group = Class(pkg.SwitchManager, [
                 this.selected = null;
                 this.updated(old, false);
             }
-        }
+        };
     }
 ]);
 
-
+/**
+ * Switchable component interface
+ * @class  zebkit.ui.Switchable
+ * @interface zebkit.ui.Switchable
+ */
 pkg.Switchable = zebkit.Interface([
     function $prototype() {
         this.manager = null;
@@ -1330,14 +1473,19 @@ pkg.Switchable = zebkit.Interface([
         /**
          * Set the check box state
          * @param  {Boolean} b a state
-         * @chainable
          * @method setValue
+         * @chainable
          */
         this.setValue = function(b) {
             this.manager.setValue(this, b);
             return this;
         };
 
+        /**
+         * Toggle the component current state
+         * @method toggle
+         * @chainable
+         */
         this.toggle = function() {
             this.manager.toggle(this);
             return this;
@@ -1356,6 +1504,7 @@ pkg.Switchable = zebkit.Interface([
          * Set the specified switch manager
          * @param {zebkit.ui.SwicthManager} m a switch manager
          * @method setSwicthManager
+         * @chainable
          */
         this.setSwitchManager = function(m){
             /**
@@ -1381,24 +1530,22 @@ pkg.Switchable = zebkit.Interface([
 
 
 /**
- * Check-box UI component. The component is a container that
- * consists from two other UI components:
+ * Check-box UI component. The component is a container that consists from two other UI components:
 
     - Box component to keep checker indicator
     - Label component to paint label
 
- * Developers are free to customize the component as they want.
- * There is no limitation regarding how the box and label components
- * have to be laid out, which UI components have to be used as
- * the box or label components, etc. The check box extends state
- * panel component and re-map states  to own views IDs:
+ * Developers are free to customize the component as they want. There is no limitation regarding
+ * how the box and label components have to be laid out, which UI components have to be used as
+ * the box or label components, etc. The check box extends state panel component and re-map states
+ * to own views IDs:
 
-    - "on.out" - checked and pointer cursor is out
-    - "off.out" - un-checked and pointer cursor is out
-    - "don" - disabled and checked,
-    - "doff" - disabled and un-checked ,
-    - "on.over" - checked and pointer cursor is over
-    - "off.over" - un-checked and pointer cursor is out
+   - **"on.out"** - checked and pointer cursor is out
+   - **"off.out"** - un-checked and pointer cursor is out
+   - **"don"** - disabled and checked,
+   - **"doff"** - disabled and un-checked ,
+   - **"on.over"** - checked and pointer cursor is over
+   - **"off.over"** - un-checked and pointer cursor is out
 
  *
  * Customize is quite similar to what explained for zebkit.ui.EvStatePan:
@@ -1423,8 +1570,8 @@ pkg.Switchable = zebkit.Interface([
         // sync current state with new look and feel
         ch.syncState();
 
- * Listening checked event should be done by registering a
- * listener in the check box switch manager as follow:
+ * Listening checked event should be done by registering a listener in the check box switch manager
+ * as follow:
 
         // create checkbox component
         var ch = new zebkit.ui.Checkbox("Checkbox");
@@ -1437,6 +1584,7 @@ pkg.Switchable = zebkit.Interface([
 
  * @class  zebkit.ui.Checkbox
  * @extends zebkit.ui.CompositeEvStatePan
+ * @uses  zebkit.ui.Switchable
  * @constructor
  * @param {String|zebkit.ui.Panel} [label] a label
  * @param {zebkit.ui.SwitchManager} [m] a switch manager
@@ -1444,8 +1592,7 @@ pkg.Switchable = zebkit.Interface([
 pkg.Checkbox = Class(pkg.CompositeEvStatePan, pkg.Switchable, [
     function $clazz() {
         /**
-         * The box UI component class that is used by default with
-         * the check box component.
+         * The box UI component class that is used by default with the check box component.
          * @constructor
          * @class zebkit.ui.Checkbox.Box
          * @extends zebkit.ui.ViewPan
@@ -1473,7 +1620,7 @@ pkg.Checkbox = Class(pkg.CompositeEvStatePan, pkg.Switchable, [
         /**
          * Map the specified state into its symbolic name.
          * @protected
-         * @param  {Integer} state a state
+         * @param  {String} state a state
          * @return {String} a symbolic name of the state
          * @method toViewId
          */
@@ -1519,9 +1666,9 @@ pkg.Checkbox = Class(pkg.CompositeEvStatePan, pkg.Switchable, [
     function keyPressed(e){
         if (zebkit.instanceOf(this.manager, pkg.Group) && this.getValue()){
             var d = 0;
-            if (e.code === pkg.KeyEvent.LEFT || e.code === pkg.KeyEvent.UP) d = -1;
+            if (e.code === "ArrowLeft" || e.code === "ArrowUp") d = -1;
             else {
-                if (e.code === pkg.KeyEvent.RIGHT || e.code === pkg.KeyEvent.DOWN) d = 1;
+                if (e.code === "ArrowRight" || e.code === "ArrowDown") d = 1;
             }
 
             if (d !== 0) {
@@ -1567,6 +1714,7 @@ pkg.Checkbox = Class(pkg.CompositeEvStatePan, pkg.Switchable, [
  * @constructor
  * @param {String|zebkit.ui.Panel} [label] a label
  * @param {zebkit.ui.Group} [m] a switch manager
+ * @extends {zebkit.ui.Checkbox}
  */
 pkg.Radiobox = Class(pkg.Checkbox, [
     function(c, group) {
@@ -1589,14 +1737,15 @@ pkg.Radiobox = Class(pkg.Checkbox, [
  *  a possibility to place border panel title in different places. Generally
  *  the title can be placed on the top or bottom part of the border panel.
  *  Also the title can be aligned horizontally.
-
-         // create border panel with a title located at the
-         // top and aligned at the canter
-         var bp = new zebkit.ui.BorderPan("Title",
-                                         new zebkit.ui.Panel(),
-                                         "top", "center");
-
-
+ *
+ *  ```JavaScript
+ *     // create border panel with a title located at the
+ *     // top and aligned at the canter
+ *     var bp = new zebkit.ui.BorderPan("Title",
+ *                                     new zebkit.ui.Panel(),
+ *                                     "top", "center");
+ *  ```
+ *
  *  @constructor
  *  @class zebkit.ui.BorderPan
  *  @extends {zebkit.ui.Panel}
@@ -1632,12 +1781,28 @@ pkg.BorderPan = Class(pkg.Panel, [
           * Border panel label indent
           * @type {Integer}
           * @attribute indent
+          * @readOnly
           * @default 4
           */
         this.indent = 4;
 
+        /**
+         * Border panel title area arrangement. Border title can be placed
+         * either at the top or bottom area of border panel component.
+         * @type {String}
+         * @attribute orient
+         * @readOnly
+         * @default "top"
+         */
         this.orient = "top";
 
+        /**
+         * Border panel title horizontal alignment.
+         * @type {String}
+         * @attribute alignment
+         * @readOnly
+         * @default "left"
+         */
         this.alignment = "left";
 
          /**
@@ -1703,9 +1868,8 @@ pkg.BorderPan = Class(pkg.Panel, [
         };
 
         /**
-         * Set vertical and horizontal paddings between the
-         * border panel border and the content of the border
-         * panel
+         * Set vertical and horizontal paddings between the border panel border and the content
+         * of the border panel
          * @param {Integer} vg a top and bottom paddings
          * @param {Integer} hg a left and right paddings
          * @method setGaps
@@ -1720,6 +1884,14 @@ pkg.BorderPan = Class(pkg.Panel, [
             return this;
         };
 
+        /**
+         * Set border panel title orientation. The title area can be
+         * placed either at the top or at the bottom of border panel
+         * component.
+         * @param {String} o a border title orientation. Can be "top" or "bottom"
+         * @method setOrientation
+         * @chainable
+         */
         this.setOrientation = function(o) {
             if (this.orient !== o) {
                 this.orient = zebkit.util.$validateValue(o, "top", "bottom");
@@ -1728,6 +1900,13 @@ pkg.BorderPan = Class(pkg.Panel, [
             return this;
         };
 
+        /**
+         * Set border panel title horizontal alignment.
+         * @param {String} a a horizontal alignment. Use "left", "right", "center" as
+         * the parameter value.
+         * @method setAlignment
+         * @chainable
+         */
         this.setAlignment = function(a) {
             if (this.alignment !== a) {
                 this.alignment = zebkit.util.$validateValue(a, "left", "right", "center");
@@ -1804,7 +1983,7 @@ pkg.BorderPan = Class(pkg.Panel, [
 
       // create split panel
       var sp = new zebkit.ui.SplitPan(new zebkit.ui.Label("Left panel"),
-                                    new zebkit.ui.Label("Right panel"));
+                                      new zebkit.ui.Label("Right panel"));
 
       // customize gripper background color depending on its state
       sp.gripper.setBackground(new zebkit.ui.ViewSet({
@@ -1951,6 +2130,12 @@ pkg.SplitPan = Class(pkg.Panel, [
             return (xy > this.maxXY || xy < this.minXY) ?  -1 : xy;
         };
 
+        /**
+         * Set split panel orientation.
+         * @param  {String} o an orientation ("horizontal" or "vertical")
+         * @method setOrientation
+         * @chainable
+         */
         this.setOrientation = function(o) {
             if (o !== this.orient) {
                 this.orient = zebkit.util.$validateValue(o, "horizontal", "vertical");
@@ -2008,21 +2193,21 @@ pkg.SplitPan = Class(pkg.Panel, [
                 if (this.gripper != null){
                     if (this.isMoveable){
                         this.gripper.setBounds(left, this.barLocation, w, bSize.height);
-                    }
-                    else {
+                    } else {
                         this.gripper.toPreferredSize();
                         this.gripper.setLocation(Math.floor((w - bSize.width) / 2), this.barLocation);
                     }
                 }
+
                 if (this.leftComp != null){
                     this.leftComp.setBounds(left, top, w, this.barLocation - this.gap - top);
                 }
+
                 if (this.rightComp != null){
                     this.rightComp.setLocation(left, this.barLocation + bSize.height + this.gap);
                     this.rightComp.setSize(w, this.height - this.rightComp.y - bottom);
                 }
-            }
-            else {
+            } else {
                 var h = this.height - top - bottom;
                 if (this.barLocation < left) this.barLocation = left;
                 else {
@@ -2032,10 +2217,9 @@ pkg.SplitPan = Class(pkg.Panel, [
                 }
 
                 if (this.gripper != null){
-                    if(this.isMoveable === true){
+                    if (this.isMoveable === true){
                         this.gripper.setBounds(this.barLocation, top, bSize.width, h);
-                    }
-                    else{
+                    } else{
                         this.gripper.setBounds(this.barLocation, Math.floor((h - bSize.height) / 2),
                                                bSize.width, bSize.height);
                     }
@@ -2056,6 +2240,7 @@ pkg.SplitPan = Class(pkg.Panel, [
          * Set gap between gripper element and sizable panels
          * @param  {Integer} g a gap
          * @method setGap
+         * @chainable
          */
         this.setGap = function (g){
             if (this.gap != g){
@@ -2069,6 +2254,7 @@ pkg.SplitPan = Class(pkg.Panel, [
          * Set the minimal size of the left (or top) sizeable panel
          * @param  {Integer} m  a minimal possible size
          * @method setLeftMinSize
+         * @chainable
          */
         this.setLeftMinSize = function (m){
             if (this.leftMinSize != m){
@@ -2082,6 +2268,7 @@ pkg.SplitPan = Class(pkg.Panel, [
          * Set the minimal size of the right (or bottom) sizeable panel
          * @param  {Integer} m  a minimal possible size
          * @method setRightMinSize
+         * @chainable
          */
         this.setRightMinSize = function(m){
             if (this.rightMinSize != m){
@@ -2162,7 +2349,7 @@ pkg.SplitPan = Class(pkg.Panel, [
 ]);
 
 /**
- * Progress bar UI component class.                                                                                                                                                                                                                           y -= (bundleSize + this.gap   [description]
+ * Progress bar UI component class.
  * @class zebkit.ui.Progress
  * @constructor
  * @extends {zebkit.ui.Panel}
@@ -2303,6 +2490,7 @@ pkg.Progress = Class(pkg.Panel, [
      * Set the progress bar orientation
      * @param {String} o an orientation: "vertical" or "horizontal"
      * @method setOrientation
+     * @chainable
      */
     function setOrientation(o){
         if (o !== this.orient) {
@@ -2316,6 +2504,7 @@ pkg.Progress = Class(pkg.Panel, [
      * Set maximal integer value the progress bar value can rich
      * @param {Integer} m a maximal value the progress bar value can rich
      * @method setMaxValue
+     * @chainable
      */
     function setMaxValue(m){
         if (m != this.maxValue) {
@@ -2330,6 +2519,7 @@ pkg.Progress = Class(pkg.Panel, [
      * Set the current progress bar value
      * @param {Integer} p a progress bar
      * @method setValue
+     * @chainable
      */
     function setValue(p){
         p = p % (this.maxValue + 1);
@@ -2346,6 +2536,7 @@ pkg.Progress = Class(pkg.Panel, [
      * Set the given gap between progress bar bundle elements
      * @param {Integer} g a gap
      * @method setGap
+     * @chainable
      */
     function setGap(g){
         if (this.gap != g){
@@ -2359,6 +2550,7 @@ pkg.Progress = Class(pkg.Panel, [
      * Set the progress bar bundle element view
      * @param {zebkit.ui.View} v a progress bar bundle view
      * @method setBundleView
+     * @chainable
      */
     function setBundleView(v){
         if (this.bundleView != v){
@@ -2373,6 +2565,7 @@ pkg.Progress = Class(pkg.Panel, [
      * @param {Integer} w a bundle element width
      * @param {Integer} h a bundle element height
      * @method setBundleSize
+     * @chainable
      */
     function setBundleSize(w, h){
         if (w != this.bundleWidth && h != this.bundleHeight){
@@ -2393,12 +2586,20 @@ pkg.Progress = Class(pkg.Panel, [
  */
 pkg.Link = Class(pkg.Button, [
     function $prototype() {
+        /**
+         * Mouse cursor type.
+         * @attribute cursorType
+         * @default zebkit.ui.Cursor.HAND;
+         * @type {String}
+         * @readOnly
+         */
         this.cursorType = pkg.Cursor.HAND;
 
         /**
          * Set link font
          * @param {zebkit.ui.Font} f a font
          * @method setFont
+         * @chainable
          */
         this.setFont = function() {
             var old = this.view.font;
@@ -2414,6 +2615,7 @@ pkg.Link = Class(pkg.Button, [
          * @param {String} state a link state
          * @param {String} c a link text color
          * @method  setColor
+         * @chainable
          */
         this.setColor = function(state,c){
             if (this.colors[state] != c){
@@ -2498,6 +2700,7 @@ pkg.Link = Class(pkg.Button, [
 
  * @constructor
  * @class zebkit.ui.ExtendablePan
+ * @uses zebkit.ui.Switchable
  * @extends {zebkit.ui.Panel}
  * @param {zebkit.ui.Panel|String} l a title label text or
  * @param {zebkit.ui.Panel} c a content of the extender panel
@@ -2527,13 +2730,22 @@ pkg.ExtendablePan = Class(pkg.Panel, pkg.Switchable, [
 
         this.TogglePan = Class(pkg.StatePan, [
             function $prototype() {
+                this.switchable = null;
+                this.cursorType = pkg.Cursor.HAND;
+
                 this.pointerPressed = function(e){
                     if (e.isAction()) {
-                        // TODO: not very nice ref
-                        this.parent.parent.toggle();
+                        this.switchable.toggle();
                     }
                 };
-                this.cursorType = pkg.Cursor.HAND;
+            },
+
+            function(sw) {
+                if (zebkit.instanceOf(sw, pkg.Switchable) === false) {
+                    throw new Error("Passed component has to implement Switchable interface");
+                }
+                this.switchable = sw;
+                this.$super();
             }
         ]);
 
@@ -2558,7 +2770,7 @@ pkg.ExtendablePan = Class(pkg.Panel, pkg.Switchable, [
                         }
                         return this;
                     }
-                ])
+                ]);
             },
 
             function $prototype() {
@@ -2673,8 +2885,9 @@ pkg.ExtendablePan = Class(pkg.Panel, pkg.Switchable, [
         this.titlePan = new this.clazz.TitlePan();
         this.add("top", this.titlePan);
 
-        this.titlePan.add(new this.clazz.TogglePan());
+        this.titlePan.add(new this.clazz.TogglePan(this));
         this.titlePan.add(pkg.$component(lab == null ? "" : lab, this));
+
 
         /**
          * Content panel
@@ -2796,6 +3009,7 @@ pkg.ScrollManager = Class([
          * @param  {Integer} w a width of the rectangular area
          * @param  {Integer} h a height of the rectangular area
          * @method makeVisible
+         * @chainable
          */
         this.makeVisible = function(x,y,w,h){
             var p = pkg.calcOrigin(x, y, w, h, this.getSX(), this.getSY(), this.target);
@@ -2828,6 +3042,8 @@ pkg.ScrollManager = Class([
  * @class zebkit.ui.Scroll
  * @constructor
  * @extends {zebkit.ui.Panel}
+ * @uses {zebkit.util.Position.Metric}
+ * @uses  {zebkit.util.Position.Metric}
  */
 pkg.Scroll = Class(pkg.Panel, zebkit.util.Position.Metric, [
     function $clazz() {
@@ -3059,6 +3275,7 @@ pkg.Scroll = Class(pkg.Panel, zebkit.util.Position.Metric, [
          * Set the specified maximum value of the scroll bar component
          * @param {Integer} m a maximum value
          * @method setMaximum
+         * @chainable
          */
         this.setMaximum = function (m){
             if (m != this.max) {
@@ -3075,6 +3292,7 @@ pkg.Scroll = Class(pkg.Panel, zebkit.util.Position.Metric, [
          * Set the scroll bar value.
          * @param {Integer} v a scroll bar value.
          * @method setValue
+         * @chainable
          */
         this.setValue = function(v){
             this.position.setOffset(v);
@@ -3183,11 +3401,9 @@ pkg.Scroll = Class(pkg.Panel, zebkit.util.Position.Metric, [
 ]);
 
 /**
- * Scroll UI panel. The component is used to manage scrolling
- * for a children UI component that occupies more space than
- * it is available. The usage is very simple, just put an component
- * you want to scroll horizontally or/and vertically in the scroll
- * panel:
+ * Scroll UI panel. The component is used to manage scrolling for a children UI component
+ * that occupies more space than it is available. The usage is very simple, just put an
+ * component you want to scroll horizontally or/and vertically in the scroll panel:
 
         // scroll vertically and horizontally a large picture
         var scrollPan = new zebkit.ui.ScrollPan(new zebkit.ui.ImagePan("largePicture.jpg"));
@@ -3276,6 +3492,7 @@ pkg.ScrollPan = Class(pkg.Panel, [
          * Set the given auto hide state.
          * @param  {Boolean} b an auto hide state.
          * @method setAutoHide
+         * @chainable
          */
         this.setAutoHide = function(b) {
             if (this.autoHide != b) {
@@ -3644,20 +3861,18 @@ pkg.ScrollPan = Class(pkg.Panel, [
 ]);
 
 /**
- * Tabs UI panel. The component is used to organize switching
- * between number of pages where every page is an UI component.
+ * Tabs UI panel. The component is used to organize switching between number of pages where every
+ * page is an UI component.
  *
- *  Filling tabs component with pages is the same to how you add
- *  an UI component to a panel. For instance in the example below
- *  three pages with "Titl1", "Title2", "Title3" are added:
+ * Filling tabs component with pages is the same to how you add an UI component to a panel. For
+ * instance in the example below three pages with "Titl1", "Title2", "Title3" are added:
 
       var tabs = new zebkit.ui.Tabs();
       tabs.add("Title1", new zebkit.ui.Label("Label as a page"));
       tabs.add("Title2", new zebkit.ui.Button("Button as a page"));
       tabs.add("Title3", new zebkit.ui.TextArea("Text area as a page"));
 
- *  You can access tabs pages UI component the same way like you
- *  access a panel children components
+ *  You can access tabs pages UI component the same way like you access a panel children components
 
      ...
      tabs.kids[0] // access the first page
@@ -3668,8 +3883,7 @@ pkg.ScrollPan = Class(pkg.Panel, [
      tabs.removeAt(0); // remove first tab page
 
 
- *  To customize tab page caption and icon you should access tab object and
- *  do it with API it provides:
+ *  To customize tab page caption and icon you should access tab object and do it with API it provides:
 
 
         // update a tab caption
@@ -3823,6 +4037,7 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
              * @param {Boolean} [b] the tab state. true means selected state.
              * @param {String} s the tab caption
              * @method setCaption
+             * @chainable
              */
             function setCaption(b, s) {
                 if (arguments.length === 1) {
@@ -3851,6 +4066,7 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
              * @param {Boolean} [b] the tab state. true means selected state.
              * @param {String} c the tab caption
              * @method setColor
+             * @chainable
              */
             function setColor(b, c) {
                 if (arguments.length === 1) {
@@ -3872,6 +4088,7 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
              * @param {Boolean} [b] the tab state. true means selected state.
              * @param {zebkit.ui.Font} f the tab text font
              * @method setFont
+             * @chainable
              */
             function setFont(b, f) {
                 if (arguments.length === 1) {
@@ -3892,6 +4109,7 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
              * Set the tab icon.
              * @param {String|Image} c an icon path or image object
              * @method setIcon
+             * @chainable
              */
             function setIcon(c) {
                 this.target.getImagePan().setImage(c);
@@ -4058,7 +4276,7 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
 
         /**
          * Draw currently activate tab page marker.
-         * @param  {2DContext} g a graphical context
+         * @param  {CanvasRenderingContext2D} g a graphical context
          * @param  {Object} r a tab page title rectangular area
          * @method drawMarker
          */
@@ -4077,7 +4295,7 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
 
         /**
          * Paint the given tab page title
-         * @param  {2DContext} g a graphical context
+         * @param  {CanvasRenderingContext2D} g a graphical context
          * @param  {Integer} pageIndex a tab page index
          * @method paintTab
          */
@@ -4351,13 +4569,13 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
         this.keyPressed = function(e){
             if (this.selectedIndex != -1 && this.pages.length > 0){
                 switch(e.code) {
-                    case pkg.KeyEvent.UP:
-                    case pkg.KeyEvent.LEFT:
+                    case "ArrowUp":
+                    case "ArrowLeft":
                         var nxt = this.next(this.selectedIndex - 1,  -1);
                         if(nxt >= 0) this.select(nxt);
                         break;
-                    case pkg.KeyEvent.DOWN:
-                    case pkg.KeyEvent.RIGHT:
+                    case "ArrowDown":
+                    case "ArrowRight":
                         var nxt = this.next(this.selectedIndex + 1, 1);
                         if(nxt >= 0) this.select(nxt);
                         break;
@@ -4381,6 +4599,7 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
          * Switch to the given tab page
          * @param  {Integer} index a tab page index to be navigated
          * @method select
+         * @chainable
          */
         this.select = function(index){
             if (this.selectedIndex != index){
@@ -4398,6 +4617,8 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
                 this._.fired(this, this.selectedIndex);
                 this.vrp();
             }
+
+            return this;
         };
 
         /**
@@ -4415,6 +4636,7 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
          * Set tab side spaces.
          * @param {Integer} sideSpace  [description]
          * @method setSideSpace
+         * @chainable
          */
         this.setSideSpace = function(sideSpace){
             if (sideSpace != this.sideSpace) {
@@ -4438,6 +4660,7 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
          * @param {String} o an alignment. The valid value is one of the following:
          * "left", "right", "top", "bottom"
          * @method  setAlignment
+         * @chainable
          */
         this.setAlignment = function(o){
             if (this.orient !== o) {
@@ -4452,6 +4675,7 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
          * @param  {Integer} i a tab page index
          * @param  {Boolean} b a tab page enabled state
          * @method enableTab
+         * @chainable
          */
         this.enableTab = function(i,b){
             var c = this.kids[i];
@@ -4608,6 +4832,8 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
 /**
  * Slider UI component class.
  * @class  zebkit.ui.Slider
+ * @param {String} [o]  a slider orientation ("vertical or "horizontal")
+ * @constructor
  * @extends {zebkit.ui.Panel}
  */
 pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
@@ -4747,8 +4973,7 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
                 if (bnv != null) {
                     bnv.paint(g, this.getBundleLoc(this.value), by, bs.width, bs.height, this);
                 }
-            }
-            else {
+            } else {
                 var leftX = left + Math.floor((w - this.psW) / 2) + 1, bx = leftX;
                 if (this.isEnabled === true) {
                     if (gauge != null) {
@@ -4937,6 +5162,8 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
                 this._.fired(this, prev);
                 this.repaint();
             }
+
+            return this;
         };
 
         this.getPointValue = function (i){
@@ -4948,20 +5175,20 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
         this.keyPressed = function(e){
             var b = this.isIntervalMode;
             switch(e.code) {
-                case pkg.KeyEvent.DOWN:
-                case pkg.KeyEvent.LEFT:
+                case "ArrowDown":
+                case "ArrowLeft":
                     var v = this.nextValue(this.value, this.exactStep,-1);
                     if (v >= this.min) this.setValue(v);
                     break;
-                case pkg.KeyEvent.UP:
-                case pkg.KeyEvent.RIGHT:
+                case "ArrowUp":
+                case "ArrowRight":
                     var v = this.nextValue(this.value, this.exactStep, 1);
                     if (v <= this.max) this.setValue(v);
                     break;
-                case pkg.KeyEvent.HOME: this.setValue(b ? this.getPointValue(0) : this.min);break;
-                case pkg.KeyEvent.END:  this.setValue(b ? this.getPointValue(this.intervals.length - 1)
-                                                        : this.max);
-                                        break;
+                case "Home": this.setValue(b ? this.getPointValue(0) : this.min);break;
+                case "End":  this.setValue(b ? this.getPointValue(this.intervals.length - 1)
+                                             : this.max);
+                             break;
             }
         };
 
@@ -5106,6 +5333,7 @@ pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
 /**
  * Status bar UI component class
  * @class zebkit.ui.StatusBar
+ * @constructor
  * @param {Integer} [gap] a gap between status bar children elements
  * @extends {zebkit.ui.Panel}
  */
@@ -5120,6 +5348,7 @@ pkg.StatusBar = Class(pkg.Panel, [
      * Set the specified border to be applied for status bar children components
      * @param {zebkit.ui.View} v a border
      * @method setBorderView
+     * @chainable
      */
     function setBorderView(v){
         if (v != this.borderView){
@@ -5141,6 +5370,7 @@ pkg.StatusBar = Class(pkg.Panel, [
 /**
  * Toolbar UI component. Handy way to place number of click able elements
  * @class zebkit.ui.Toolbar
+ * @constructor
  * @extends {zebkit.ui.Panel}
  */
 
@@ -5161,6 +5391,7 @@ pkg.StatusBar = Class(pkg.Panel, [
         });
 
  * @event pressed
+ * @constructor
  * @param {zebkit.ui.Panel} src a toolbar element that has been pressed
  */
 pkg.Toolbar = Class(pkg.Panel, [
@@ -5332,7 +5563,7 @@ pkg.VideoPan = Class(pkg.Panel,  [
     function $prototype(clazz) {
         this.videoWidth = this.videoHeight = 0;
 
-        this.cancelationTimeout = 20000 // 20 seconds
+        this.cancelationTimeout = 20000; // 20 seconds
 
         this.showSign = true;
 
@@ -5406,6 +5637,12 @@ pkg.VideoPan = Class(pkg.Panel,  [
             }
         };
 
+        /**
+         * Set autoplay for video
+         * @param  {Boolean} b an autoplay flag
+         * @method autoplay
+         * @chainable
+         */
         this.autoplay = function(b) {
             this.video.autoplay = b;
             return this;
@@ -5424,6 +5661,12 @@ pkg.VideoPan = Class(pkg.Panel,  [
             return this;
         };
 
+        /**
+         * Mute sound
+         * @param  {Boolean} b true to mute the video sound
+         * @method mute
+         * @chainable
+         */
         this.mute = function(b) {
             this.video.muted = b;
             return this;
@@ -5447,6 +5690,12 @@ pkg.VideoPan = Class(pkg.Panel,  [
             return this;
         };
 
+        /**
+         * Adjust video proportion to fill maximal space with correct ratio
+         * @param  {Boolean} b true if the video proportion has to be adjusted
+         * @method adjustProportions
+         * @chainable
+         */
         this.adjustProportions = function(b) {
             if (this.$adjustProportions !== b) {
                 this.$adjustProportions = b;
@@ -5470,10 +5719,20 @@ pkg.VideoPan = Class(pkg.Panel,  [
             }
         };
 
+        /**
+         * Check if the video is paused
+         * @method isPaused
+         * @return {Boolean} true if the video has been paused
+         */
         this.isPaused = function() {
             return this.video.paused;
         };
 
+        /**
+         * Check if the video is ended
+         * @method isEnded
+         * @return {Boolean} true if the video has been ended
+         */
         this.isEnded = function() {
             return this.video.ended;
         };
@@ -5747,7 +6006,10 @@ pkg.MobileScrollMan = Class(pkg.Manager, [
 ]);
 
 /**
- * Stack layout out panel
+ * Panel class that uses zebkit.layout.StackLayout as a default layout manager.
+ * @class  zebkit.ui.StackPan
+ * @constructor
+ * @extends {zebkit.ui.Panel}
  */
 pkg.StackPan = Class(pkg.Panel, [
     function() {
@@ -5758,7 +6020,4 @@ pkg.StackPan = Class(pkg.Panel, [
     }
 ]);
 
-/**
- * @for
- */
 });

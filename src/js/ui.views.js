@@ -1,23 +1,97 @@
 zebkit.package("ui", function(pkg, Class) {
 /**
- * @module  ui
- * @required easyoop, util
+ * @for zebkit.ui
  */
 
-pkg.font      = new pkg.Font("Arial", 14);
+/**
+ * Default normal font
+ * @attribute font
+ * @type {zebkit.ui.Font}
+ * @for  zebkit.ui
+ */
+pkg.font = new pkg.Font("Arial", 14);
+
+/**
+ * Default small font
+ * @attribute smallFont
+ * @type {zebkit.ui.Font}
+ * @for  zebkit.ui
+ */
 pkg.smallFont = new pkg.Font("Arial", 10);
+
+/**
+ * Default bold font
+ * @attribute boldFont
+ * @type {zebkit.ui.Font}
+ * @for  zebkit.ui
+ */
 pkg.boldFont  = new pkg.Font("Arial", "bold", 12);
 
-
+/**
+ * Build a view instance by the given object.
+ * @param  {Object} v an object that can be used to build a view. The following variants
+ * of object types are possible
+ *
+ *   - **null** null is returned
+ *   - **String** if the string is color or border view id than "zebki.util.rgb" or border view
+ *     is returned. Otherwise an instance of zebkit.ui.StringRender is returned.
+ *   -  **String** if the string starts from "#" or "rgb" it is considered as encoded color.  "zebki.util.rgb"
+ *     instance will be returned as the view
+ *   - **Array** an instance of "zebkit.ui.CompositeView" is returned
+ *   - **Function** in this case the passed method is considered as ans implementation of "paint(g, x, y, w, h, d)"
+ *     method of "zebkit.ui.View" class. Ans instance of "zebki.ui.View" with the method implemented is returned.
+ *   - **Object** an instance of "zebkit.ui.ViewSet" is returned
+ *
+ * @return {zebkit.ui.View} a view
+ * @method $view
+ * @example
+ *
+ *      // string render
+ *      var view = zebkit.ui.$view("String render");
+ *
+ *      // color render
+ *      var view = zebkit.ui.$view("red");
+ *
+ *      // composite view
+ *      var view = zebkit.ui.$view([
+ *          zebkit.ui.rgb.yellow,
+ *          "Text Render"
+ *      ]);
+ *
+ *      // custom view
+ *      var view = zebkit.ui.$view(function(g,x,y,w,h,d) {
+ *          g.drawLine(x, y, x + w, y + w);
+ *          ...
+ *       });
+ *
+ * @protected
+ * @for zebkit.ui
+ */
 pkg.$view = function(v) {
-    if (v == null || v.paint != null) {
+    if (v === null || typeof v.paint !== 'undefined') {
         return v;
     }
 
     if (zebkit.isString(v)) {
-        return zebkit.util.rgb.hasOwnProperty(v) ? zebkit.util.rgb[v]
-                                                 : (pkg.borders != null && pkg.borders.hasOwnProperty(v) ? pkg.borders[v]
-                                                                                                         : new zebkit.util.rgb(v));
+        if (zebkit.util.rgb[v] != null) {
+            return zebkit.util.rgb[v];
+        }
+
+        if (pkg.borders != null && pkg.borders[v] != null) {
+            return pkg.borders[v];
+        }
+
+        if (v.length > 0 &&
+            (v[0] === '#'        ||
+              ( v.length > 2 &&
+                v[0] === 'r' &&
+                v[1] === 'g' &&
+                v[2] === 'b'    )  ))
+        {
+            return new zebkit.util.rgb(v);
+        }
+
+        return new pkg.StringRender(v);
     }
 
     if (Array.isArray(v)) {
@@ -27,8 +101,6 @@ pkg.$view = function(v) {
     if (typeof v !== 'function') {
         return new pkg.ViewSet(v);
     }
-
-    console.log("Function detected ! " + v);
 
     var vv = new pkg.View();
     vv.paint = v;
@@ -55,8 +127,7 @@ zebkit.util.rgb.prototype.paint = function(g,x,y,w,h,d) {
 
             if (rh > 0) g.fillRect(rx, ry, rw, rh);
         }
-    }
-    else {
+    } else {
         g.fillRect(x, y, w, h);
     }
 };
@@ -66,9 +137,9 @@ zebkit.util.rgb.prototype.getPreferredSize = function() {
 };
 
 /**
- * View class that is designed as a basis for various reusable decorative
- * UI elements implementations
+ * View class that is designed as a basis for various reusable decorative UI elements implementations
  * @class zebkit.ui.View
+ * @constructor
  */
 pkg.View = Class([
     function $prototype() {
@@ -111,13 +182,14 @@ pkg.View = Class([
         * @return {Object}
         */
         this.getPreferredSize = function() {
-            return { width:0, height:0 };
+            return { width  : 0,
+                     height : 0 };
         };
 
         /**
-        * The method is called to render the decorative element on the
-        * given surface of the specified UI component
-        * @param {Canvas 2D context} g  graphical context
+        * The method is called to render the decorative element on the given surface of the specified
+        * UI component
+        * @param {CanvasRenderingContext2D} g  graphical context
         * @param {Integer} x  x coordinate
         * @param {Integer} y  y coordinate
         * @param {Integer} w  required width
@@ -143,6 +215,10 @@ pkg.View = Class([
  * @class zebkit.ui.Render
  */
 pkg.Render = Class(pkg.View, [
+    function(target) {
+        this.setTarget(target);
+    },
+
     function $prototype() {
         /**
          * Target object to be visualized
@@ -153,15 +229,10 @@ pkg.Render = Class(pkg.View, [
          */
         this.target = null;
 
-        this[''] = function(target) {
-            this.setTarget(target);
-        };
-
         /**
-         * Set the given target object. The method triggers
-         * "targetWasChanged(oldTarget, newTarget)" execution if
-         * the method is declared. Implement the method if you need
-         * to track a target object updating.
+         * Set the given target object. The method triggers "targetWasChanged(oldTarget, newTarget)"
+         * execution if the method is declared. Implement the method if you need to track a target
+         * object updating.
          * @method setTarget
          * @param  {Object} o a target object to be visualized
          */
@@ -340,6 +411,10 @@ pkg.Raised = Class(pkg.View, [
 * @extends zebkit.ui.View
 */
 pkg.Dotted = Class(pkg.View, [
+    function (c){
+        if (arguments.length > 0) this.color = c;
+    },
+
     function $prototype() {
         /**
          * @attribute color
@@ -353,15 +428,16 @@ pkg.Dotted = Class(pkg.View, [
             g.setColor(this.color);
             g.drawDottedRect(x, y, w, h);
         };
-
-        this[''] = function (c){
-            if (arguments.length > 0) this.color = c;
-        };
     }
 ]);
 
 
 pkg.Shape = Class(pkg.View, [
+    function (c, w){
+        if (arguments.length > 0) this.color = c;
+        if (arguments.length > 1) this.width = this.gap = w;
+    },
+
     function $prototype() {
         this.color = "gray";
         this.gap   = this.width = 1;
@@ -374,11 +450,6 @@ pkg.Shape = Class(pkg.View, [
             this.outline(g,x,y,w,h,d);
             g.setColor(this.color);
             g.stroke();
-        };
-
-        this[''] = function (c, w){
-            if (arguments.length > 0) this.color = c;
-            if (arguments.length > 1) this.width = this.gap = w;
         };
     }
 ]);
@@ -401,6 +472,12 @@ pkg.Shape = Class(pkg.View, [
  * @extends zebkit.ui.View
  */
 pkg.Border = Class(pkg.View, [
+    function (c,w,r) {
+        if (arguments.length > 0) this.color = c;
+        if (arguments.length > 1) this.width = this.gap = w;
+        if (arguments.length > 2) this.radius = r;
+    },
+
     function $prototype() {
         /**
          * Border color
@@ -494,7 +571,7 @@ pkg.Border = Class(pkg.View, [
 
         /**
          * Defines border outline for the given 2D Canvas context
-         * @param  {2D Canvas context} g
+         * @param  {CanvasRenderingContext2D} g
          * @param  {Integer} x x coordinate
          * @param  {Integer} y y coordinate
          * @param  {Integer} w required width
@@ -540,12 +617,6 @@ pkg.Border = Class(pkg.View, [
             g.closePath();
             return true;
         };
-
-        this[''] = function (c,w,r){
-            if (arguments.length > 0) this.color = c;
-            if (arguments.length > 1) this.width = this.gap = w;
-            if (arguments.length > 2) this.radius = r;
-        };
     }
 ]);
 
@@ -559,6 +630,17 @@ pkg.Border = Class(pkg.View, [
  * @extends zebkit.ui.View
  */
 pkg.RoundBorder = Class(pkg.View, [
+    function(col, width) {
+        if (arguments.length > 0) {
+            if (zebkit.isNumber(col)) this.width = col;
+            else {
+                this.color = col;
+                if (zebkit.isNumber(width)) this.width = width;
+            }
+        }
+        this.gap = this.width;
+    },
+
     function $prototype() {
         /**
          * Border width
@@ -606,22 +688,8 @@ pkg.RoundBorder = Class(pkg.View, [
                 width : s, height : s
             };
         };
-
-        this[''] = function(col, width) {
-            if (arguments.length > 0) {
-                if (zebkit.isNumber(col)) this.width = col;
-                else {
-                    this.color = col;
-                    if (zebkit.isNumber(width)) this.width = width;
-                }
-            }
-            this.gap = this.width;
-        };
     }
 ]);
-
-
-
 
 /**
  *  UI component render class. Renders the given target UI component
@@ -703,31 +771,31 @@ pkg.CompRender = Class(pkg.Render, [
 * @extends zebkit.ui.View
 */
 pkg.Gradient = Class(pkg.View, [
+    function(){
+        /**
+         * Gradient orientation: vertical or horizontal
+         * @attribute orient
+         * @readOnly
+         * @default "vertical"
+         * @type {String}
+         */
+
+        /**
+         * Gradient start and stop colors
+         * @attribute colors
+         * @readOnly
+         * @type {Array}
+         */
+
+        this.colors = Array.prototype.slice.call(arguments, 0);
+        if (arguments.length > 2) {
+            this.orient = arguments[arguments.length-1];
+            this.colors.pop();
+        }
+    },
+
     function $prototype() {
         this.orient = "vertical";
-
-        this[''] = function(){
-            /**
-             * Gradient orientation: vertical or horizontal
-             * @attribute orient
-             * @readOnly
-             * @default "vertical"
-             * @type {String}
-             */
-
-            /**
-             * Gradient start and stop colors
-             * @attribute colors
-             * @readOnly
-             * @type {Array}
-             */
-
-            this.colors = Array.prototype.slice.call(arguments, 0);
-            if (arguments.length > 2) {
-                this.orient = arguments[arguments.length-1];
-                this.colors.pop();
-            }
-        };
 
         this.paint = function(g,x,y,w,h,dd){
             var d = (this.orient === "horizontal" ? [0,1]: [1,0]),
@@ -766,11 +834,11 @@ pkg.Gradient = Class(pkg.View, [
 * @extends zebkit.ui.View
 */
 pkg.Radial = Class(pkg.View, [
-    function $prototype() {
-        this[''] = function() {
-            this.colors = Array.prototype.slice.call(arguments, 0);
-        };
+    function() {
+        this.colors = Array.prototype.slice.call(arguments, 0);
+    },
 
+    function $prototype() {
         this.paint = function(g,x,y,w,h,d){
             var cx1 = Math.floor(w / 2), cy1 = Math.floor(h / 2);
             this.gradient = g.createRadialGradient(cx1, cy1, 10, cx1, cy1, w > h ? w : h);
@@ -797,52 +865,52 @@ pkg.Radial = Class(pkg.View, [
 * @extends zebkit.ui.Render
 */
 pkg.Picture = Class(pkg.Render, [
+    function(img,x,y,w,h) {
+        /**
+         * A x coordinate of the image part that has to be rendered
+         * @attribute x
+         * @readOnly
+         * @type {Integer}
+         * @default 0
+         */
+
+        /**
+         * A y coordinate of the image part that has to be rendered
+         * @attribute y
+         * @readOnly
+         * @type {Integer}
+         * @default 0
+         */
+
+        /**
+         * A width  of the image part that has to be rendered
+         * @attribute width
+         * @readOnly
+         * @type {Integer}
+         * @default 0
+         */
+
+        /**
+         * A height  of the image part that has to be rendered
+         * @attribute height
+         * @readOnly
+         * @type {Integer}
+         * @default 0
+         */
+
+        this.setTarget(img);
+        if (arguments.length > 4) {
+            this.x = x;
+            this.y = y;
+            this.width  = w;
+            this.height = h;
+        }
+        else {
+            this.x = this.y = this.width = this.height = 0;
+        }
+    },
+
     function $prototype() {
-        this[''] = function(img,x,y,w,h) {
-            /**
-             * A x coordinate of the image part that has to be rendered
-             * @attribute x
-             * @readOnly
-             * @type {Integer}
-             * @default 0
-             */
-
-            /**
-             * A y coordinate of the image part that has to be rendered
-             * @attribute y
-             * @readOnly
-             * @type {Integer}
-             * @default 0
-             */
-
-            /**
-             * A width  of the image part that has to be rendered
-             * @attribute width
-             * @readOnly
-             * @type {Integer}
-             * @default 0
-             */
-
-            /**
-             * A height  of the image part that has to be rendered
-             * @attribute height
-             * @readOnly
-             * @type {Integer}
-             * @default 0
-             */
-
-            this.setTarget(img);
-            if (arguments.length > 4) {
-                this.x = x;
-                this.y = y;
-                this.width  = w;
-                this.height = h;
-            }
-            else {
-                this.x = this.y = this.width = this.height = 0;
-            }
-        };
-
         this.paint = function(g,x,y,w,h,d) {
             if (this.target != null && this.target.complete === true && this.target.naturalWidth > 0 && w > 0 && h > 0){
                 if (this.width > 0) {
@@ -911,6 +979,15 @@ pkg.Pattern = Class(pkg.Render, [
 * @extends zebkit.ui.View
 */
 pkg.CompositeView = Class(pkg.View, [
+    function() {
+        this.views = [];
+        var args = arguments.length === 1 ? arguments[0] : arguments;
+        for(var i = 0; i < args.length; i++) {
+            this.views[i] = pkg.$view(args[i]);
+            this.$recalc(this.views[i]);
+        }
+    },
+
     function $prototype() {
         /**
          * Left padding
@@ -1026,15 +1103,6 @@ pkg.CompositeView = Class(pkg.View, [
         this.outline = function(g,x,y,w,h,d) {
             return this.voutline != null && this.voutline.outline(g,x,y,w,h,d);
         };
-
-        this[''] = function() {
-            this.views = [];
-            var args = arguments.length === 1 ? arguments[0] : arguments;
-            for(var i = 0; i < args.length; i++) {
-                this.views[i] = pkg.$view(args[i]);
-                this.$recalc(this.views[i]);
-            }
-        };
     }
 ]);
 
@@ -1051,6 +1119,36 @@ pkg.CompositeView = Class(pkg.View, [
 * @extends zebkit.ui.CompositeView
 */
 pkg.ViewSet = Class(pkg.CompositeView, [
+    function(args) {
+        if (args == null) {
+            throw new Error("" + args);
+        }
+
+        /**
+         * Views set
+         * @attribute views
+         * @type Object
+         * @default {}
+         * @readOnly
+        */
+        this.views = {};
+
+        /**
+         * Active in the set view
+         * @attribute activeView
+         * @type View
+         * @default null
+         * @readOnly
+        */
+        this.activeView = null;
+
+        for(var k in args) {
+            this.views[k] = pkg.$view(args[k]);
+            if (this.views[k] != null) this.$recalc(this.views[k]);
+        }
+        this.activate("*");
+    },
+
     function $prototype() {
         this.paint = function(g,x,y,w,h,d) {
             if (this.activeView != null) {
@@ -1100,51 +1198,53 @@ pkg.ViewSet = Class(pkg.CompositeView, [
                 f.call(this, k, this.views[k]);
             }
         };
-
-        this[''] = function(args) {
-            if (args == null) {
-                throw new Error("" + args);
-            }
-
-            /**
-             * Views set
-             * @attribute views
-             * @type Object
-             * @default {}
-             * @readOnly
-            */
-            this.views = {};
-
-            /**
-             * Active in the set view
-             * @attribute activeView
-             * @type View
-             * @default null
-             * @readOnly
-            */
-            this.activeView = null;
-
-            for(var k in args) {
-                this.views[k] = pkg.$view(args[k]);
-                if (this.views[k] != null) this.$recalc(this.views[k]);
-            }
-            this.activate("*");
-        };
     }
 ]);
 
-
+/**
+ * Line view
+ * @class  zebkit.ui.Line
+ * @extends {zebkit.ui.View}
+ * @constructor
+ * @param  {String} [side] a side of rectangular area where the line has to be rendered. Use
+ * "left", "top", "right" or "bottom" as the parameter value
+ * @param  {String} [color] a line color
+ * @param  {Integer} [width] a line width
+ */
 pkg.LineView = Class(pkg.View, [
-    function $prototype() {
-        this.side      = "top";
-        this.color     = "black";
-        this.lineWidth = 1;
+    function(side, color, lineWidth) {
+        if (side != null)      this.side      = side;
+        if (color != null)     this.color     = color;
+        if (lineWidth != null) this.lineWidth = lineWidth;
+    },
 
-        this[''] = function(side, color, lineWidth) {
-            if (side != null)      this.side      = side;
-            if (color != null)     this.color     = color;
-            if (lineWidth != null) this.lineWidth = lineWidth;
-        };
+    function $prototype() {
+        /**
+         * Side the line has to be rendered
+         * @attribute side
+         * @type {String}
+         * @default "top"
+         * @readOnly
+         */
+        this.side = "top";
+
+        /**
+         * Line color
+         * @attribute color
+         * @type {String}
+         * @default "black"
+         * @readOnly
+         */
+        this.color = "black";
+
+        /**
+         * Line width
+         * @attribute lineWidth
+         * @type {Integer}
+         * @default 1
+         * @readOnly
+         */
+        this.lineWidth = 1;
 
         this.paint = function(g,x,y,w,h,d) {
             g.setColor(this.color);
@@ -1175,6 +1275,12 @@ pkg.LineView = Class(pkg.View, [
 ]);
 
 pkg.ArrowView = Class(pkg.View, [
+    function (d, col, w) {
+        if (d   != null) this.direction = d;
+        if (col != null) this.color = col;
+        if (w   != null) this.width = this.height = w;
+    },
+
     function $prototype() {
         this.lineWidth = 1;
         this.fill = true;
@@ -1182,12 +1288,6 @@ pkg.ArrowView = Class(pkg.View, [
         this.color  = "black";
         this.width = this.height = 6;
         this.direction = "bottom";
-
-        this[''] = function (d, col, w) {
-            if (d   != null) this.direction = d;
-            if (col != null) this.color = col;
-            if (w   != null) this.width = this.height = w;
-        };
 
         this.outline  = function(g, x, y, w, h, d) {
             x += this.gap;
@@ -1262,7 +1362,14 @@ pkg.ArrowView = Class(pkg.View, [
     }
 ]);
 
-pkg.BaseTextRender = Class(pkg.Render,  [
+/**
+ * Base class to build text render implementations.
+ * @class  zebkit.ui.BaseTextRender
+ * @constructor
+ * @param  {Object} [target]  target component to be rendered
+ * @extends {zebkit.ui.Render}
+ */
+pkg.BaseTextRender = Class(pkg.Render, [
     function $clazz() {
         this.font          =  pkg.font;
         this.color         = "gray";
@@ -1280,6 +1387,12 @@ pkg.BaseTextRender = Class(pkg.Render,  [
          */
         this.owner = null;
 
+        /**
+         * Line indention
+         * @attribute lineIndent
+         * @type {Integer}
+         * @default 1
+         */
         this.lineIndent = 1;
 
         // implement position metric methods
@@ -1315,6 +1428,12 @@ pkg.BaseTextRender = Class(pkg.Render,  [
             return this;
         };
 
+        /**
+         * Resize font
+         * @param  {String|Integer} size a new size of the font
+         * @chainable
+         * @method resizeFont
+         */
         this.resizeFont = function(size) {
             return this.setFont(this.font.resize(size));
         };
@@ -1368,32 +1487,12 @@ pkg.BaseTextRender = Class(pkg.Render,  [
  * @param {zebkit.ui.Font} [font] a text font
  * @param {String} [color] a text color
  * @constructor
- * @extends {zebkit.ui.Render}
+ * @extends {zebkit.ui.BaseTextRender}
  * @class zebkit.ui.StringRender
  */
 pkg.StringRender = Class(pkg.BaseTextRender, [
     function $prototype() {
         this.stringWidth = -1;
-
-        this[''] = function(txt, font, color) {
-            this.setTarget(txt);
-
-            /**
-             * Font to be used to render the target string
-             * @attribute font
-             * @readOnly
-             * @type {zebkit.ui.Font}
-             */
-            this.font = font != null ? font : this.clazz.font;
-
-            /**
-             * Color to be used to render the target string
-             * @readOnly
-             * @attribute color
-             * @type {String}
-             */
-            this.color = color != null ? color : this.clazz.color;
-        };
 
         // implement position metric methods
         this.getMaxOffset = function() {
@@ -1491,6 +1590,28 @@ pkg.StringRender = Class(pkg.BaseTextRender, [
                 height: this.font.height
             };
         };
+
+        // for the sake of speed up construction of the widely used render
+        // declare it none standard way.
+        this[''] = function(txt, font, color) {
+            this.setTarget(txt);
+
+            /**
+             * Font to be used to render the target string
+             * @attribute font
+             * @readOnly
+             * @type {zebkit.ui.Font}
+             */
+            this.font = font != null ? font : this.clazz.font;
+
+            /**
+             * Color to be used to render the target string
+             * @readOnly
+             * @attribute color
+             * @type {String}
+             */
+            this.color = color != null ? color : this.clazz.color;
+        };
     }
 ]);
 
@@ -1498,7 +1619,7 @@ pkg.StringRender = Class(pkg.BaseTextRender, [
  * Text render that expects and draws a text model or a string as its target
  * @class zebkit.ui.TextRender
  * @constructor
- * @extends zebkit.ui.Render
+ * @extends zebkit.ui.BaseTextRender
  * @param  {String|zebkit.data.TextModel} text a text as string or text model object
  */
 pkg.TextRender = Class(pkg.BaseTextRender, zebkit.util.Position.Metric, [
@@ -1522,7 +1643,7 @@ pkg.TextRender = Class(pkg.BaseTextRender, zebkit.util.Position.Metric, [
 
         /**
          * Paint the specified text line
-         * @param  {2DContext} g graphical 2D context
+         * @param  {CanvasRenderingContext2D} g graphical 2D context
          * @param  {Integer} x x coordinate
          * @param  {Integer} y y coordinate
          * @param  {Integer} line a line number
@@ -1774,7 +1895,7 @@ pkg.TextRender = Class(pkg.BaseTextRender, zebkit.util.Position.Metric, [
          * Paint the specified text selection of the given line. The area
          * where selection has to be rendered is denoted with the given
          * rectangular area.
-         * @param  {2DContext} g a canvas graphical context
+         * @param  {CanvasRenderingContext2D} g a canvas graphical context
          * @param  {Integer} x a x coordinate of selection rectangular area
          * @param  {Integer} y a y coordinate of selection rectangular area
          * @param  {Integer} w a width of of selection rectangular area
@@ -2219,6 +2340,13 @@ pkg.TabBorder = Class(pkg.View, [
  *
  */
 pkg.TitledBorder = Class(pkg.Render, [
+    function (b, a){
+        if (arguments.length > 1) {
+            this.lineAlignment = zebkit.util.$validateValue(a, "bottom", "top", "center");
+        }
+        this.setTarget(b);
+    },
+
     function $prototype() {
         this.lineAlignment = "bottom";
 
@@ -2441,23 +2569,16 @@ pkg.TitledBorder = Class(pkg.Render, [
                 this.target.paint(g, x, y, w, h, d);
             }
         };
-
-        this[''] = function (b, a){
-            if (arguments.length > 1) {
-                this.lineAlignment = zebkit.util.$validateValue(a, "bottom", "top", "center");
-            }
-            this.setTarget(b);
-        };
     }
 ]);
 
 pkg.CheckboxView = Class(pkg.View, [
+    function(color) {
+        if (arguments.length > 0) this.color = color;
+    },
+
     function $prototype() {
         this.color = "rgb(65, 131, 255)";
-
-        this[''] = function(color) {
-            if (arguments.length > 0) this.color = color;
-        };
 
         this.paint = function(g,x,y,w,h,d){
             g.beginPath();
@@ -2476,16 +2597,17 @@ pkg.CheckboxView = Class(pkg.View, [
 ]);
 
 pkg.BunldeView = Class(pkg.View, [
+    function(dir, color) {
+        if (arguments.length > 0) {
+            this.direction = zebkit.util.$validateValue(dir, "vertical", "horizontal");
+            if (arguments.length > 1) this.color = color;
+        }
+    },
+
     function $prototype() {
         this.color = "#AAAAAA";
         this.direction = "vertical";
 
-        this[''] = function(dir, color) {
-            if (arguments.length > 0) {
-                this.direction = zebkit.util.$validateValue(dir, "vertical", "horizontal");
-                if (arguments.length > 1) this.color = color;
-            }
-        };
 
         this.paint =  function(g,x,y,w,h,d) {
             g.beginPath();
@@ -2519,11 +2641,11 @@ pkg.BunldeView = Class(pkg.View, [
 pkg.RadioView = Class(pkg.View, [
     function(col1, col2) {
         if (arguments.length > 0) {
-            this.color1 = col1
+            this.color1 = col1;
             if (arguments.length > 1) {
                 this.color2 = col2;
             }
-        };
+        }
     },
 
     function $prototype() {
@@ -2555,27 +2677,27 @@ pkg.RadioView = Class(pkg.View, [
  * @param  {String} bg a background
  */
 pkg.ToggleView = Class(pkg.View, [
-    function $prototype() {
-        this.color = "white";
-        this.bg    = "lightGray";
-        this.plus  = false
-        this.br    = new pkg.Border("rgb(65, 131, 215)", 1, 3);
-        this.width = this.height = 12;
-
-        this[''] = function(plus, color, bg, size) {
-            if (arguments.length > 0) {
-                this.plus = plus;
-                if (arguments.length > 1) {
-                    this.color = color;
-                    if (arguments.length > 2) {
-                        this.bg = bg;
-                        if (arguments.length > 3) {
-                            this.width = this.height = size;
-                        }
+    function(plus, color, bg, size) {
+        if (arguments.length > 0) {
+            this.plus = plus;
+            if (arguments.length > 1) {
+                this.color = color;
+                if (arguments.length > 2) {
+                    this.bg = bg;
+                    if (arguments.length > 3) {
+                        this.width = this.height = size;
                     }
                 }
             }
-        };
+        }
+    },
+
+    function $prototype() {
+        this.color = "white";
+        this.bg    = "lightGray";
+        this.plus  = false;
+        this.br    = new pkg.Border("rgb(65, 131, 215)", 1, 3);
+        this.width = this.height = 12;
 
         this.paint = function(g, x, y, w, h, d) {
             if (this.br !== null) {
@@ -2611,13 +2733,13 @@ pkg.ToggleView = Class(pkg.View, [
 ]);
 
 pkg.CaptionBgView = Class(pkg.View, [
+    function(bg) {
+        if (bg != null) this.bg = bg;
+    },
+
     function $prototype() {
         this.gap = this.radius = 6;
         this.bg  = "#66CCFF";
-
-        this[''] = function(bg) {
-            if (bg != null) this.bg = bg;
-        };
 
         this.paint = function(g,x,y,w,h,d) {
             this.outline(g,x,y,w,h,d);
@@ -2639,7 +2761,4 @@ pkg.CaptionBgView = Class(pkg.View, [
     }
 ]);
 
-/**
- * @for
- */
 });

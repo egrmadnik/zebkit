@@ -1,6 +1,17 @@
 zebkit.package("ui", function(pkg, Class) {
 
+    /**
+     * Tasks set that can be used by UI.
+     * @attribute $tasks
+     * @private
+     * @type {zebkit.util.TasksSet}
+     * @readOnly
+     */
+    pkg.$tasks = new zebkit.util.TasksSet();
 
+    /**
+     *  @for zebkit.ui
+     */
     function decodeSize(s, defaultHeight) {
         if (zebkit.isString(s)) {
             var size = Number(s);
@@ -23,24 +34,22 @@ zebkit.package("ui", function(pkg, Class) {
         return s == null ? null : s + "px";
     }
 
-
     /**
-     * This class represents a font and provides basic font metrics like
-     * height, ascent. Using the class developers can compute string width.
+     * This class represents a font and provides basic font metrics like height, ascent. Using
+     * the class developers can compute string width.
 
-          // plain font
-          var f = new zebkit.ui.Font("Arial", 14);
+     // plain font
+     var f = new zebkit.ui.Font("Arial", 14);
 
-          // bold font
-          var f = new zebkit.ui.Font("Arial", "bold", 14);
+     // bold font
+     var f = new zebkit.ui.Font("Arial", "bold", 14);
 
-          // defining font with CSS font name
-          var f = new zebkit.ui.Font("100px Futura, Helvetica, sans-serif");
+     // defining font with CSS font name
+     var f = new zebkit.ui.Font("100px Futura, Helvetica, sans-serif");
 
      * @constructor
-     * @param {String} name a name of the font. If size and style parameters
-     * has not been passed the name is considered as CSS font name that
-     * includes size and style
+     * @param {String} name a name of the font. If size and style parameters has not been passed
+     * the name is considered as CSS font name that includes size and style
      * @param {String} [style] a style of the font: "bold", "italic", etc
      * @param {Integer} [size] a size of the font
      * @class zebkit.ui.Font
@@ -175,6 +184,20 @@ zebkit.package("ui", function(pkg, Class) {
         return this.s;
     };
 
+    /**
+     * Resize font and return new instance of font class with new size.
+     * @param  {Integer | String} size can be specified in pixels as integer value or as
+     * a percentage from the given font:
+     * @return {zebkit.ui.Font} a font
+     * @for zebkit.ui.Font
+     * @method resize
+     * @example
+     *
+     * ```javascript
+     * var font = new zebkit.ui.Font(10); // font 10 pixels
+     * font = font.resize("200%"); // two times higher font
+     * ```
+     */
     pkg.Font.prototype.resize = function(size) {
         var nsize = decodeSize(size, this.height);
         if (nsize == null) {
@@ -191,7 +214,6 @@ zebkit.package("ui", function(pkg, Class) {
     pkg.Font.family = "Arial, Helvetica";
     pkg.Font.style  =  null;
     pkg.Font.height =  14;
-
 
     // initialize font specific structures
     zebkit.busy();
@@ -250,18 +272,19 @@ zebkit.package("ui", function(pkg, Class) {
 
             if ($wrt != null) {
                 $winSizeUpdated = true;
-            }
-            else {
-                $wrt = zebkit.util.task(
-                    function(t) {
+            } else {
+                $wrt = pkg.$tasks.run(
+                    function() {
                         if ($winSizeUpdated === false) {
                             pkg.$elBoundsUpdated();
-                            t.shutdown();
+                            this.shutdown();
                             $wrt = null;
                         }
                         $winSizeUpdated = false;
-                    }
-                ).run(200, 150);
+                    },
+                    200,
+                    150
+                );
             }
         }
     }, false);
