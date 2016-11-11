@@ -130,12 +130,36 @@ gulp.task('demoscript', function() {
         .pipe(gulp.dest('samples/demo'));
 });
 
+
+gulp.task('website', function (gulpCallBack){
+    var spawn  = require('child_process').spawn;
+    var jekyll = spawn('jekyll', ['build', '-d', 'build/website', '-s', 'src/jekyll/' ], { stdio: 'inherit' });
+
+    jekyll.on('exit', function(code) {
+        gulpCallBack(code === 0 ? null : 'ERROR: Jekyll process exited with code: ' + code);
+    });
+});
+
+gulp.task('apidoc', function (gulpCallBack){
+    var spawn  = require('child_process').spawn;
+    var yuidoc = spawn('yuidoc', ['-t', 'node_modules/yuidoc-zebkit-theme',
+                                  '-H', 'node_modules/yuidoc-zebkit-theme/helpers/helpers.js',
+                                  "-o", "build/apidoc",
+                                  "-n",
+                                  'build/.' ], { stdio: 'inherit' });
+
+    yuidoc.on('exit', function(code) {
+        gulpCallBack(code === 0 ? null : 'ERROR: yuidoc process exited with code: ' + code);
+    });
+});
+
+
 gulp.task('clean', function() {
     return gulp.src([ 'build/**/*' ], { read: false })
            .pipe(rm());
 });
 
-gulp.task('default', ['zebkit', 'demoscript', 'runtime']);
+gulp.task('default', ['zebkit', 'demoscript', 'samplescript', 'runtime']);
 
 gulp.task('watch', function() {
     gulp.watch(zebkitFiles, ['zebkit']);

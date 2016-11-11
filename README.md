@@ -9,11 +9,12 @@ To build the package install nodejs. To generate zebkit website install jekyll (
 
 ## Installation 
 
+To install required packages run the following: 
 ```bash
     $ npm install
 ```
 
-## Building
+## Building zebkit artifacts
 
 To build Java Script packages:
 ```bash
@@ -22,13 +23,18 @@ To build Java Script packages:
 
 To build web site:
 ```bash
-   $ jekyll build -d web -s src/jekyll/ 
+   $ gulp website
 ```
 
-## Run http server 
+To generate apidoc:
+```bash
+   $ gulp apidoc
+```
+
+## Run http server and view web site 
 
 ```bash
    $ gulp http
 ```
 
-Open "http://localhost:8090/web/about.html" in a browser.
+Open "http://localhost:8090/index.html" in a browser.
