@@ -159,12 +159,12 @@ gulp.task('clean', function() {
            .pipe(rm());
 });
 
-gulp.task('default', ['zebkit', 'demoscript', 'samplescript', 'runtime']);
+gulp.task('default', ['zebkit', 'runtime']);
 
 gulp.task('watch', function() {
     gulp.watch(zebkitFiles, ['zebkit']);
-    gulp.watch(demoFiles,   ['demoscript']);
-    gulp.watch("samples/js/uiengine.samples.js", ['samplescript']);
+    //gulp.watch(demoFiles,   ['demoscript']);
+    //gulp.watch("samples/js/uiengine.samples.js", ['samplescript']);
 });
 
 //gulp.task('scripts', [ "demoscript", "samplescript", "zebkit", 'datescript', 'vkscript', 'copy']);
