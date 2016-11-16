@@ -1089,6 +1089,9 @@ zebkit = new Package("zebkit").package(function(pkg) {
                 }
             }
         }
+
+        $Interface.clazz.$name = "zebkit.Interface";
+
         return $Interface;
     });
 
@@ -1296,6 +1299,9 @@ zebkit = new Package("zebkit").package(function(pkg) {
 
         // define Class (function) that has to be used to instantiate the class instance
         var classTemplate = make_template(pkg.Class, function() {
+            // TODO: this unique string building takes time
+            // in general this is not required except the case of tree component model and UI tree
+            // component where component instance is stored as key in {} object
             this.$hash$ = "$ZkIo" + ($$$++);
 
             if (arguments.length > 0) {
@@ -1701,6 +1707,8 @@ zebkit = new Package("zebkit").package(function(pkg) {
             }
         };
 
+        classTemplate.clazz.$name = "zebkit.Class";
+        
         return classTemplate;
     });
 
@@ -1855,6 +1863,7 @@ if (isInBrowser) {
     zebkit.ready();
 }
 
+// nodejs
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
     module.exports = zebkit;
 } else {
