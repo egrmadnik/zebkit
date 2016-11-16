@@ -1542,8 +1542,8 @@ pkg.Switchable = zebkit.Interface([
 
    - **"on.out"** - checked and pointer cursor is out
    - **"off.out"** - un-checked and pointer cursor is out
-   - **"don"** - disabled and checked,
-   - **"doff"** - disabled and un-checked ,
+   - **"on.disabled"** - disabled and checked,
+   - **"off.disabled"** - disabled and un-checked ,
    - **"on.over"** - checked and pointer cursor is over
    - **"off.over"** - un-checked and pointer cursor is out
 
@@ -1631,7 +1631,7 @@ pkg.Checkbox = Class(pkg.CompositeEvStatePan, pkg.Switchable, [
                 }
                 return (this.state === OVER) ? "off.over" : "off.out";
             }
-            return this.getValue() ? "don" : "doff";
+            return this.getValue() ? "on.disabled" : "off.disabled";
         };
     },
 
@@ -4204,7 +4204,9 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
          */
         this.next =  function (page, d){
             for(; page >= 0 && page < Math.floor(this.pages.length / 2); page += d) {
-                if (this.isTabEnabled(page) === true) return page;
+                if (this.isTabEnabled(page) === true) {
+                    return page;
+                }
             }
             return -1;
         };
@@ -4227,8 +4229,7 @@ pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
                 if (b){
                     res.y = r.y;
                     res.height = r.height;
-                }
-                else{
+                } else {
                     res.x = r.x;
                     res.width = r.width;
                 }

@@ -177,16 +177,16 @@
             "border"       : "@borders.plain",
             "background"   : {
                 "*": { "$Gradient": [ "rgb(250, 250, 250)", "rgb(234, 234, 234)" ] },
-                "doff": "lightGray",
-                "don": "lightGray"
+                "off.disabled": "lightGray",
+                "on.disabled" : "lightGray"
             },
             "view": {
                 "on.out"   : { "$zebkit.ui.CheckboxView": [] },
                 "off.out"  : { "$View": [] },
                 "off.over" : { "$zebkit.ui.CheckboxView": [ "lightGray" ] },
                 "on.over"  : { "$zebkit.ui.CheckboxView": [ "red" ] },
-                "don"      : { "$zebkit.ui.CheckboxView": [ "#AAAAAA" ] },
-                "doff"     : { "$View": [] }
+                "on.disabled"   : { "$zebkit.ui.CheckboxView": [ "#AAAAAA" ] },
+                "disabled.doff" : { "$View": [] }
             }
         },
 
@@ -214,16 +214,16 @@
             "border"       : { "$zebkit.ui.RoundBorder":["rgb(197,197,197)", 1] },
             "background"   : {
                 "*" : { "$Gradient": [ "rgb(250, 250, 250)", "rgb(234, 234, 234)" ] },
-                "doff": "lightGray",
-                "don": "lightGray"
+                "off.disabled": "lightGray",
+                "on.disabled": "lightGray"
             },
             "view": {
                 "on.out"   : { "$zebkit.ui.RadioView" : []  },
                 "off.out"  : { "$View"      : []  },
                 "off.over" : { "$zebkit.ui.RadioView" : [ "lightGray", "#DDDDDD"]  },
                 "on.over"  : { "$zebkit.ui.RadioView" : [ "#111111", "red"    ] },
-                "don"      : { "$zebkit.ui.RadioView" : [ "#AAAAAA", "#AAAAAA"] },
-                "doff"     : { "$View" : [] }
+                "on.disabled"      : { "$zebkit.ui.RadioView" : [ "#AAAAAA", "#AAAAAA"] },
+                "off.disabled"     : { "$View" : [] }
             }
         }
     },
