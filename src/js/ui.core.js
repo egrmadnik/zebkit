@@ -266,6 +266,10 @@ pkg.Bag = Class(zebkit.util.Bag, [
             zebkit.ready();
             return r;
         }).catch(function(e) {
+            // show error since it can be overridden with
+            // an error that next ready method call fires
+            zebkit.$printError(e);
+
             zebkit.ready();
             throw e;
         });
@@ -3180,7 +3184,6 @@ SHORTCUT_EVENT = new pkg.ShortcutEvent();
  *  @class zebkit.ui.ShortcutManager
  *  @extends {zebkit.ui.Manager}
  */
-
 pkg.ShortcutManager = Class(pkg.Manager, [
     function $prototype() {
         this.keyPath = [];
@@ -3724,6 +3727,9 @@ pkg.zCanvas = Class(pkg.HtmlCanvas, [
 
             if (pkg.focusManager.focusOwner != null) {
                 e.source = pkg.focusManager.focusOwner;
+                return pkg.events.fireEvent("keyPressed", e);
+            } else {
+                e.source = this;
                 return pkg.events.fireEvent("keyPressed", e);
             }
 

@@ -2125,6 +2125,7 @@ pkg.PasswordText = Class(pkg.TextRender, [
      * Set the specified echo character. The echo character is used to hide secret text.
      * @param {String} ch an echo character
      * @method setEchoChar
+     * @chainable
      */
     function setEchoChar(ch){
         if (this.echo != ch){
@@ -2654,13 +2655,16 @@ pkg.RadioView = Class(pkg.View, [
 
         this.paint = function(g,x,y,w,h,d){
             g.beginPath();
-
-            g.fillStyle = this.color1;
+            if (g.fillStyle != this.color1) {
+                g.fillStyle = this.color1;
+            }
             g.arc(Math.floor(x + w/2), Math.floor(y + h/2) , Math.floor(w/3 - 0.5), 0, 2* Math.PI, 1, false);
             g.fill();
 
             g.beginPath();
-            g.fillStyle = this.color2;
+            if (g.fillStyle != this.color2) {
+                g.fillStyle = this.color2;
+            }
             g.arc(Math.floor(x + w/2), Math.floor(y + h/2) , Math.floor(w/4 - 0.5), 0, 2* Math.PI, 1, false);
             g.fill();
         };
@@ -2733,8 +2737,17 @@ pkg.ToggleView = Class(pkg.View, [
 ]);
 
 pkg.CaptionBgView = Class(pkg.View, [
-    function(bg) {
-        if (bg != null) this.bg = bg;
+    function(bg, gap, radius) {
+        if (arguments.length > 0) {
+            this.bg = bg;
+            if (arguments.length > 1) {
+                this.gap = gap;
+
+                if (arguments.length > 2) {
+                    this.radius = radius;
+                }
+            }
+        }
     },
 
     function $prototype() {

@@ -180,7 +180,8 @@ pkg.ShaperPan = Class(ui.Panel, [
         this.catchInput = true;
 
         this.getCursorType = function (t, x ,y) {
-            return this.kids.length > 0 ? CURSORS[this.shaperBr.detectAt(t, x, y)] : null;
+            return this.kids.length > 0 ? CURSORS[this.shaperBr.detectAt(t, x, y)]
+                                        : null;
         };
 
         /**
@@ -279,7 +280,6 @@ pkg.ShaperPan = Class(ui.Panel, [
                 rp = true;
             }
 
-
             var hasFocus = this.hasFocus();
             if (this.shaperBr.color != this.colors[hasFocus?1:0]) {
                 this.shaperBr.color = this.colors[hasFocus?1:0];
@@ -295,7 +295,7 @@ pkg.ShaperPan = Class(ui.Panel, [
 
         this.setColors = function(col1, col2) {
             this.setColor(false, col1);
-            if (col2 != null) {
+            if (arguments.length > 1) {
                 this.setColor(true, col2);
             }
             return this;
