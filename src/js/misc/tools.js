@@ -174,7 +174,7 @@ zebkit.package(function(pkg, Class) {
                     debug : pkg.print };
     }
 
-    function AssertionError(msg) {
+    function AssertionError(msg, lab) {
         Error.call(this, msg);
         this.message = msg;
     }
@@ -211,22 +211,25 @@ zebkit.package(function(pkg, Class) {
             if (obj1 === obj2) return true;
 
             if (obj1 == null || obj2 == null) {
-                throw new AssertionError("One of the compared object is null");
+                throw new AssertionError("One of the compared object is null. " + (lab ? "'" + lab + "' ":""));
             }
 
             if (Array.isArray(obj1)) {
                 if (!Array.isArray(obj2) || obj1.length != obj2.length) {
-                    throw new AssertionError("Array type or length mismatch");
+                    throw new AssertionError("Array type or length mismatch. " + (lab ? "'" + lab + "' ":""));
                 }
 
                 for(var i=0; i < obj1.length; i++) {
                     if (!cmp(obj1[i], obj2[i], path)) return false;
                 }
+
                 return true;
             }
 
             if (zebkit.isString(obj1) || isNumeric(obj1) || typeof obj1 === 'boolean') {
-                if (obj1 !== obj2) throw new AssertionError("Objects values '" + obj1 + "' !== '" + obj2 );
+                if (obj1 !== obj2) {
+                    throw new AssertionError("Objects values '" + obj1 + "' !== '" + obj2  + "'  " + (lab ? "'" + lab + "' ":""));
+                }
                 return true;
             }
 
@@ -234,9 +237,12 @@ zebkit.package(function(pkg, Class) {
                 var pp =  path == "" ? k : path + "." + k;
 
                 if (typeof obj2[k] === "undefined") {
-                    throw new AssertionError("Object field '"  + pp + "' is undefined" );
+                    throw new AssertionError("Object field '"  + pp + "' is undefined. " + (lab ? "'" + lab + "' ":""));
                 }
-                if (!cmp(obj1[k], obj2[k], pp)) return false;
+
+                if (!cmp(obj1[k], obj2[k], pp)) {
+                    return false;
+                }
             }
             return true;
         }
@@ -327,8 +333,8 @@ zebkit.package(function(pkg, Class) {
 
         out.print("Running " + args.length + " test cases "  + (title !== null? "from '" + title + "' test suite" : "") + " :");
         out.print("==============================================");
-        if (typeof zebkit.util.Runner !== "undefined" && pkg.$useSyncTest != true) {
-            var runner = new zebkit.util.Runner();
+        if (typeof zebkit.DoIt !== "undefined" && pkg.$useSyncTest != true) {
+            var runner = new zebkit.DoIt();
 
             for(var i = 0; i < args.length; i++) {
                 var f = args[i], k = pkg.$FN(f);
@@ -357,26 +363,29 @@ zebkit.package(function(pkg, Class) {
                                     runner.$currentTestCase = k;
                                     f.apply(this, arguments);
                                     notify.call($this);
-                                }
-                                catch(e) {
-                                    $this.fireError(e);
+                                } catch(e) {
+                                    $this.error(e);
                                 }
                             }
                         };
 
-                        runner.than(function() {
+                        runner.then(function() {
                             c++ ;
-                            f.call(this);
+                            try {
+                                f.call(this);
+                            } catch(e) {
+                                throw e;
+                            }
                         })
                         .
-                        than(function() {
+                        then(function() {
                             out.print("+ " + k);
                         });
                     })(f, k);
                 }
             }
 
-            runner.than(function() {
+            runner.then(function() {
                 out.print("==============================================");
                 if (c === 0) {
                     out.warn("No test case to be run was found");
@@ -419,7 +428,6 @@ zebkit.package(function(pkg, Class) {
                         out.error("- " + k + " || " + e.message);
                     } else {
                         out.error("" + k + " (unexpected error) " + (e.stack ? e.stack : e));
-                        console.log("" + e.stack);
                         throw e;
                     }
                 }

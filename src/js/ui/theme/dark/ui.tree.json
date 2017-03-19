@@ -1,0 +1,78 @@
+{
+
+    "DefViews": {
+        "color" : "@palette.gray1",
+        "font"  : "12px 'Lucida Grande', 'Lucida Sans', Arial, sans-serif"
+    },
+
+    "BaseTree" : {
+        "lineColor" : "red",
+        "color"     : "red",
+        "views": {
+            "close2"   : { "$zebkit.ui.Picture": [ "%{zebkit.ui.icons}", 61 ,20 ,16,14, true ] },
+            "open2"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.icons}", 49 ,34,16,14, true ] },
+            "leaf2"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.icons}", 49 ,20 ,16,14, true ] },
+            "off"     : { "$zebkit.ui.ToggleView": [ true, "white", "orange", 14 ] },
+            "on"      : { "$zebkit.ui.ToggleView": [ false, "white", "orange", 14 ] },
+            "aselect" : [ [ "rgb(228, 244, 252)", { "$zebkit.ui.Border": "rgb(200,180,200)" } ] ]
+        }
+    },
+
+    "DefViews" : {
+        "color" : "red",
+        "font"  : "bold"
+    },
+
+
+    "Tree": {
+        "inheritProperties" : true
+    },
+
+    "CompTree": {
+        "Checkbox" : {
+            "inheritProperties" : true,
+            "Label"   : {
+                "color"   : "red",
+                "font"    : "bold"
+            }
+        },
+
+        "Combo" : {
+            "inheritProperties" : true,
+            "background" : null,
+            "border"     : "%{zebkit.ui.borders.plain}",
+            "CompList" : {
+                "Label" : {
+                    "font" : "bold",
+                    "color" : "red"
+                }
+            },
+            "List" : {
+                "ViewProvider" : {
+                    "font" : "bold",
+                    "color": "red"
+                }
+            }
+        },
+
+        "Label" : {
+            "inheritProperties" : true,
+            "color"   : "red",
+            "font"    : "bold",
+            "padding" : 4
+        },
+
+        "inheritProperties" : true,
+
+        "views": {
+            "close"   : null,
+            "open"    : null,
+            "leaf"    : null,
+
+            "off"     : { "$zebkit.ui.ToggleView": [ false, "white", "red", 14  ] },
+            "on"      : { "$zebkit.ui.ToggleView": [ "true", "white", "red", 14 ] },
+            "iselect" : { "$zebkit.ui.Border" : [ "lightGray", 1, 6 ]  },
+            "aselect" : { "$zebkit.ui.Border" : [ "white", 1, 6 ]  }
+        }
+    }
+}

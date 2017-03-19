@@ -45,17 +45,17 @@ In general you should just work with zebkit JS code. No HTML neither CSS manipul
    * **Write application code:**
 
 ```js
-// wrap zebkit code with ready method to make sure everything
+// wrap zebkit code with require method to make sure everything
 // has been initialized 
-zebkit.ready(function() {
-    var root = new zebkit.ui.zCanvas("sample", 300, 300).root;
+zebkit.require("ui", "layout", function(ui, layout) {
+    var root = new ui.zCanvas("sample", 300, 300).root;
     root.properties({
         border:  "plain", 
         padding: 8,
-        layout:  new zebkit.layout.BorderLayout(6),
+        layout:  new layout.BorderLayout(6),
         kids  : {
-            "center": new zebkit.ui.TextArea("A text ... "),
-            "bottom": new zebkit.ui.Button("test") 
+            "center": new ui.TextArea("A text ... "),
+            "bottom": new ui.Button("test") 
         }
     });
 });
@@ -66,15 +66,15 @@ zebkit.ready(function() {
 {% include zsample.html canvas_id='sample' title="Get started zebkit application" %}
 
 <script>
-zebkit.ready(function() {
-    var root = new zebkit.ui.zCanvas("sample", 400, 300).root;
+zebkit.require("ui", "layout", function(ui, layout) {
+    var root = new ui.zCanvas("sample", 400, 300).root;
     root.properties({
         border:  "plain", 
         padding: 8,
-        layout:  new zebkit.layout.BorderLayout(6),
+        layout:  new layout.BorderLayout(6),
         kids  : {
-            "center" : new zebkit.ui.TextArea("A text ... "),
-            "bottom" : new zebkit.ui.Button("test") 
+            "center" : new ui.TextArea("A text ... "),
+            "bottom" : new ui.Button("test") 
         }
     });
 });
@@ -83,7 +83,7 @@ zebkit.ready(function() {
 ### Add events handling
 
 ```js
-zebkit.ready(function() {
+zebkit.require(function() {
     ...
     // find first component whose class is zebkit.ui.Button
     root.find("zebkit.ui.Button").bind(function() {
@@ -100,15 +100,15 @@ zebkit.ready(function() {
 <script>
 zebkit.config["zebkit.theme"] = "dark";
 
-zebkit.ready(function() {
-    var root = new zebkit.ui.zCanvas("sample2", 400, 300).root;
+zebkit.require("ui", "layout", function(ui, layout) {
+    var root = new ui.zCanvas("sample2", 400, 300).root;
     root.properties({
         border:  "plain", 
         padding: 8,
-        layout:  new zebkit.layout.BorderLayout(6),
+        layout:  new layout.BorderLayout(6),
         kids  : {
-            "center" : new zebkit.ui.TextArea("A text ... "),
-            "bottom" : new zebkit.ui.Button("test") 
+            "center" : new ui.TextArea("A text ... "),
+            "bottom" : new ui.Button("test") 
         }
     });
 

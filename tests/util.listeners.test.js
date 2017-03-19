@@ -586,6 +586,23 @@ zebkit.runTests("Util Listeners",
         a.bind(b);
         a.trigger2();
         a.trigger1();
+
+
+        var L = ListenersClass("test2", "test3" ),
+            l = new L();
+
+        assert(typeof l.test2 === 'function', true);
+        assert(typeof l.test3 === 'function', true);
+        assert(typeof l.test4 === 'undefined', true);
+
+        l.addEvents("test4");
+
+        assert(typeof l.test4 === 'function', true);
+
+        l = new L();
+        assert(typeof l.test2 === 'function', true);
+        assert(typeof l.test3 === 'function', true);
+        assert(typeof l.test4 === 'undefined', true);
     }
 );
 

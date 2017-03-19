@@ -21,9 +21,9 @@ To build Java Script packages:
    $ gulp
 ```
 
-To build web site:
+To build all artifacts including web site:
 ```bash
-   $ gulp website
+   $ gulp build
 ```
 
 To generate apidoc:

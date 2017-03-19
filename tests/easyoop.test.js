@@ -8,7 +8,7 @@ if (typeof(zebkit) === "undefined") {
     require(path.join(base, 'misc', 'tools.js'));
 }
 
-zebkit.package("test", function () {
+
     var assertException = zebkit.assertException, assert = zebkit.assert, assume = zebkit.assume,
         Class = zebkit.Class, Interface = zebkit.Interface, assertObjEqual = zebkit.assertObjEqual;
 
@@ -1089,11 +1089,6 @@ zebkit.package("test", function () {
             assert(zebkit.instanceOf(I3, I3), false, "test_interface16");
             assert(zebkit.instanceOf(I3, I2), false, "test_interface17");
 
-            assertException(function() {
-                zebkit.Interface(I1, I2);
-            }, Error);
-
-
             var II   = new Interface([ function a() {} ])
             var III  = new Interface([ function b() {} ]);
             var IIII = new Interface([ function c() {} ]);
@@ -1117,7 +1112,6 @@ zebkit.package("test", function () {
             assertException(function() {
                 Class(C4, III);
             }, Error);
-
 
             var o = new C1();
             assert(zebkit.instanceOf(o,C1), true, "test_interface18");
@@ -1187,7 +1181,7 @@ zebkit.package("test", function () {
             }, Error);
 
             var IA = Interface([
-                function() {
+                function $prototype() {
                     this.test = 88;
                 },
 
@@ -1199,7 +1193,7 @@ zebkit.package("test", function () {
             var ia = new IA();
             assert(ia.a(), "0", "test_interface69");
             assert(ia.b(), 999, "test_interface70");
-            assert(ia.test, 88, "test_interface70");
+            assert(ia.test, 88, "test_interface71");
             assert(zebkit.instanceOf(ia, IA), true);
 
             var IB = Interface([
@@ -1212,36 +1206,42 @@ zebkit.package("test", function () {
             }, Error);
 
             var A = Class(IA, [
-                function() {
+                function $prototype() {
                     this.test2 = 99;
                 }
             ]), a = new A();
-            assert(a.a(), "0", "test_interface70");
-            assert(a.b(), 999, "test_interface70");
-            assert(a.test, 88, "test_interface70");
-            assert(a.test2, 99, "test_interface70");
-            assert(zebkit.instanceOf(a, A), true);
-            assert(zebkit.instanceOf(a, IA), true);
+            assert(a.a(), "0", "test_interface72");
+            assert(a.b(), 999, "test_interface73");
+            assert(a.test, 88, "test_interface74");
+            assert(a.test2, 99, "test_interface75");
+            assert(zebkit.instanceOf(a, A), true, "test_interface76");
+            assert(zebkit.instanceOf(a, IA), true, "test_interface77");
 
 
-            assertException(function() {
-                var A = Class(IA, [
-                    function a() { return "1"; }
-                ])
-            }, Error);
+            var A = Class(IA, [
+                function $prototype() {
+                    this.test = 888;
+                },
+
+                function a() { return "1"; }
+            ]), a = new A();
+
+            assert(a.a(), "1", "test_interface78");
+            assert(a.b(), 999, "test_interface79");
+            assert(a.test, 888, "test_interface80");
 
             var A = Class([
                 function a() { return 10; }
             ]), I = Interface([ function a() { return 11; } ]), B = Class(A, I, []);
 
             var a = new A(), b = new B(), c = new I();
-            assert(a.a(), 10)
-            assert(zebkit.instanceOf(a, A), true);
-            assert(zebkit.instanceOf(a, I), false);
-            assert(zebkit.instanceOf(a, B), false);
-            assert(b.a(), 11);
-            assert(zebkit.instanceOf(b, B), true);
-            assert(zebkit.instanceOf(b, I), true);
+            assert(a.a(), 10, "test_interface81")
+            assert(zebkit.instanceOf(a, A), true, "test_interface82");
+            assert(zebkit.instanceOf(a, I), false, "test_interface83");
+            assert(zebkit.instanceOf(a, B), false, "test_interface84");
+            assert(b.a(), 11, "test_interface85");
+            assert(zebkit.instanceOf(b, B), true, "test_interface86");
+            assert(zebkit.instanceOf(b, I), true, "test_interface87");
 
             var I = Interface([
                 function a() { return this.$super() + 1; }
@@ -1252,34 +1252,34 @@ zebkit.package("test", function () {
             ]);
 
             var B = Class(A, I, []), b = new B();
-            assert(b.a(), 997);
+            assert(b.a(), 997, "test_interface88");
 
             var C = Class(A,[]), c = new C();
             c.extend(I);
-            assert(zebkit.instanceOf(c, I), true);
-            assert(zebkit.instanceOf(c, A), true);
-            assert(zebkit.instanceOf(c, C), true);
-            assert(zebkit.instanceOf(c, B), false);
-            assert(c.a(), 997);
+            assert(zebkit.instanceOf(c, I), true, "test_interface89");
+            assert(zebkit.instanceOf(c, A), true, "test_interface90");
+            assert(zebkit.instanceOf(c, C), true, "test_interface91");
+            assert(zebkit.instanceOf(c, B), false, "test_interface92");
+            assert(c.a(), 997, "test_interface93");
             assertException(function() {
                 c.extend(I);
             }, Error);
 
             // check side effect
             c = new C();
-            assert(zebkit.instanceOf(c, I), false);
-            assert(zebkit.instanceOf(c, A), true);
-            assert(zebkit.instanceOf(c, C), true);
-            assert(zebkit.instanceOf(c, B), false);
-            assert(c.a(), 996);
+            assert(zebkit.instanceOf(c, I), false, "test_interface94");
+            assert(zebkit.instanceOf(c, A), true, "test_interface95");
+            assert(zebkit.instanceOf(c, C), true, "test_interface96");
+            assert(zebkit.instanceOf(c, B), false, "test_interface97");
+            assert(c.a(), 996, "test_interface98");
 
             C.extend(I);
             c = new C();
-            assert(zebkit.instanceOf(c, I), true);
-            assert(zebkit.instanceOf(c, A), true);
-            assert(zebkit.instanceOf(c, C), true);
-            assert(zebkit.instanceOf(c, B), false);
-            assert(c.a(), 997);
+            assert(zebkit.instanceOf(c, I), true, "test_interface99");
+            assert(zebkit.instanceOf(c, A), true, "test_interface100");
+            assert(zebkit.instanceOf(c, C), true, "test_interface101");
+            assert(zebkit.instanceOf(c, B), false, "test_interface102");
+            assert(c.a(), 997, "test_interface103");
 
             var C = Class(A,[]);
             assertException(function() {
@@ -1288,11 +1288,12 @@ zebkit.package("test", function () {
                 ]);
             }, Error);
 
+
             var c = new C();
-            assert(zebkit.instanceOf(c, I), false);
-            assert(zebkit.instanceOf(c, A), true);
-            assert(zebkit.instanceOf(c, C), true);
-            assert(zebkit.instanceOf(c, B), false);
+            assert(zebkit.instanceOf(c, I), false, "test_interface104");
+            assert(zebkit.instanceOf(c, A), true, "test_interface105");
+            assert(zebkit.instanceOf(c, C), true, "test_interface106");
+            assert(zebkit.instanceOf(c, B), false, "test_interface107");
             assertException(function() {
                 c.extend(I, [
                     function a() {}
@@ -1300,27 +1301,27 @@ zebkit.package("test", function () {
             }, Error);
 
 
-            assertException(function() {
-                var C = Class(A,I,[ function a() {} ]);
-            }, Error);
-
-
             // not stable abstract API
             var I = zebkit.Interface([
-                function () {
+                function $prototype() {
                     this.b = 10;
                 },
 
                 function a() { return "10"; },
 
                 "abstract",
-
-                function aa() {}
+                    function aa() {},
+                    function bb() {}
             ]);
 
+            assert(I.$abstractMethods, 2, "test_interface108");
+            assert(I.prototype.aa.$isAbstract, true, "test_interface109");
+            assert(I.prototype.bb.$isAbstract, true, "test_interface110");
+            assert(I.prototype.a.$isAbstract, undefined, "test_interface11");
+
             var i = new I();
-            assert(i.b, 10);
-            assert(i.a(), "10");
+            assert(i.b, 10, "test_interface112");
+            assert(i.a(), "10", "test_interface113");
 
             assertException(function() {
                 i.aa();
@@ -1330,9 +1331,33 @@ zebkit.package("test", function () {
                 function aa() { return 99; }
             ]);
 
-            assert(i.b, 10);
-            assert(i.a(), "10");
-            assert(i.aa(), 99);
+            assert(i.b, 10, "test_interface114");
+            assert(i.a(), "10", "test_interface115");
+            assert(i.aa(), 99, "test_interface116");
+
+
+            var A = Class(I, [
+                function aa() {
+                    return "111";
+                }
+            ]);
+
+            assert(A.prototype.aa.$isAbstract, undefined, "test_interface117");
+            assert(A.prototype.bb.$isAbstract, true, "test_interface118");
+            assert(A.prototype.a.$isAbstract, undefined, "test_interface119");
+
+            var I = Interface([
+                function $prototype() {
+                    this.aa = 100;
+                }
+            ]), A = Class(I, [
+                function $prototype() {
+                    this.aa = 200;
+                }
+            ]), a = new A();
+
+
+            assert(a.aa, 200, "test_interface120");
         },
 
         function test_class_toString_overwriting() {
@@ -1764,6 +1789,52 @@ zebkit.package("test", function () {
                     }
                 ]);
             }, Error, "test overriding 43");
+        },
+
+
+        function test_abstract() {
+            zebkit.package("tst", function(tst) {
+                tst.A = Class(zebkit.Abstract(), [
+                    function () {
+                        this.aval = "test";
+                    }
+                ]);
+
+                tst.B = Class(tst.A, [
+                    function () {
+                        this.$super();
+                        this.bval = "1";
+                    }
+                ]);
+
+                tst.C = Class(tst.B, [
+                    function () {
+                        this.$super();
+                        this.cval = "2";
+                    }
+                ]);
+
+                tst.I = zebkit.Abstract();
+                tst.D = Class(tst.I, []);
+            })
+
+
+            var tst = zebkit.tst;
+            var a   = new tst.A();
+
+            assert(zebkit.instanceOf(a, tst.A), true);
+            assert(zebkit.instanceOf(a, tst.B), true);
+            assert(a.clazz, tst.B);
+            assert(a.aval, "test");
+            assert(a.bval, "1");
+
+            var aa = zebkit.newInstance(tst.A);
+            assert(zebkit.instanceOf(aa, tst.A), true);
+            assert(zebkit.instanceOf(aa, tst.B), true);
+            assert(aa.clazz, tst.B);
+            assert(aa.aval, "test");
+            assert(aa.bval, "1");
+            assert(aa !== a, true);
         },
 
         function test_class_extending() {
@@ -2704,64 +2775,188 @@ zebkit.package("test", function () {
             assert(pkg2.AA.B.A.$name, "zebkit.test.AA.B.A", "test class package 15");
         },
 
-        function test_parametrized_interface() {
+        function _test_implementation_interface() {
+            zebkit.package("test", function(t) {
+                t.A = Class([
+                    function() { this.v1 = 213; },
+                    function a() { return 10; }
+                ]);
 
-            var args = [];
-            var counter = 0;
-            var I    = Interface();
-            assertException(function() { I(); }, Error);
-            assert(I.$original == null, true);
+                t.B = Class(t.A, [
+                    function() {
+                        this.$super();
+                        this.v2 = 329;
+                    },
+
+                    function a() { return this.$super() + 8; },
+                    function b() { return 300; }
+                ]);
+
+                t.C = Class(zebkit.Abstract(), [
+                    function() { this.c1 = 876; },
+                    function c() { return "123"; }
+                ]);
+            });
+
+            zebkit.package("test.imp", function(t) {
+                t.AI = Class(zebkit.Implement(zebkit.test.A), [
+                    function() { this.v1 = 33; },
+                    function a() { return 100; }
+                ]);
+
+                t.BI = Class(zebkit.Implement("zebkit.test.B"), [
+                    function() { this.v1 = 44; },
+                    function a() { return 101; },
+                    function b() { return 102; }
+                ]);
+
+                t.CI = Class(zebkit.test.C, [
+                    function() {
+                        this.$super();
+                        this.c2 = 1;
+                    }
+                ]);
+            });
+
+            var i1 = zebkit.Implement(zebkit.test.A);
+            var i2 = zebkit.Implement(zebkit.test.A);
+            var i3 = zebkit.Implement("zebkit.test.B");
+
+            assert(i1 != i2, true);
+            assert(i2 != i3, true);
+            assert(i1.$implFor, zebkit.test.A);
+            assert(i2.$implFor, zebkit.test.A);
+            assert(i3.$implFor, zebkit.test.B);
+            assert(typeof i1.inheritedWidth, 'function');
+            assert(typeof i2.inheritedWidth, 'function');
+            assert(typeof i3.inheritedWidth, 'function');
+
+            var ai1 = new zebkit.test.A();
+            assert(zebkit.test.A, zebkit.test.imp.AI);
+            assert(zebkit.instanceOf(ai1, zebkit.test.imp.AI), true);
+            assert(ai1.v1, 33);
+            assert(ai1.a(), 100);
+
+            var ai2 = new zebkit.test.A([
+                function() {
+                    this.v1 = 77;
+                },
+
+                function a() {
+                    return 200;
+                }
+            ]);
+
+            assert(ai1 != ai2, true);
+            assert(zebkit.test.A, zebkit.test.imp.AI);
+            assert(zebkit.instanceOf(ai2, zebkit.test.imp.AI), true);
+            assert(zebkit.instanceOf(ai1, zebkit.test.imp.AI), true);
+            assert(ai1.v1, 33);
+            assert(ai2.v1, 77);
+            assert(ai1.a(), 100);
+            assert(ai2.a(), 200);
+
+            var c = new zebkit.test.C();
+            assert(zebkit.instanceOf(c, zebkit.test.C), true);
+            assert(zebkit.instanceOf(c, zebkit.test.imp.CI), true);
+            assert(zebkit.instanceOf(c, zebkit.Abstract()), false);
+            assert(c.c1, 876);
+            assert(c.c2, 1);
+            assert(c.c(), "123");
+        },
+
+        function test_parametrized_interface() {
+            assertException(function() { Interface([ function() {} ]); }, Error);
+
+            var I = Interface([
+                function a() {
+                    return 9;
+                },
+
+                function $prototype() {
+                    this.v1 = 100;
+                    this.v2 = 299;
+                }
+            ]);
+            assertException(function() { I(); }, Error, "test_parametrized_interface1");
+            assertException(function() { I([]); }, Error, "test_parametrized_interface2");
+            assertException(function() { I(1); }, Error, "test_parametrized_interface3");
+            assertException(function() { I("1"); }, Error, "test_parametrized_interface4");
+
 
             var i = new I();
             assert(zebkit.instanceOf(i, I), true);
-            assert(I.$original == null, true);
+            assert(i.a(), 9, "test_parametrized_interface5");
+            assert(i.v1, 100, "test_parametrized_interface6");
+            assert(i.v2, 299, "test_parametrized_interface7");
 
-            var I = Interface([ function() {
-                counter++;
-                assert(arguments.length, args.length);
-                for(var i = 0; i < arguments.length; i++) {
-                    assert(arguments[i], args[i]);
-                }
-                this.value = 10;
-            }]);
 
-            assert(counter, 0);
-            var A = Class(I.apply(this, args), []);
-            assert(counter, 0);
+            var II = I({ v1: 345 }), ii = new II();
 
-            var a = new A();
-            assert(counter, 1);
-            assert(a.value, 10);
-            assert(zebkit.instanceOf(a, A), true);
-            assert(zebkit.instanceOf(a, I), true);
-            assert(I.$original == null, true);
+            assert(II.$abstractMethods, 0, "test_parametrized_interface8");
+            assert(I.$abstractMethods, 0, "test_parametrized_interface9");
+            assert(II.$lostMe, I.$lostMe, "test_parametrized_interface10");
 
-            var A = Class([]), II = I(1, 2, 3), args = [1,2,3] ;
-            a = new A();
 
-            assert(counter, 1);
-            assert(II.$original, I);
-            assert(typeof a.value, "undefined");
-            assert(zebkit.instanceOf(a, A), true);
-            assert(zebkit.instanceOf(a, I), false);
-            assert(zebkit.instanceOf(a, II), false);
+            assert(zebkit.instanceOf(ii, I), true, "test_parametrized_interface11");
+            assert(zebkit.instanceOf(ii, II), true, "test_parametrized_interface12");
+            assert(ii.a(), 9, "test_parametrized_interface13" );
+            assert(ii.v1, 345, "test_parametrized_interface14" );
+            assert(ii.v2, 299, "test_parametrized_interface15" );
+            assert(i.a(), 9, "test_parametrized_interface16.1");
+            assert(i.v1, 100, "test_parametrized_interface16.2");
+            assert(i.v2, 299, "test_parametrized_interface17");
 
-            a.extend(II);
-            assert(counter, 2);
-            assert(II.$original, I);
-            assert(I.$original == null, true);
-            assert(a.value, 10);
-            assert(zebkit.instanceOf(a, A), true);
-            assert(zebkit.instanceOf(a, I), true);
-            assert(zebkit.instanceOf(a, II), true);
+            var i = new I();
+            assert(zebkit.instanceOf(i, I), true, "test_parametrized_interface18");
+            assert(i.a(), 9, "test_parametrized_interface19");
+            assert(i.v1, 100, "test_parametrized_interface20");
+            assert(i.v2, 299, "test_parametrized_interface21");
 
-            assertException(function() {
-                a.extend(II);
-            }, Error);
 
-            assertException(function() {
-                a.extend(I);
-            }, Error);
+            var A = Class(I({ v2: 300 }), []), a = new A();
+            assert(zebkit.instanceOf(a, A), true, "test_parametrized_interface22");
+            assert(zebkit.instanceOf(a, I), true, "test_parametrized_interface23");
+            assert(a.v1, 100, "test_parametrized_interface24");
+            assert(a.v2, 300, "test_parametrized_interface25");
+            assert(a.a(), 9, "test_parametrized_interface26");
+
+            var I = Interface([
+                function $prototype() {
+                    this.v1 = 100;
+                    this.v2 = [ 1, 2, 3];
+                    this.v3 = {
+                        a: 1, d: true
+                    };
+                },
+
+                function aa() {},
+
+                "abstract",
+                    function a() {},
+                    function b() {},
+            ]), II = I({});
+
+            assert(I.$abstractMethods, 2, "test_parametrized_interface27");
+            assert(II.$abstractMethods, 2, "test_parametrized_interface28");
+            assert(I.prototype.aa != null, true, "test_parametrized_interface29");
+            assert(I.prototype.aa, II.prototype.aa, "test_parametrized_interface30");
+
+            assert(I.prototype.a != null, true, "test_parametrized_interface31");
+            assert(I.prototype.a, II.prototype.a, "test_parametrized_interface32");
+            assert(I.prototype.b != null, true, "test_parametrized_interface33");
+            assert(I.prototype.b, II.prototype.b, "test_parametrized_interface34");
+
+            var i = new I(), ii = new II();
+
+            assert(i.v1, 100);
+            assert(i.v2 != null, true);
+            assertObjEqual(i.v2, [1,2,3]);
+            assert(ii.v1, i.v1);
+            assert(i.v2 != ii.v2, true);
+            assert(i.v3 != ii.v3, true);
+            assertObjEqual(ii.v2, i.v2);
+            assertObjEqual(ii.v3, i.v3);
         },
 
         function test_clone() {
@@ -2898,4 +3093,4 @@ zebkit.package("test", function () {
             assertObjEqual(d1, d2);
         }
     );
-});
+//});

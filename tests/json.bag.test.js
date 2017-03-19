@@ -1,13 +1,24 @@
 
+if (typeof(XMLHttpRequest) === 'undefined') {
+    XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+}
+
 if (typeof(zebkit) === "undefined") {
+    require('../src/js/web/web.environment.js');
     require('../src/js/easyoop.js');
     require('../src/js/misc/tools.js');
+    require('../src/js/io.js');
     require('../src/js/util.js');
 }
 
 zebkit.package("test", function() {
 
-var assert = zebkit.assert, Class = zebkit.Class, Bag = zebkit.util.Bag, assertException = zebkit.assertException;
+var assert = zebkit.assert,
+    Class = zebkit.Class,
+    Bag = zebkit.util.Zson,
+    assertException = zebkit.assertException,
+    assertObjEqual = zebkit.assertObjEqual;
+
 
 zebkit.runTests("util objects bag",
     function test_variables() {
@@ -20,40 +31,55 @@ zebkit.runTests("util objects bag",
             }
         ]);
 
-        bag.load('{ "a":1,"b":2, "c": { "d": true}, ".addVariables": { "aa": "@a", "bb": "@b", "cc": "@c.d" , "dd": { "$A": 22 }}, "k":"@aa", "l": "@bb", "m": "@cc" }' );
-        var r = bag.root;
+        var json = `
+            { "a" : 1,
+              "b" : 2,
+              "c" : { "d": true },
+              "aa": "%{a}",
+              "bb": "%{b}",
+              "cc": "%{c.d}" ,
+              "dd": { "$A": 22 },
+              "k" : "%{aa}",
+              "l" : "%{bb}",
+              "m" : "%{cc}",
+              "mm": "%{dd}" }
+        `;
 
-        assert(bag.variables.aa, 1);
-        assert(bag.variables.bb, 2);
-        assert(bag.variables.cc, true);
+        bag.then(json, function(bag) {
+            var r = bag.root;
+            assert(r.aa, 1, "test_variables 1");
+            assert(r.bb, 2, "test_variables 2");
+            assert(r.cc, true, "test_variables 3");
 
-        assert(bag.variables.dd instanceof A, true);
+            assert(r.dd instanceof A, true, "test_variables 4");
 
-        assert(bag.variables.dd.a, 22);
-        assert(bag.variables.dd.d, 100);
-        assert(r.variables, undefined);
+            assert(r.dd.a, 22, "test_variables 5");
+            assert(r.dd.d, 100, "test_variables 6");
+            assert(r.variables, undefined, "test_variables 7");
 
-        assert(r.k, 1);
-        assert(r.l, 2);
-        assert(r.m, true);
+            assert(r.k, 1, "test_variables 8");
+            assert(r.l, 2, "test_variables 9");
+            assert(r.m, true, "test_variables 10");
+            assert(r.mm instanceof A, true, "test_variables 11");
+        }).throw();
     },
 
     function test_emptybag() {
         var b = new Bag();
-        b.load("{}");
+        b.then("{}").throw();
         var b = new Bag();
-        b.load("[]");
+        b.then("[]").throw();
         assert(Array.isArray(b.root), true);
 
-        assertException(function() { b.get("ds"); });
-        assertException(function() { b.load(""); });
-        assertException(function() { b.get(null); });
-        assertException(function() { b.get(undefined); });
+        assertException(function() { b.get("ds"); }, "exception 1");
+        assertException(function() { b.then("").throw(); }, "exception 2");
+        assertException(function() { b.get(null); }, "exception 3");
+        assertException(function() { b.get(undefined); }, "exception 4");
     },
 
     function test_simple_load() {
         var b = new Bag();
-        b.load('{ "a":1, "b":{ "b1":"abc" }, "c": [1,2,3], "d":null }');
+        b.then('{ "a":1, "b":{ "b1":"abc" }, "c": [1,2,3], "d":null }').throw();
         assert(b.get("a") === 1, true);
         assert(b.get("d") === null, true);
         zebkit.assertObjEqual(b.get("b"), {b1:"abc"});
@@ -63,46 +89,52 @@ zebkit.runTests("util objects bag",
     },
 
     function test_obj_merge() {
-        var o = {a:2, b: {b2:100}, c:[-2,-1, 0], x:{ ll:100 }, k: { k: 100 }, dd:null, ddd:[1,2,3], pp: { pp: { } } }, b = new Bag(o);
+        var o = { a:2, b: { b2:100 }, c:[-2,-1, 0], x:{ ll:100 }, k: { k: 100 }, dd : null, ddd:[1,2,3], pp: { pp: { } } },
+            b = new Bag(o);
 
-        b.load('{ "a":1, "b":{ "b1":"abc" }, "c": [1,2,3], "d":null, "x":null, "k": { "k": { "k":100 }, "kk":99 }, "dd":[1,2,3] , "ddd":null, "pp": { "pp": { "pp": [1,2]} } }');
-        assert(b.get("a") === 1, true, "1");
-        assert(b.get("d") === null, true, "2");
-        zebkit.assertObjEqual(b.get("b"), {b1:"abc", b2:100}, "3");
-        zebkit.assertObjEqual(b.get("c"), [1, 2, 3], "4");
+        var json = `
+            {
+               "a" : 1,
+               "b" : { "b1":"abc" },
+               "c" : [1,2,3],
+               "d" : null,
+               "x" : null,
+               "k" : { "k": { "k":100 }, "kk":99 },
+               "dd": [1,2,3],
+               "ddd" : null,
+               "pp": { "pp": { "pp": [1,2]} }
+           }
+        `;
 
-        assertException(function() { b.get("cc"); });
-        zebkit.assert(b.get("b.b1"), "abc", "6");
-        zebkit.assert(b.get("b.b2") , 100, "7");
+        b.then(json).throw();
 
-        zebkit.assert(b.get("x"), null, "8");
-        zebkit.assert(b.get("k.k.k"), 100, "9");
-        zebkit.assert(b.get("k.kk"), 99, "10");
-        zebkit.assert(b.get("ddd"), null, "11");
+        assert(b.get("a") === 1, true, "1", "test merge 1");
+        assert(b.get("d") === null, true, "2", "test merge 2");
 
-        zebkit.assertObjEqual(b.get("dd"), [1,2,3], "12");
+        zebkit.assertObjEqual(b.get("b"), { b1: "abc", b2 : 100 }, "3", "test merge 3");
+        zebkit.assertObjEqual(b.get("c"), [1, 2, 3], "4", "test merge 4");
+
+
+        assertException(function() { b.get("cc"); }, "test merge 5");
+        zebkit.assert(b.get("b.b1"), "abc", "6", "test merge 6");
+        zebkit.assert(b.get("b.b2") , 100, "7", "test merge 7");
+
+        zebkit.assert(b.get("x"), null, "8", "test merge 8");
+        zebkit.assert(b.get("k.k.k"), 100, "9", "test merge 9");
+        zebkit.assert(b.get("k.kk"), 99, "10", "test merge 10");
+        zebkit.assert(b.get("ddd"), null, "11", "test merge 11");
+
+        zebkit.assertObjEqual(b.get("dd"), [1,2,3], "12", "test merge 12");
+
 
         // empty bag merge
         var b = new Bag({});
-        b.load('{ "test": 100, "a": { "b": true, "c": null } }');
+        b.then('{ "test": 100, "a": { "b": true, "c": null } }').throw();
 
-        assert(b.get("test"), 100);
-        assert(b.root.test, 100);
-        assert(b.root.a.b, true);
-        assert(b.root.a.c, null);
-
-
-        // test obj merge
-        var b = new Bag({
-            a: {
-                b: {
-                    c: 222
-                }
-            }
-        });
-        b.load('{ "a": 100 }');
-        assert(b.root.a, 100);
-        assert(b.get("a"), 100);
+        assert(b.get("test"), 100, "test merge 14");
+        assert(b.root.test, 100), "test merge 15";
+        assert(b.root.a.b, true, "test merge 16");
+        assert(b.root.a.c, null, "test merge 17");
 
         // test obj merge
         var b = new Bag({
@@ -112,9 +144,9 @@ zebkit.runTests("util objects bag",
                 }
             }
         });
-        b.load('{ "a": { "d": 300 }  }');
-        assert(b.root.a.d, 300);
-        assert(b.root.a.b.c, 222);
+        b.then('{ "a": 100 }').throw();
+        assert(b.root.a, 100, "test merge 18");
+        assert(b.get("a"), 100, "test merge 20");
 
         // test obj merge
         var b = new Bag({
@@ -124,43 +156,21 @@ zebkit.runTests("util objects bag",
                 }
             }
         });
-        b.load('{ "a": { "b": 300 }  }');
-        assert(b.root.a.b, 300);
+        b.then('{ "a": { "d": 300 }  }').throw();
+        assert(b.root.a.d, 300, "test merge 21");
+        assert(b.root.a.b.c, 222, "test merge 22");
 
-
-        // test merging on the fly
-        // KeyEvent class has to be pre-filled when class A is instantiated
-        var pkg = zebkit.test;
-        var KeyEvent = pkg.KeyEvent = Class([]);
-
-        A = Class([
-            function() {
-                this.done = 333;
-                assert(pkg.KeyEvent, KeyEvent);
-                assert("KeyA" , "a");
-                assert("KeyB" , "b");
-                assert("KeyC" , "c");
-            }
-        ]);
-
-        var b = new Bag(pkg).load({
-            KeyEvent: {
-                A : "a",
-                B : "b",
-                C:  "c"
-            },
-
-            A: {
-                $A : []
+        // test obj merge
+        var b = new Bag({
+            a: {
+                b: {
+                    c: 222
+                }
             }
         });
+        b.then('{ "a": { "b": 300 }  }').throw();
+        assert(b.root.a.b, 300, "test merge 23");
 
-        assert(pkg.KeyEvent, KeyEvent);
-        assert("KeyA" , "a");
-        assert("KeyB" , "b");
-        assert("KeyC" , "c");
-        assert(zebkit.instanceOf(pkg.A, A) , true);
-        assert(pkg.A.done, 333);
     },
 
     function test_class_instantiation() {
@@ -175,7 +185,7 @@ zebkit.runTests("util objects bag",
                 this.$mmm = 22;
             }
         ]);
-        bag.load(l);
+        bag.then(l).throw();
         var a = bag.get("a");
         var b = bag.get("b");
         var c = bag.get("c");
@@ -208,8 +218,8 @@ zebkit.runTests("util objects bag",
 
         var o   = {},
             bag = new Bag(o),
-            l = '{ "a": { "$A":[], "c": { "$A":[] } }, "b":{ "$A":["abc"], "dd":"@a", "mm":"@a.c" }, "d":"@a.c" }';
-        bag.load(l);
+            l = '{ "a": { "$A":[], "c": { "$A":[] } }, "b":{ "$A":["abc"], "dd":"%{a}", "mm":"%{a.c}" }, "d":"%{a.c}" }';
+        bag.then(l).throw();
         var r = bag.root;
 
         assert(zebkit.instanceOf(r.a, A), true, "zebkit.instanceOf(r.a, A)");
@@ -220,29 +230,30 @@ zebkit.runTests("util objects bag",
         assert(zebkit.instanceOf(r.b.dd, A), true, "zebkit.instanceOf(r.b.dd, A)");
         assert(zebkit.instanceOf(r.b.mm, A), true, "zebkit.instanceOf(r.b.mm, A)");
 
-        assert(r.b.dd, r.a);
-        assert(r.a !== r.a.c, true);
-        assert(r.b.mm, r.a.c);
-        assert(r.d, r.a.c);
+        assert(r.b.dd, r.a, "test_class_instantiation 1");
+        assert(r.a !== r.a.c, true, "test_class_instantiation 2");
+        assert(r.b.mm, r.a.c, "test_class_instantiation 3");
+        assert(r.d, r.a.c, "test_class_instantiation 4");
 
         assert(r.b.c, "abc");
 
         // root class
         var bag = new Bag();
         var json = '{ "$A":[] }';
-        bag.load(json);
+        bag.then(json).throw();
 
-        assert(zebkit.instanceOf(bag.root, A), true);
-        assert(bag.root.c, "test");
-        assert(bag.root.$mmm, 22);
+
+        assert(zebkit.instanceOf(bag.root, A), true, "test_class_instantiation 5");
+        assert(bag.root.c, "test", "test_class_instantiation 6");
+        assert(bag.root.$mmm, 22, "test_class_instantiation 7");
 
         var bag = new Bag();
         var json = '{ "$A":[] }';
-        bag.load(json);
+        bag.then(json).throw();
 
-        assert(zebkit.instanceOf(bag.root, A), true);
-        assert(bag.root.c, "test");
-        assert(bag.root.$mmm, 22);
+        assert(zebkit.instanceOf(bag.root, A), true, "test_class_instantiation 8");
+        assert(bag.root.c, "test", "test_class_instantiation 9");
+        assert(bag.root.$mmm, 22, "test_class_instantiation 10");
     },
 
     function test_classprops() {
@@ -266,8 +277,19 @@ zebkit.runTests("util objects bag",
             }
         ]);
 
-        var t = {}, b = new Bag(t);
-        b.load('{ "a": { "$A":[], "name":100, "name2":101, "prop3": 11,  "obj": { "$A":[], "prop3":200 }, "b": { "$A":[], "name":200, "name2":201, "k":1 }, "c":400  } }');
+        var t = {},
+            b = new Bag(t),
+            json = `{ "a": { "$A"    :[],
+                              "name" : 100,
+                              "name2": 101,
+                              "prop3": 11,
+                              "obj"  : { "$A":[], "prop3":200 },
+                              "b"    : { "$A":[], "name":200, "name2":201, "k":1 },
+                              "c"    : 400
+                            }
+                    }`;
+
+        b.then(json).throw();
 
         assert(t.a.nameProp, 100);
         assert(t.a.nameProp2, 101);
@@ -282,7 +304,7 @@ zebkit.runTests("util objects bag",
         assert(t.a.b.k, 1);
 
         var t = new A(), b = new Bag(t);
-        b.load('{  "prop3": 400,  "obj" : {  "$A":[], "prop3": 500   } }');
+        b.then('{  "prop3": 400,  "obj" : {  "$A":[], "prop3": 500   } }').throw();
 
         assert(t.prop3, 410);
         assert(zebkit.instanceOf(t.obj, A), true);
@@ -290,130 +312,54 @@ zebkit.runTests("util objects bag",
     },
 
     function test_refs() {
-        var o = {p1: { "p222":333  }}, bag = new Bag(o);
-        bag.ignoreNonExistentKeys = true;
+        var o = { p1: { "p222":333  } }, bag = new Bag(o);
 
-        var l = '{ "p1": { "p11": { "p111": 100, "p12":"@p1.p11.p111", "p13": { "p133":"@p1.p11.p111" } }, "p33":"@p1.p11.p111" }, "p2": { "p11": { "p22":"@p1.p11.p111" } }, "kf": "@p1.p222"  }';
-        bag.load(l);
+        var l = `{ "p1": {
+                       "p11": { "p111" :  100,
+                                "p12"  : "%{p1.p11.p111}",
+                                "p13"  : { "p133" : "%{p1.p11.p111}" }
+                              },
+                              "p33" : "%{p1.p11.p111}"
+                        },
+                        "p2"  : { "p11": { "p22":"%{p1.p11.p111}" } },
+                        "kf"  : "%{p1.p222}"
+                }
+                `;
+        bag.then(l).throw();
 
-        assert(bag.get("p1.p11.p111"), 100, "1");
-        assert(bag.get("p1.p11.p13.p133"), 100, "2");
-        assert(bag.get("p1.p33"), 100, "3");
-        assert(bag.get("p1.p11.p12"), 100, "4");
-        assert(bag.get("kf"), 333, "5");
+        assert(bag.get("p1.p11.p111"), 100, "test_refs 1");
+        assert(bag.get("p1.p11.p13.p133"), 100, "test_refs 2");
+        assert(bag.get("p1.p33"), 100, "test_refs 3");
+        assert(bag.get("p1.p11.p12"), 100, "test_refs 4");
+        assert(bag.get("kf"), 333, "test_refs 5");
 
         var l = {
             a : 100,
-            b : "@a"
+            b : "%{a}"
         }
         var b = new Bag();
-        b.load(l);
-        assert(b.root.a, 100);
-        assert(b.root.b, 100);
+        b.then(l).throw();
+        assert(b.root.a, 100, "test_refs 6");
+        assert(b.root.b, 100, "test_refs 7");
 
         var l = {
             k: {
                 a : 100,
-                b : "@k.a"
+                b : "%{k.a}"
             }
         }
         var b = new Bag();
-        b.load(l);
-        assert(b.root.k.a, 100);
-        assert(b.root.k.b, 100);
-    },
-
-    function test_inherit() {
-        var o = {},
-            bag = new Bag(o),
-            l = '{ "p": { "p1": 100, "p2": 200  }, "b": { "b1": { "inherit":["p"], "p2":300 } }  }';
-
-        bag.load(l);
-
-        var r = bag.root;
-        assert(r.b.b1.p2, 300);
-        assert(r.b.b1.p1, 100);
-
-        var o = { d: { k: "str", d:{ d1 : 1, d2 : 2, d3: { s: [1,2] } } } },
-            bag = new Bag(o),
-            l = '{ "p": { "p1": 100, "p2": 200  }, "b": { "b1": { "inherit":["p", "d.d"], "p2":300 } }  }';
-
-        bag.load(l);
-        var r = bag.root;
-
-        assert(r.b.b1.p2, 300);
-        assert(r.b.b1.p1, 100);
-        zebkit.assertObjEqual(r.b.b1, { d1: 1, d2: 2, d3: { s: [1,2]  }, p2: 300, p1:100 } );
-
-        // one level inheritance
-        var o = { d: {
-            a : {
-                m: 100,
-                mm: 300
-            },
-
-            b: {
-                m: 200,
-                mmm: 400,
-                "inherit" : [ "d.a"]
-            }
-        }};
-        var b = new Bag().load(o);
-
-        assert(b.root.d.a.m, 100);
-        assert(b.root.d.a.mm, 300);
-        assert(b.root.d.b.m, 200);
-        assert(b.root.d.b.mm, 300);
-        assert(b.root.d.b.mmm, 400);
-        assert(b.root.d.b["inherit"], undefined);
-
-        var pkg = zebkit.package("test2.tree");
-        pkg.BaseTree = Class([]);
-        pkg.Tree     = Class([]);
-        var bag = new Bag(zebkit.package("test2"));
-
-        bag.load('{ "tree": { "BaseTree":  { "views":  { "a": 1, "b": 2 } } , "Tree": { "inherit": [ "tree.BaseTree" ], "c": "@tree.BaseTree.views.a" } } }');
-
-
-        var r = bag.root;
-        assert(r.tree.BaseTree.views.a, 1);
-        assert(r.tree.BaseTree.views.b, 2);
-        assert(r.tree.Tree.inherit, undefined);
-        assert(r.tree.Tree.views != undefined, true);
-        assert(r.tree.Tree.views.a, 1);
-        assert(r.tree.Tree.views.b, 2);
-        assert(r.tree.Tree.views.b, 2);
-        assert(r.tree.Tree.c, 1);
-    },
-
-    function test_obj_inherit() {
-        var o = {},
-            bag = new Bag(o),
-            l = { p: { p1: 100, p2: 200  }, b: { b1: { inherit:["p"], p2:300 } }  };
-
-        bag.load(l);
-
-        var r = bag.root;
-        assert(r.b.b1.p2, 300);
-        assert(r.b.b1.p1, 100);
-
-        var o = { d: { k: "str", d:{ d1 : 1, d2 : 2, d3: { s: [1,2] } } } },
-            bag = new Bag(o),
-            l = { p: { p1: 100, p2: 200  }, b: { b1: { inherit:["p", "d.d"], p2:300 } }  };
-
-        bag.load(l);
-        var r = bag.root;
-
-        assert(r.b.b1.p2, 300);
-        assert(r.b.b1.p1, 100);
-        zebkit.assertObjEqual(r.b.b1, { d1: 1, d2: 2, d3: { s: [1,2]  }, p2: 300, p1:100 } );
+        b.then(l).throw();
+        assert(b.root.k.a, 100, "test_refs 8");
+        assert(b.root.k.b, 100, "test_refs 9");
     },
 
     function test_class_field_initialization() {
         zebkit.A = zebkit.Class([]);
 
-        var o = {}, bag = new Bag(o), l = '{ "a": { "$zebkit.A":[], "id":100 }  }';
-        bag.load(l);
+        var o = {},
+            bag = new Bag(o), l = '{ "a": { "$zebkit.A":[], "id":100 }  }';
+        bag.then(l).throw();
 
         assert(o.a.id, 100);
     },
@@ -421,51 +367,41 @@ zebkit.runTests("util objects bag",
     function test_obj_class_field_initialization() {
         zebkit.A = zebkit.Class([]);
 
-        var o = {}, bag = new Bag(o), l = { a: { "$zebkit.A":[], id:100 }  };
-        bag.load(l);
+        var o = {},
+            bag = new Bag(o), l = { a: { "$zebkit.A":[], id:100 }  };
+        bag.then(l).throw();
 
         assert(o.a.id, 100);
     },
 
-    function _test_optional_fields() {
-        zebkit.$a = 100;
-
-        var o = {}, bag = new Bag(o), l = '{ "? zebkit.$a == 100": { "p1": 100, "p2": 200, "p4":"abc"  }, "? zebkit.$a == 200": { "p1": 300, "p2":400, "p3":500 } }';
-        bag.load(l, false);
-        bag.load('{"? zebkit.$a > 10" : { "p1":999, "?zebkit.$a > 5": {  "p4":"ggg" }, "? zebkit.$a > 0": {"p7": 7 }  } }');
-
-        var r = bag.root;
-        assert(r.p1, 999);
-        assert(r.p2, 200);
-        assert(r.p4, "ggg");
-        assert(r.p7, 7);
-        assert(typeof r.p3, "undefined");
-
-        var bag = new Bag(o), l = '{ "a":100, "? zebkit.$a == 100": { "a": 200 } }';
-        bag.load(l);
-        var r = bag.root;
-        assert(r.a, 200);
-
-        var bag = new Bag(), l = '{ "a":{  "b": { "c": 100, "m":777 }, "k":444 },  "? zebkit.$a == 100": { "a": { "b" : { "c": "ABC" } }  } }';
-        bag.load(l);
-        var r = bag.root;
-        assert(r.a.b.c, "ABC");
-        assert(r.a.k, 444);
-        assert(r.a.b.m, 777);
-    },
-
-    function testExpr() {
+    function test_expr() {
         zebkit.$c = 100;
 
-        var o = {}, bag = new Bag(o), l = '{ "v": { ".expr": "zebkit.$c > 0"  } }';
-        bag.load(l);
+        var o = {},
+            bag = new Bag(o), l = '{ "v": "%{<js> zebkit.$c + 10}"  }';
+        bag.then(l).throw();
+        assert(bag.get("v"), 110);
 
-        assert(bag.get("v"), true);
+        zebkit.$c = 100;
+        var o = {},
+            bag = new Bag(o), l = '{ "v": { ".expr" : "zebkit.$c + 12" } }';
+        bag.then(l).throw();
+        assert(bag.get("v"), 112);
+
+        var json = `{
+            "js": "%{<txt> http://localhost:8090/tests/json.expr.json}",
+            "eval": {
+                ".expr": "%{js}"
+            }
+        }`;
+
+        new Bag().then(json, function(bg) {
+            assert(bg.root.eval, 82);
+            assert(eval(bg.root.js), 82);
+        }).catch();
     },
 
-    function testClassAlias() {
-        var bag = new Bag();
-
+    function test_class_alias() {
         A = zebkit.Class([
             function(a) {
                 this.a = a;
@@ -473,7 +409,8 @@ zebkit.runTests("util objects bag",
             }
         ]);
 
-        bag.load('{ ".addClassAliases" : {  "DD": "A" }, "c": { "$DD": 121 } } ' );
+        var bag = new Bag();
+        bag.then('{ "#addClassAliases" : {  "DD": "A" }, "c": { "$DD": 121 } } ' ).throw();
         var r = bag.root;
 
         assert(r.classAliases, undefined);
@@ -483,19 +420,13 @@ zebkit.runTests("util objects bag",
         assert(r.c.d, 100);
     },
 
-    function testMethodCall() {
-
+    function test_method_call() {
         var r = {
-            c : function(p) {
-                assert(r, this);
-                return p;
-            }
-            ,
             cc : 2000
         };
 
         var bag = new Bag(r, [
-            function b(p) {
+            function b (p) {
                 assert(bag, this);
                 return p;
             }
@@ -508,21 +439,18 @@ zebkit.runTests("util objects bag",
             }
         ]);
 
-        bag.load({
+        bag.then({
             a : {
                 "$A": 123,
                 "b": { ".b": 133 },
-                "c": { ".c": 233 },
                 "d": 222
             }
-        })
+        }).throw();
 
         assert(bag.root.a instanceof A, true);
         assert(bag.root.a.b, 133);
-        assert(bag.root.a.c, 233);
         assert(bag.root.a.d, 222);
         assert(bag.root.cc, 2000);
-        assert(typeof bag.root.c  == 'function', true);
     },
 
     function test_instance_overwriting() {
@@ -545,51 +473,362 @@ zebkit.runTests("util objects bag",
         });
 
         var json = '{"a":11,"b":false,"c":"String 2","d":"undefined","e":[3,4,5],"f":{"bb":2},"k":{"$A":"test2"}}';
-        bag.load(json);
+        bag.then(json).throw();
 
-        assert(bag.root.a, 11);
-        assert(bag.root.b, false);
-        assert(bag.root.c, "String 2");
-        assert(bag.root.d, "undefined");
-        zebkit.assertObjEqual(bag.root.e, [3,4,5]);
-        zebkit.assertObjEqual(bag.root.f, { bb: 2, aa : 1 });
+        assert(bag.root.a, 11, "test_instance_overwriting 1");
+        assert(bag.root.b, false, "test_instance_overwriting 2");
+        assert(bag.root.c, "String 2", "test_instance_overwriting 3");
+        assert(bag.root.d, "undefined", "test_instance_overwriting 4");
+        zebkit.assertObjEqual(bag.root.e, [3,4,5], "test_instance_overwriting 5");
+        zebkit.assertObjEqual(bag.root.f, { bb: 2, aa : 1 }, "test_instance_overwriting 6");
 
         assert(bag.root.k.t, "test2" );
     },
 
-    function test_fileload() {
-        if (typeof navigator !== "undefined") {
-            var bag = new Bag({});
-            assertException(function() {
-                bag.load("test2.json");
-            });
+    function test_complex_refs() {
+        var bag = new Bag(), completed = false;
+        bag.then("http://localhost:8090/tests/json.bag.test.json")
+           .then(function(r) {
+                assert(arguments.length, 1, "assert complex refs 0");
+                assert(r === bag, true, "assert complex refs 00");
 
-            var bag = new Bag({});
-            bag.load("json.bag.test.json");
-            assert(bag.root.test, 100);
-        }
-        else {
-            zebkit.warn("Test case is ignored, since browser context cannot be detected");
+                r = r.root;
+                assert(r.test1.a.test, 100, "assert complex refs 1");
+                assert(r.test1.a.test2, "Hello", "assert complex refs 2");
+                assert(r.test1.b.test, 200, "assert complex refs 3");
+                assert(r.test1.b.a.test, 300, "assert complex refs 4");
+                assert(r.test1.b.a.a, "???", "assert complex refs 5");
+                assert(r.test1.b.clz instanceof Date, true, "assert complex refs 6");
+                assert(r.test1.c.test, 800, "assert complex refs 7");
+                assert(r.test1.c.a.test, 300, "assert complex refs 8");
+                assert(r.test1.c.a.a, "???", "assert complex refs 9");
+                assert(r.test1.d, 200, "assert complex refs 10");
+
+                assert(r.test2.a, 100, "assert complex refs 11");
+                assert(r.test2.b.test, 800, "assert complex refs 12");
+                assert(r.test2.b.a.test, 300, "assert complex refs 13");
+
+                assert(r.test2.c, 200, "assert complex refs 1");
+
+                zebkit.assertObjEqual(r.test3, {
+                    "test" : 999,
+                    "test2": "Hello",
+                    "a": {
+                        "test": 300,
+                        "a": "???"
+                    },
+                    "clz": r.test1.b.clz
+                }, "assert complex refs 14");
+
+                zebkit.assertObjEqual(r.test4, {
+                    "test" : 100,
+                    "test2": "hello2"
+                }, "assert complex refs 15");
+
+            }).catch(function(e) {
+                zebkit.dumpError(e);
+            });
+    },
+
+    function test_load_image() {
+        if (typeof Image !== "undefined") {
+            var bag = new Bag();
+            bag.then('{"img" : { ".loadImage" : "http://localhost:8090/samples/images/home.png" } }', function(r) {
+                assert(r.root.img instanceof Image, true, "test_load_image 1");
+            }).catch();
+
+
+            var bag = new Bag();
+            bag.then('{"img" : "%{<img>http://localhost:8090/samples/images/home.png}" }', function(r) {
+                assert(r.root.img instanceof Image, true, "test_load_image 2");
+            }).catch();
+
+            var bag = new Bag();
+            bag.then('{"txt" : "%{<txt> http://localhost:8090/tests/t1.txt}" }', function(r) {
+                assert(zebkit.isString(r.root.txt), true, "test_load_txt 1");
+                assert(r.root.txt, "hello", "test_load_txt 2");
+            }).catch();
         }
     },
 
-    function test_fileasyncload() {
-        if (typeof navigator !== "undefined") {
-            var bag = new Bag();
-            bag.load("test2.json", this.assertCallback(function(e) {
-                assert(e instanceof Error, true);
-            }));
+    function test_async_class() {
+        var aaac = false;
 
-            var bag = new Bag({});
-            bag.load("json.bag.test.json", this.assertCallback(function() {
-                assert(bag.root.test, 100);
-            }));
+        AAA = zebkit.Class([
+            function setTest(t) {
+                aaac = true;
+                this.test = t;
+                zebkit.assertObjEqual(t, {"a":{"test":100,"test2":"Hello"}}, "test_async_class 1");
+            }
+        ]);
+
+        var json = `
+            { "a" :
+                {   "$AAA" : [],
+                    "test" : {
+                        "a" : "%{<json> http://localhost:8090/tests/json.bag.test.1.1.json}"
+                    }
+                }
+            }`;
+
+        var bag = new Bag();
+        bag.usePropertySetters = true;
+
+        bag.then(json, function(res) {
+            var r = res.root;
+            assert(res, bag, "test_async_class 2");
+
+            assert(res.root.a instanceof AAA, true, "test_async_class 3");
+            zebkit.assertObjEqual(res.root.a.test, {"a":{"test":100,"test2":"Hello"}}, "test_async_class 4");
+            assert(aaac, true, "test_async_class 5");
+        }).catch();
+    },
+
+    function test_async_obj_load() {
+        var cnt = 0;
+        var A = zebkit.Class([
+            function setA(v) {
+                this.a = v;
+                cnt++;
+            },
+
+            function setB(v) {
+                cnt++;
+                this.b = v;
+            },
+
+            function setC(v) {
+                cnt++;
+                this.c = v;
+            }
+        ]);
+
+        var json = `
+            { "a" : 100,
+              "b" : "%{<json>http://localhost:8090/tests/json.bag.test.1.1.json}",
+              "c" : "%{<json>http://localhost:8090/tests/json.bag.test.1.2.json}"}`;
+
+        var a = new A(), bag = new Bag(a);
+        bag.usePropertySetters = true;
+
+        bag.then(json, function(r) {
+            assert(r, bag, "test_async_obj_load 0");
+            assert(cnt, 3, "test_async_obj_load 1");
+            assert(r, bag, "test_async_obj_load 2");
+            assert(r.root, a, "test_async_obj_load 3");
+            zebkit.assertObjEqual(a.a, 100, "test_async_obj_load 4");
+            zebkit.assertObjEqual(a.b, { "test":100,"test2":"Hello" }, "test_async_obj_load 5");
+            assert(a.c.clz != null, true, "test_async_obj_load 6");
+            zebkit.assertObjEqual(a.c, {"test":200,"a":{"test":300,"a":"???"},"clz": a.c.clz }, "test_async_obj_load 7");
+        }).catch(function(e) {
+            zebkit.dumpError(e);
+        });
+
+
+        var bbc = false, aac = false, ttc = false;
+        BB = zebkit.Class([
+            function(b) {
+                bbc = true;
+                this.b = b;
+                assertObjEqual(b, {"test":200,"a":{"test":300,"a":"???"},"clz":b.clz}, "test_async_obj_load 9");
+                assert(b.clz != null, true, "test_async_obj_load 8");
+            },
+
+            function setA(a) {
+                aac = true;
+                zebkit.assertObjEqual(a, { "test":100,"test2":"Hello" }, "test_async_obj_load 10");
+                this.a = a;
+            }
+        ]);
+        var json = `
+            {   "kids" : {
+                    "top" : {
+                        "$BB" : [ "%{<json>http://localhost:8090/tests/json.bag.test.1.2.json}" ],
+                        "a"   : [ "%{<json>http://localhost:8090/tests/json.bag.test.1.1.json}" ]
+                    }
+                }
+            }`;
+
+        var TT = zebkit.Class([
+            function setKids(kids) {
+                ttc = true;
+                for(var k in kids) {
+                    assert(k, "top", "test_async_obj_load 11");
+                    assert(kids[k] instanceof BB, true, "test_async_obj_load 12");
+                    zebkit.assertObjEqual(kids[k].a, { "test":100,"test2":"Hello" }, "test_async_obj_load 13");
+                    zebkit.assertObjEqual(kids[k].b, {"test":200,"a":{"test":300,"a":"???"},"clz": kids[k].b.clz }, "test_async_obj_load 14");
+                }
+
+                this.kids = kids;
+            }
+        ]);
+
+        var t    = new TT();
+        var bag2 = new Bag(t);
+        bag2.usePropertySetters = true;
+
+        bag2.then(json, function(r) {
+            assert(bbc, true, "test_async_obj_load 15");
+            assert(aac, true, "test_async_obj_load 16");
+            assert(ttc, true, "test_async_obj_load 17");
+
+            assert(r.root.kids != null, true, "test_async_obj_load 18");
+            assert(r.root.kids.top instanceof BB, true, "test_async_obj_load 19");
+        }).throw();
+    },
+
+    function test_mixin() {
+        var bag  = new Bag();
+        var json = `{
+            "a": "%{<json>http://localhost:8090/tests/json.bag.test.1.2.json}",
+            "b": {
+                "#mixin" : [ "%{b}", "%{a}" ],
+                "a" : 300
+            }
         }
-        else {
-            zebkit.warn("Test case is ignored, since browser context cannot be detected");
-        }
+        `;
+
+        bag.then(json, function(bag) {
+            assertObjEqual(bag.root.a.a, {"test":300,"a":"???"}, "test_mixin 1" );
+            assert(bag.root.b.a, 300, "test_mixin 2");
+            assert(bag.root.b.test, 200, "test_mixin 3");
+        }).catch();
+    },
+
+    function test_class_asyncprops_and_constructor() {
+        var constr_seq = [];
+
+        BBB = Class([
+            function() {
+                assert(arguments.length > 0, true, "test_class_asyncprops_and_constructor 1");
+                assert(zebkit.isString(arguments[0]), true, "test_class_asyncprops_and_constructor 2");
+                constr_seq.push(arguments[0]);
+
+                this.constr = arguments[1];
+                this.constr2 = arguments[2];
+            },
+
+            function setM(a) {
+                console.log(a);
+            },
+
+            function setKids(kid) {
+                constr_seq.push(arguments[0]);
+                assert(kid instanceof zebkit.DoIt, false, "test_class_asyncprops_and_constructor 3");
+                this.kids = arguments[1];
+            }
+        ]);
+
+        var json = `
+            {
+                "$BBB" :  [
+                    "1",
+                    { "a": "%{<json>http://localhost:8090/tests/json.bag.test.1.1.json}" }
+                ],
+                "kids" :  [
+                    "2",
+                    {
+                        "a": "%{<json>http://localhost:8090/tests/json.bag.test.1.1.json}",
+                        "clazz" : {
+                            "$BBB": [ "2.1", "%{<json>http://localhost:8090/tests/json.bag.test.1.1.json}"  ],
+                            "kids" : [ "2.2", "%{<json>http://localhost:8090/tests/json.bag.test.class.json}" ]
+                        }
+                    }
+                ],
+                "c": {
+                    "$BBB" : [
+                        "3.1",
+                        {
+                            "a": "%{<json>http://localhost:8090/tests/json.bag.test.1.1.json}"
+                        },
+                        {
+                            "$BBB" : [ "3.1.1",
+                                       "%{<json>http://localhost:8090/tests/json.bag.test.1.2.json}",
+                                       "%{<json>http://localhost:8090/tests/json.bag.test.class.json}" ]
+
+                        }
+                    ],
+                    "kids" : [ "3.2", "%{<json>http://localhost:8090/tests/json.bag.test.1.2.json}" ]
+                }
+            }
+        `;
+
+        var bag = new Bag();
+        var rn  = bag.then(json, function(bag) {
+
+            assert(bag instanceof Bag, true, "test_class_asyncprops_and_constructor 4");
+            assert(bag.root != null, true, "test_class_asyncprops_and_constructor 5");
+
+
+            zebkit.assertObjEqual(constr_seq, [ "4", "2.1", "2.2", "4", "3.1.1", "3.1", "3.2", "1", "2" ], "test_class_asyncprops_and_constructor 6");
+
+            var r = bag.root;
+
+            assert(r instanceof BBB, true, "test_class_asyncprops_and_constructor 7");
+
+
+            assert(r.c instanceof BBB, true, "test_class_asyncprops_and_constructor 8");
+
+
+            zebkit.assertObjEqual(r.constr.a,   {
+                                                    "test"  : 100,
+                                                    "test2" : "Hello"
+                                                }, "test_class_asyncprops_and_constructor 9");
+
+
+            zebkit.assertObjEqual(r.kids.a,   {
+                                                    "test"  : 100,
+                                                    "test2" : "Hello"
+                                                }, "test_class_asyncprops_and_constructor 10");
+
+            assert(r.kids.clazz instanceof BBB , true, "test_class_asyncprops_and_constructor 11");
+
+
+            zebkit.assertObjEqual(r.kids.clazz.constr , {
+                                                    "test"  : 100,
+                                                    "test2" : "Hello"
+                                                }, "test_class_asyncprops_and_constructor 12");
+
+            zebkit.assertObjEqual(r.c.constr.a,   {
+                                                    "test"  : 100,
+                                                    "test2" : "Hello"
+                                                }, "test_class_asyncprops_and_constructor 13");
+
+
+            assert(r.c.constr2 instanceof BBB, true, "test_class_asyncprops_and_constructor 14");
+            assert(r.c.constr2.constr2 instanceof BBB, true, "test_class_asyncprops_and_constructor 15");
+            assertObjEqual(r.c.constr2.constr.a, {
+                                                    "test":300,
+                                                    "a" : "???"
+                                                }, "test_class_asyncprops_and_constructor 16");
+            assert(r.c.constr2.constr.test, 200, "test_class_asyncprops_and_constructor 17");
+
+
+            assert(r.c.kids.test, 200, "test_class_asyncprops_and_constructor 18");
+            assertObjEqual(r.c.kids.a, { test: 300, a: '???' }, "test_class_asyncprops_and_constructor 19");
+            assert(r.c.kids.clz instanceof Date, true, "test_class_asyncprops_and_constructor 20");
+
+        }).catch();
+    },
+
+    function test_prom() {
+        var rr = null, p = new Promise(function(resolve, reject) {
+            rr = resolve;
+            resolve(1);
+        });
+
+        p.then(function(r) {
+            p.then(function() {
+            })
+            rr(11);
+        }).then(function(r) {
+            console.log("3 " + r);
+        }).catch(function(e) {
+            console.log("" + e);
+        }).catch(function(e) {
+            console.log("" + e);
+        });
     }
 );
-
 
 });

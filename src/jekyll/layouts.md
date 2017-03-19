@@ -76,7 +76,7 @@ Zebkit comes with number of ready to use layout managers that are in most cases 
 
 
 <script type='text/javascript'>
-zebkit.ready(function() {
+zebkit.require(function() {
     eval(zebkit.import("ui", "layout"));
 
     var PAN = zebkit.Class(Panel, []);

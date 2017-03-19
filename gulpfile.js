@@ -2,36 +2,95 @@ var gulp = require('gulp');
 
 var jshint    = require('gulp-jshint'),
     concat    = require('gulp-concat'),
+    copy      = require('gulp-copy'),
     wrap      = require("gulp-wrap"),
     uglify    = require('gulp-uglify'),
     rename    = require('gulp-rename'),
     webserver = require('gulp-webserver'),
     rm        = require('gulp-rm'),
     expect    = require('gulp-expect-file'),
-    zip       = require('gulp-zip');
+    zip       = require('gulp-zip'),
+    insert    = require('gulp-insert');
 
-var zebkitFiles = [
-    'src/js/easyoop.js',
-    'src/js/layout.js',
+
+var useStrictMode = true;
+
+var miscFiles = [
     'src/js/util.js',
     'src/js/io.js',
     'src/js/data.js',
-    'src/js/web.js',
-    'src/js/ui.webstuff.js',
-    'src/js/ui.webpointer.js',
-    'src/js/ui.webkey.js',
-    'src/js/ui.views.js',
-    'src/js/ui.core.js',
-    'src/js/ui.html.js',
-    'src/js/ui.js',
-    'src/js/ui.field.js',
-    'src/js/ui.list.js',
-    'src/js/ui.window.js',
-    'src/js/ui.grid.js',
-    'src/js/ui.tree.js',
-    'src/js/ui.designer.js',
-    'src/js/ui.bootstrap.js'
+    'src/js/layout.js'
 ];
+
+var uiCoreFiles = [
+    "src/js/ui/ui.web.font.js",
+    "src/js/ui/ui.core.event.js",
+    "src/js/ui/ui.core.js",
+    "src/js/ui/ui.views.js",
+    "src/js/ui/ui.FocusManager.js",
+    "src/js/ui/ui.ShortcutManager.js"
+];
+
+var uiFiles = [
+    "src/js/ui/ui.common.js",
+    "src/js/ui/ui.state.js",
+    "src/js/ui/ui.buttons.js",
+    "src/js/ui/ui.panels.js",
+    "src/js/ui/ui.scroll.js",
+    "src/js/ui/ui.Slider.js",
+    "src/js/ui/ui.Tabs.js",
+    "src/js/ui/ui.field.js",
+    "src/js/ui/ui.list.js",
+    "src/js/ui/ui.Combo.js",
+    "src/js/ui/ui.menu.js",
+    "src/js/ui/ui.window.js",
+    "src/js/ui/ui.tooltip.js",
+    "src/js/ui/ui.bootstrap.js"
+];
+
+var uiDesignFiles = [ "src/js/ui/design/ui.design.js" ];
+
+var uiTreeFiles = [
+    "src/js/ui/tree/ui.tree.common.js",
+    "src/js/ui/tree/ui.tree.Tree.js",
+    "src/js/ui/tree/ui.tree.CompTree.js",
+    "src/js/ui/tree/ui.tree.bootstrap.js"
+];
+
+var uiGridFiles = [
+    "src/js/ui/grid/ui.grid.common.js",
+    "src/js/ui/grid/ui.grid.GridCaption.js",
+    "src/js/ui/grid/ui.grid.CompGridCaption.js",
+    "src/js/ui/grid/ui.grid.Grid.js",
+    "src/js/ui/grid/ui.grid.GridStretchPan.js",
+    "src/js/ui/grid/ui.grid.bootstrap.js"
+];
+
+var webFiles = [
+    "src/js/web/web.common.js",
+    "src/js/web/web.clipboard.js",
+    "src/js/web/web.event.pointer.js",
+    "src/js/web/web.event.wheel.js",
+    "src/js/web/web.event.key.js"
+];
+
+var uiWebFiles = [
+    "src/js/ui/web/ui.web.CursorManager.js",
+    "src/js/ui/web/ui.web.core.js",
+    "src/js/ui/web/ui.web.elements.js",
+    "src/js/ui/web/ui.web.layers.js",
+    "src/js/ui/web/ui.web.canvas.js",
+    "src/js/ui/web/ui.web.bootstrap.js"
+];
+
+var zebkitFiles = [ 'build/easyoop.js',
+                    'build/misc.js',
+                    'build/ui.js',
+                    'build/ui.tree.js',
+                    'build/ui.grid.js',
+                    'build/ui.design.js',
+                    'build/web.js',
+                    'build/ui.web.js' ];
 
 var demoFiles = [
     "samples/demo/ui.demo.js",
@@ -42,8 +101,40 @@ var demoFiles = [
     "samples/demo/ui.demo.popup.js",
     "samples/demo/ui.demo.win.js",
     "samples/demo/ui.demo.grid.js",
-    "samples/demo/ui.demo.designer.js"
+    "samples/demo/ui.demo.design.js"
 ];
+
+
+function packageTask(name, files, wrap, pkg) {
+    gulp.task(name, function() {
+        var t = gulp.src(files).pipe(expect(files));
+
+        if (typeof pkg === 'undefined') {
+            pkg = name;
+        }
+
+        if (wrap !== false) {
+            t = t.pipe(insert.transform(function(content, file) {
+                var i = content.indexOf("{");
+                var j = content.lastIndexOf("}");
+                //console.log(file.path);
+                return content.substring(i + 1, j);
+            }));
+        }
+
+        t = t.pipe(concat('build/' + name + '.js')).pipe(gulp.dest("."));
+
+        if (wrap !== false) {
+            t = t.pipe(insert.wrap("zebkit.package(\"" + pkg + "\", function(pkg, Class) {" + (useStrictMode ? "\n    'use strict';":"")
+                                    ,"});"))
+                 .pipe(gulp.dest("."));
+        }
+
+        return t.pipe(rename(name + '.min.js'))
+                .pipe(uglify({ compress: false, mangle: false }))
+                .pipe(gulp.dest("build"));
+    });
+}
 
 
 gulp.task('http', function() {
@@ -65,34 +156,28 @@ gulp.task('lint', function() {
 
 gulp.task('theme', function() {
     return gulp.src([
-                        "src/js/theme/**/zebkit.json",
-                        "src/js/theme/**/zebkit.png"
-                    ])
-          .pipe(gulp.dest("build/theme"));
+        "src/js/ui/theme/**/*.json",
+        "src/js/ui/theme/**/*.png"
+    ]).pipe(gulp.dest("build/theme"));
 });
 
-gulp.task('easyoop', function() {
-    return gulp.src("src/js/easyoop.js")
-          .pipe(rename('easyoop.min.js'))
-          .pipe(uglify({ compress: false, mangle: false }))
-          .pipe(gulp.dest("build"));
-});
+//
+packageTask("easyoop", [   "src/js/web/web.environment.js", "src/js/easyoop.js" ], false);
+packageTask("misc", miscFiles, false);
+//packageTask("ui.core", uiCoreFiles, true, "ui");
+packageTask("ui", uiCoreFiles.concat(uiFiles));
+packageTask("ui.grid", uiGridFiles);
+packageTask("ui.tree", uiTreeFiles);
+packageTask("ui.design", uiDesignFiles, false);
+packageTask("web", webFiles);
+packageTask("ui.web", uiWebFiles);
 
-gulp.task('calendar', function() {
-    return gulp.src("src/js/component/ui.date.js")
-          .pipe(rename('ui.date.min.js'))
-          .pipe(uglify({ compress: false, mangle: false }))
-          .pipe(gulp.dest("build"));
-});
+// extra packages
+packageTask("ui.calendar", [ "src/js/ui/date/ui.date.js" ], false);
+packageTask("ui.vk", [ "src/js/ui/vk/ui.vk.js" ], false);
 
-gulp.task('vk', function() {
-    return gulp.src("src/js/component/ui.vk.js")
-          .pipe(rename('ui.vk.min.js'))
-          .pipe(uglify({ compress: false, mangle: false }))
-          .pipe(gulp.dest("build"));
-});
 
-gulp.task('zebkit', function() {
+gulp.task('zebkit',  ['easyoop', 'misc',  'ui', 'ui.grid', 'ui.tree', 'ui.design', 'web', 'ui.web'], function() {
     return gulp.src(zebkitFiles)
           .pipe(expect(zebkitFiles))
           .pipe(concat('build/zebkit.js'))
@@ -102,7 +187,8 @@ gulp.task('zebkit', function() {
           .pipe(gulp.dest("build"))
 });
 
-gulp.task('build', [ "zebkit", "theme", "calendar", "vk", "easyoop" ]);
+
+gulp.task('build', [ "zebkit", "theme", "ui.calendar", "ui.vk", 'website' ]);
 
 gulp.task('runtime', [ "build" ], function () {
     return  gulp.src([
@@ -130,7 +216,7 @@ gulp.task('demoscript', function() {
         .pipe(gulp.dest('samples/demo'));
 });
 
-
+// generate WEB site
 gulp.task('website', function (gulpCallBack){
     var spawn  = require('child_process').spawn;
     var jekyll = spawn('jekyll', ['build', '-d', 'build/website', '-s', 'src/jekyll/' ], { stdio: 'inherit' });
@@ -140,6 +226,7 @@ gulp.task('website', function (gulpCallBack){
     });
 });
 
+// generate APIDOC
 gulp.task('apidoc', function (gulpCallBack){
     var spawn  = require('child_process').spawn;
     var yuidoc = spawn('yuidoc', ['-t', 'node_modules/yuidoc-zebkit-theme',
@@ -153,19 +240,17 @@ gulp.task('apidoc', function (gulpCallBack){
     });
 });
 
-
+// clean build
 gulp.task('clean', function() {
     return gulp.src([ 'build/**/*' ], { read: false })
            .pipe(rm());
 });
 
-gulp.task('default', ['zebkit', 'runtime']);
+gulp.task('default', ['zebkit', 'demoscript', 'samplescript', 'runtime']);
 
 gulp.task('watch', function() {
     gulp.watch(zebkitFiles, ['zebkit']);
-    //gulp.watch(demoFiles,   ['demoscript']);
-    //gulp.watch("samples/js/uiengine.samples.js", ['samplescript']);
+    gulp.watch(demoFiles,   ['demoscript']);
+    gulp.watch("samples/js/uiengine.samples.js", ['samplescript']);
 });
-
-//gulp.task('scripts', [ "demoscript", "samplescript", "zebkit", 'datescript', 'vkscript', 'copy']);
 

@@ -215,8 +215,8 @@ zebkit.package("test", function() {
     this.$variable = 100;
 });
  
-// Use zebkit.ready() to write zebkit code safely 
-zebkit.ready(function() {
+// Use zebkit.require() to write zebkit code safely 
+zebkit.require(function() {
     // Import fields from "test" package into current scope 
     eval(zebkit.import("test"));
   

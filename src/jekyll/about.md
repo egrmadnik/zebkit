@@ -22,7 +22,7 @@ Zebkit is good choice for development mobile, single page applications with no l
 
 zebkit.config["zebkit.theme"] = "dark";
 
-zebkit.ready(function() {
+zebkit.require(function() {
     eval(zebkit.import("ui", "layout"));
 
     var root = (new zCanvas("designer", 400, 300)).root;
@@ -33,17 +33,17 @@ zebkit.ready(function() {
             center: new BorderPan("Designer panel", new Panel({
                 padding: 6,
                 kids: [
-                    new zebkit.ui.designer.ShaperPan(new Checkbox("Check-box").properties({
+                    new zebkit.ui.design.ShaperPan(new Checkbox("Check-box").properties({
                         value:true,
                         location: [10, 10]
                     })),
 
-                    new zebkit.ui.designer.ShaperPan(new Button("Button").properties({
+                    new zebkit.ui.design.ShaperPan(new Button("Button").properties({
                         value:true,
                         location: [190, 50]
                     })),
 
-                    new zebkit.ui.designer.ShaperPan(new TextField("Text Field").properties({
+                    new zebkit.ui.design.ShaperPan(new TextField("Text Field").properties({
                         size : [120, 60],
                         location: [30, 100]
                     }))
@@ -53,7 +53,7 @@ zebkit.ready(function() {
             bottom: new Button("Align", [
                 function fire() {
                     this.$super();
-                    var y = 10, c = root.findAll("zebkit.ui.designer.ShaperPan");
+                    var y = 10, c = root.findAll("zebkit.ui.design.ShaperPan");
                     for(var i=0; i < c.length; i++)  {
                         c[i].toPreferredSize();
                         c[i].setLocation(10, y);
@@ -111,12 +111,16 @@ b.b();  // call "b" method => 3
 {% include zsample.html canvas_id='renderingSample' title='Customized rendering' description=description%}
 
 <script type="text/javascript">
-var zebra_image = null;
-zebkit.ready(function() {
-    zebra_image = zebkit.web.$loadImage("public/images/zebra-pattern.png");
+zebra_image = null;
+
+zebkit.require(function() {
+    zebkit.then(zebkit.environment.loadImage("public/images/zebra-pattern.png",false)).then(function(img, b) {
+        console.log("IMAGE LOADED " + img + "," + b + "," + zebra_image);
+        zebra_image = img;
+    });
 });
 
-zebkit.ready(function() {
+zebkit.require(function() {
     eval(zebkit.import("ui", "layout"));
 
     var ZebkitTextRender = zebkit.Class(TextRender, [
@@ -126,6 +130,9 @@ zebkit.ready(function() {
             }
             this.$super(t);
             this.setFont("100px Futura, Helvetica, sans-serif");
+
+            console.log("::: constructor() " + zebra_image);
+
             this.image = zebra_image;
             this.reflectionGap = -40;
         },
@@ -147,7 +154,8 @@ zebkit.ready(function() {
         },
 
         function paint(g,x,y,w,h,d) {
-            this.pattern = g.createPattern(this.image, 'repeat');
+            console.log("createImage : " + this.image);
+            //this.pattern = g.createPattern(this.image, 'repeat');
             this.$super(g,x,y,w,h,d);
         }
     ]);
@@ -270,11 +278,11 @@ zebkit.ready(function() {
 <script>
     var gmap = null;
     function initMap() {
-        zebkit.ready(function() {
+        zebkit.require(function() {
             eval(zebkit.import("ui"));
 
             var c = new zCanvas("sampleGoogleMap", 400, 400);
-            var map = new HtmlElement();
+            var map = new zebkit.ui.web.HtmlElement();
             map.setAttribute("id", "map");
             map.tooltip = new Tooltip("Zebkit Tooltip");
                                                        
@@ -327,16 +335,18 @@ root.pointerPressed = function(e) {
 {% include zsample.html canvas_id='customShapeSample' title="Custom shaped UI components" %}
 
 <script>
-zebkit.ready(function() {
+zebkit.require(function() {
     eval(zebkit.import("ui"));
     var zcan = new zCanvas("customShapeSample", 550, 250);
     var root = new Panel(new zebkit.layout.FlowLayout("center", "center", "vertical", 16));
     zcan.root.setLayout(new zebkit.layout.FlowLayout(16));
     zcan.root.add(root);
 
-    var RoundButton = zebkit.Interface([
-        function () {
-            this.setBorder({
+
+    var RoundButton = zebkit.Class(Button, [
+        function (target) {
+            this.$super(target);
+            this.setBorder ({
                 "pressed.over" : new RoundBorder("#AACCDD", 4),
                 "pressed.out"  : new RoundBorder("black", 4),
                 "over"         : new RoundBorder("orange", 4),
@@ -387,10 +397,12 @@ zebkit.ready(function() {
         }
     ]);
 
-    var Triangle = zebkit.Interface([
-        function(color) {
-            this.setBorder(new TriangleBorder(arguments.length > 0 ? color : "red", 4));
+    var TriangleButton = zebkit.Class(Button, [
+        function(target, color) {
+            this.$super(target);
+            this.setBorder(new TriangleBorder(arguments.length > 1 ? color : "red", 4));
         },
+
         function contains(x, y) {
             var w = this.width, h = this.height,
                 x1 = Math.floor(w/2) - 1, x2 = w - 1, x3 = 0,
@@ -464,12 +476,9 @@ zebkit.ready(function() {
     b.setPreferredSize(140, 90);
     root.add(b);
 
-    var b1=new Button(new ImagePan("public/images/boat.png").setPadding(6)),
-        b2=new Button(new ImagePan("public/images/drop.png").setPadding(6)),
-        b3=new Button(new ImagePan("public/images/bug-o.png").setPadding(6));
-    b1.extend(RoundButton);
-    b2.extend(RoundButton);
-    b3.extend(RoundButton);
+    var b1=new RoundButton(new ImagePan("public/images/boat.png").setPadding(6)),
+        b2=new RoundButton(new ImagePan("public/images/drop.png").setPadding(6)),
+        b3=new RoundButton(new ImagePan("public/images/bug-o.png").setPadding(6));
     root.add(new Panel({
         layout:new zebkit.layout.FlowLayout("center","center","horizontal", 8),
         kids  : [ b1, b2, b3 ]
@@ -479,8 +488,7 @@ zebkit.ready(function() {
     lab.setImgAlignment("bottom");
     lab.setPadding(14,0,0,0);
     lab.setColor("black");
-    var tb = new Button(lab.setFont("bold"));
-    tb.extend(Triangle);
+    var tb = new TriangleButton(lab.setFont("bold"));
     zcan.root.add(tb.setPreferredSize(200, 150));
 });
 </script>
@@ -546,9 +554,9 @@ eval(zebkit.import("ui", "layout"));
 var root = new zCanvas(300,300).root;
 root.setLayout(new StackLayout());
 
-zebkit.util.Bag()
-.load("simpleapp.json")
-.than(function(b) {
+zebkit.util.Zson()
+.then("simpleapp.json")
+.then(function(b) {
     root.add(b.root);
 });
     
@@ -559,15 +567,16 @@ zebkit.util.Bag()
 <br/>
 
 <script>
-zebkit.ready(function() {
-   eval(zebkit.import("ui"));
-   var root = new zCanvas("jsonSample", 300, 300).root;
-   root.setLayout(new zebkit.layout.StackLayout());
+zebkit.require(function() {
+    eval(zebkit.import("ui"));
+    var root = new zCanvas("jsonSample", 300, 300).root;
+    root.setLayout(new zebkit.layout.StackLayout());
 
-   var bag = new zebkit.util.Bag();
-   bag.load("public/js/simpleapp.json").than(function(bag) {
+    var bag = new zebkit.util.Zson();
+
+    bag.then("public/js/simpleapp.json").then(function(bag) {
         root.add(bag.root);
-   });    
+    }).catch();    
 });
 </script>
 
@@ -576,8 +585,8 @@ zebkit.ready(function() {
 {% include zsample.html canvas_id='sampleRichSet' title="Number of zebkit UI components"%}
 
 <script type="text/javascript">
-    zebkit.ready(function() {
-       eval(zebkit.import("ui","layout","ui.grid","ui.tree","ui.designer"));
+    zebkit.require(function() {
+       eval(zebkit.import("ui","layout","ui.grid","ui.tree","ui.design"));
    
        var root = new zCanvas("sampleRichSet", 650, 750).root;
        root.setLayout(new RasterLayout(true));
@@ -762,7 +771,7 @@ zebkit.ready(function() {
 {% include zsample.html canvas_id='sampleBigGrid' title='10.000.000 cells' %}
 
 <script type="text/javascript">
-    zebkit.ready(function() {
+    zebkit.require(function() {
         eval(zebkit.import("ui","layout","ui.grid"));
         var grid = new Grid(1000000, 10);
         grid.defXAlignment = "center";
@@ -792,7 +801,7 @@ zebkit.ready(function() {
 {% include zsample.html canvas_id='layoutSample1' title='Border layout' %}
 
 <script type='text/javascript'>
-zebkit.ready(function() {
+zebkit.require(function() {
     eval(zebkit.import("ui", "layout"));
 
     // Border layout
