@@ -561,6 +561,32 @@ zebkit.package("ui", function(pkg, Class) {
      * @extends {zebkit.ui.Panel}
      */
     pkg.ImageLabel = Class(pkg.Panel, [
+        function(txt, img) {
+            var img = zebkit.instanceOf(img, pkg.ImagePan) ? img : new this.clazz.ImagePan(img),
+                lab = zebkit.instanceOf(txt, pkg.Panel)    ? txt : new this.clazz.Label(txt);
+
+            img.constraints = "image";
+            lab.constraints = "label";
+
+            // TODO: this is copy paste of Panel constructor to initialize fields that has to
+            // be used for adding child components. these components have top be added before
+            // properties() call. a bit dirty trick
+            if (typeof this.kids === "undefined") {
+                this.kids = [];
+            }
+
+            this.layout = new zebkit.layout.FlowLayout("left", "center", "horizontal", 6);
+
+            // add before panel constructor thanks to copy pasted code above
+            this.add(img);
+            this.add(lab);
+
+            this.$super();
+
+            lab.setVisible(txt != null);
+        },
+
+
         function $clazz() {
             this.ImagePan = Class(pkg.ImagePan, []);
             this.Label    = Class(pkg.Label, []);
@@ -696,34 +722,8 @@ zebkit.package("ui", function(pkg, Class) {
                 this.getByConstraints("image").setPreferredSize(w, h);
                 return this;
             };
-        },
-
-        function(txt, img) {
-            var img = zebkit.instanceOf(img, pkg.ImagePan) ? img : new this.clazz.ImagePan(img),
-                lab = zebkit.instanceOf(txt, pkg.Panel)    ? txt : new this.clazz.Label(txt);
-
-            img.constraints = "image";
-            lab.constraints = "label";
-
-            // TODO: this is copy paste of Panel constructor to initialize fields that has to
-            // be used for adding child components. these components have top be added before
-            // properties() call. a bit dirty trick
-            if (typeof this.kids === "undefined") {
-                this.kids = [];
-            }
-
-            this.layout = new zebkit.layout.FlowLayout("left", "center", "horizontal", 6);
-
-            // add before panel constructor thanks to copy pasted code above
-            this.add(img);
-            this.add(lab);
-
-            this.$super();
-
-            lab.setVisible(txt != null);
         }
     ]);
-
 
     /**
      * Progress bar UI component class.

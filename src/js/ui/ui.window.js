@@ -406,7 +406,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.TitleLab   = Class(pkg.Label, []);
             this.StatusPan  = Class(pkg.Panel, []);
             this.ContentPan = Class(pkg.Panel, []);
-            this.SizerIcon  = Class(pkg.ImagePan, []);
+            this.SizerPan   = Class(pkg.ViewPan, []);
             this.Icon       = Class(pkg.ImagePan, []);
             this.Button     = Class(pkg.Button, []);
         },
@@ -755,7 +755,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @type {zebkit.ui.Panel}
              */
             this.status = new this.clazz.StatusPan();
-            this.sizer  = new this.clazz.SizerIcon();
+            this.sizer  = new this.clazz.SizerPan();
             this.status.add(this.sizer);
 
             this.setSizeable(true);

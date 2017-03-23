@@ -84,6 +84,61 @@ zebkit.package("ui", function(pkg, Class) {
      * @constructor
      */
     pkg.MenuItem = Class(pkg.Panel, [
+        function (c) {
+            this.$super();
+            this.add(new this.clazz.CheckStatePan());
+
+            if (zebkit.isString(c)) {
+                var m = c.match(/(\s*\@\(.*\)\s*)?(\s*\[\s*\]|\s*\[\s*x\s*\]|\s*\(\s*x\s*\)|\s*\(\s*\))?\s*(.*)/);
+                if (m == null) {
+                    throw new Error("Invalid menu item: " + c);
+                }
+
+                if (m[2] != null) {
+                    var s = m[2].trim();
+                    this.setCheckManager(s[0] === '(' ? new pkg.Group() : new pkg.SwitchManager());
+                    this.manager.setValue(this, m[2].indexOf('x') > 0);
+                }
+
+                var img = null;
+                if (m[1] != null) {
+                    img = m[1].substring(m[1].indexOf("@(") + 2, m[1].lastIndexOf(")")).trim();
+                    if (img[0] === "'") {
+                       img = img.substring(1, img.length-1);
+                    } else {
+                        var parts = img.split('.'),
+                            scope = zebkit.$global;
+
+                        img = null;
+                        for (var i = 0; i < parts.length; i++) {
+                            scope = scope[parts[i]];
+                            if (scope == null) break;
+                        }
+                        img = scope;
+                    }
+                }
+
+                c = m[3];
+                m = c.match(/(.*)\s*\[\s*@([a-zA-Z_][a-zA-Z0-9_]+)\s*]\s*/);
+                if (m != null) {
+                    this.id = m[2].trim();
+                    c       = m[1].trim();
+                } else {
+                    this.id = c.toLowerCase().replace(/[ ]+/, '_');
+                }
+
+                c = new pkg.ImageLabel(new this.clazz.Label(c), img);
+            } else {
+                this.getCheck().setVisible(false);
+            }
+
+            this.add(c);
+            this.add(new this.clazz.SubImage());
+
+            this.setEnabled(c.isEnabled);
+            this.setVisible(c.isVisible);
+        },
+
         function $clazz() {
             this.SubImage      = Class(pkg.StatePan, []);
             this.Label         = Class(pkg.Label,    []);
@@ -119,7 +174,7 @@ zebkit.package("ui", function(pkg, Class) {
                     content.setValue(!content.getValue());
                 }
 
-                if (this.manager != null) {
+                if (this.manager !== null) {
                     this.manager.setValue(this, !this.manager.getValue(this));
                 }
             };
@@ -258,7 +313,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setCheckState = function(b) {
-                if (this.manager == null) {
+                if (this.manager === null) {
                     this.setCheckManager(new pkg.SwitchManager());
                 }
                 this.manager.setValue(this, b);
@@ -282,7 +337,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.setCheckManager = function(man) {
                 if (this.manager != man) {
-                    if (this.manager != null) {
+                    if (this.manager !== null) {
                         this.manager.uninstall(this);
                     }
                     this.manager = man;
@@ -305,70 +360,15 @@ zebkit.package("ui", function(pkg, Class) {
             }
         },
 
-        function (c) {
-            this.$super();
-            this.add(new this.clazz.CheckStatePan());
-
-            if (zebkit.isString(c)) {
-                var m = c.match(/(\s*\@\(.*\)\s*)?(\s*\[\s*\]|\s*\[\s*x\s*\]|\s*\(\s*x\s*\)|\s*\(\s*\))?\s*(.*)/);
-                if (m == null) {
-                    throw new Error("Invalid menu item: " + c);
-                }
-
-                if (m[2] != null) {
-                    var s = m[2].trim();
-                    this.setCheckManager(s[0] === '(' ? new pkg.Group() : new pkg.SwitchManager());
-                    this.manager.setValue(this, m[2].indexOf('x') > 0);
-                }
-
-                var img = null;
-                if (m[1] != null) {
-                    img = m[1].substring(m[1].indexOf("@(") + 2, m[1].lastIndexOf(")")).trim();
-                    if (img[0] === "'") {
-                       img = img.substring(1, img.length-1);
-                    } else {
-                        var parts = img.split('.'),
-                            scope = zebkit.$global;
-
-                        img = null;
-                        for (var i = 0; i < parts.length; i++) {
-                            scope = scope[parts[i]];
-                            if (scope == null) break;
-                        }
-                        img = scope;
-                    }
-                }
-
-                c = m[3];
-                m = c.match(/(.*)\s*\[\s*@([a-zA-Z_][a-zA-Z0-9_]+)\s*]\s*/);
-                if (m != null) {
-                    this.id = m[2].trim();
-                    c       = m[1].trim();
-                } else {
-                    this.id = c.toLowerCase().replace(/[ ]+/, '_');
-                }
-
-                c = new pkg.ImageLabel(new this.clazz.Label(c), img);
-            } else {
-                this.getCheck().setVisible(false);
-            }
-
-            this.add(c);
-            this.add(new this.clazz.SubImage());
-
-            this.setEnabled(c.isEnabled);
-            this.setVisible(c.isVisible);
-        },
-
         function setEnabled(b) {
             this.$super(b);
             // sync menu item enabled state with checkable element state
-            if (this.manager != null) {
+            if (this.manager !== null) {
                 this.switched(this.manager.getValue(this));
             }
             return this;
         }
-    ]);
+    ]).hashable();
 
     /**
      * Menu UI component class. The class implements popup menu UI component.
@@ -415,8 +415,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method isDecorative
              */
             this.isDecorative = function(i){
-                return this.decoratives[this.kids[i]] === true ||
-                       this.kids[i].$isDecorative === true;
+                return this.kids[i].$isDecorative === true || this.kids[i].$$isDecorative === true;
             };
 
             /**
@@ -495,8 +494,8 @@ zebkit.package("ui", function(pkg, Class) {
              * @method setMenuAt
              * @chainable
              */
-            this.setMenuAt = function (i, m){
-                if (m == this) {
+            this.setMenuAt = function (i, m) {
+                if (m === this) {
                     throw new Error("Menu cannot be sub-menu of its own");
                 }
 
@@ -511,13 +510,13 @@ zebkit.package("ui", function(pkg, Class) {
                         if (sub == null) {
                             p.activateSub(true);
                         }
-                    } else {
-                        if (sub != null) p.activateSub(false);
+                    } else if (sub != null) {
+                        p.activateSub(false);
                     }
                 }
 
                 // if the menu is shown and the menu item is selected
-                if (this.parent != null && i === this.selectedIndex) {
+                if (this.parent !== null && i === this.selectedIndex) {
                     this.select(-1);
                 }
 
@@ -681,13 +680,15 @@ zebkit.package("ui", function(pkg, Class) {
          * @method addDecorative
          */
         function addDecorative(c) {
-            this.decoratives[c] = true;
+            if (c.$isDecorative !== true) {
+                c.$$isDecorative = true;
+            }
             this.$getSuper("insert").call(this, this.kids.length, null, c);
         },
 
-        function kidRemoved(i,c) {
-            if (this.decoratives[c] !== true) {
-                delete this.decoratives[c];
+        function kidRemoved(i, c) {
+            if (typeof c.$$isDecorative !== 'undefined') {
+                delete c.$$isDecorative;
             }
             this.setMenuAt(i, null);
             this.$super(i, c);
@@ -780,20 +781,6 @@ zebkit.package("ui", function(pkg, Class) {
 
         function (d) {
             this.menus = {};
-
-            /**
-             * Dictionary to keep decorative components
-             * @attribute decoratives
-             * @type {Object}
-
-               {
-                   {zebkit.ui.Panel}:true
-               }
-
-             * @readOnly
-             * @private
-             */
-            this.decoratives = {};
 
             this.$super([], zebkit.isBoolean(d) ? d : true);
 

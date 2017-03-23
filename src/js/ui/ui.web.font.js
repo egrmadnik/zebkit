@@ -52,170 +52,190 @@ zebkit.package("ui", function(pkg, Class) {
      * @param {Integer} [size] a size of the font
      * @class zebkit.ui.Font
      */
-    pkg.Font = function(family, style, size) {
-        this.family = pkg.Font.family,
-        this.style  = pkg.Font.style;
+    pkg.Font = Class([
+        function(family, style, size) {
+            if (arguments.length === 1) {
+                this.size = decodeSize(family, this.clazz.size);
+                if (this.size === null) {
+                    // trim
+                    family = family.trim();
 
-        if (arguments.length === 1) {
-            this.size = decodeSize(family, pkg.Font.height);
-            if (this.size === null) {
-                // trim
-                family = family.trim();
+                    // check if a predefined style has been used
+                    if (family === "bold" || family === "italic") {
+                        this.style = family;
+                    } else {  // otherwise handle it as CSS-like font style
+                        // try to parse font if possible
+                        var re = /([a-zA-Z_\- ]+)?(([0-9]+px|[0-9]+em)\s+([,\"'a-zA-Z_ \-]+))?/,
+                            m  = family.match(re);
 
-                // check if a predefined style has been used
-                if (family === "bold" || family === "italic") {
-                    this.style = family;
-                } else {  // otherwise handle it as CSS-like font style
-                    // try to parse font if possible
-                    var re = /([a-zA-Z_\- ]+)?(([0-9]+px|[0-9]+em)\s+([,\"'a-zA-Z_ \-]+))?/,
-                        m  = family.match(re);
+                        if (m[4] != null) {
+                            this.family = m[4].trim();
+                        }
 
-                    if (m[4] != null) {
-                        this.family = m[4].trim();
+                        if (m[3] != null) {
+                            this.size = m[3].trim();
+                        }
+
+                        if (m[1] != null) {
+                            this.style = m[1].trim();
+                        }
+
+                        this.s = family;
                     }
-
-                    if (m[3] != null) {
-                        this.size = m[3].trim();
-                    }
-
-                    if (m[1] != null) {
-                        this.style = m[1].trim();
-                    }
-
-                    this.s = family;
                 }
+            } else if (arguments.length === 2) {
+                this.family = family;
+                this.size   = decodeSize(style, this.clazz.size);
+                this.style  = this.size == null ? style : null;
+            } else if (arguments.length === 3) {
+                this.family = family;
+                this.style  = style;
+                this.size   = decodeSize(size, this.clazz.size);
             }
-        } else if (arguments.length === 2) {
-            this.family = family;
-            this.size   = decodeSize(style, pkg.Font.height);
-            this.style  = this.size == null ? style : null;
-        } else if (arguments.length === 3) {
-            this.family = family;
-            this.style  = style;
-            this.size   = decodeSize(size, pkg.Font.height);
+
+            if (this.size == null) {
+                this.size = this.clazz.size + "px";
+            }
+
+            if (this.s == null) {
+                this.s = ((this.style != null) ? this.style + " ": "") +
+                         this.size + " " +
+                         this.family;
+            }
+
+            var m = computeFontMetrics(this.s);
+
+            /**
+             * Height of the font
+             * @attribute height
+             * @readOnly
+             * @type {Integer}
+             */
+            this.height = m.height;
+            /**
+             * Ascent of the font
+             * @attribute ascent
+             * @readOnly
+             * @type {Integer}
+             */
+            this.ascent = m.ascent;
+        },
+
+        function $clazz() {
+            // default values
+            this.family = "Arial, Helvetica";
+            this.style  =  null;
+            this.size   =  14;
+
+            this.entire = true;
+        },
+
+        function $prototype(clazz) {
+            this.family = clazz.family,
+            this.style  = clazz.style;
+            this.size   = clazz.size;
+
+            /**
+             * Calculate the given string width in pixels
+             * @param  {String} s a string whose width has to be computed
+             * @return {Integer} a string size in pixels
+             * @method stringWidth
+             * @for zebkit.ui.Font
+             */
+            this.stringWidth = function(s) {
+                if (s.length === 0) {
+                    return 0;
+                }
+
+                if (pkg.Font.$fmCanvas.font !== this.s) {
+                    pkg.Font.$fmCanvas.font = this.s;
+                }
+
+                return (pkg.Font.$fmCanvas.measureText(s).width + 0.5) | 0;
+            };
+
+            /**
+             * Calculate the specified substring width
+             * @param  {String} s a string
+             * @param  {Integer} off fist character index
+             * @param  {Integer} len length of substring
+             * @return {Integer} a substring size in pixels
+             * @method charsWidth
+             * @for zebkit.ui.Font
+             */
+            this.charsWidth = function(s, off, len) {
+                if (pkg.Font.$fmCanvas.font !== this.s) {
+                    pkg.Font.$fmCanvas.font = this.s;
+                }
+
+                return ( pkg.Font.$fmCanvas.measureText(len === 1 ? s[off]
+                                                                  : s.substring(off, off + len)).width + 0.5) | 0;
+            };
+
+            /**
+             * Returns CSS font representation
+             * @return {String} a CSS representation of the given Font
+             * @method toString
+             * @for zebkit.ui.Font
+             */
+            this.toString = function() {
+                return this.s;
+            };
+
+            /**
+             * Resize font and return new instance of font class with new size.
+             * @param  {Integer | String} size can be specified in pixels as integer value or as
+             * a percentage from the given font:
+             * @return {zebkit.ui.Font} a font
+             * @for zebkit.ui.Font
+             * @method resize
+             * @example
+             *
+             * ```javascript
+             * var font = new zebkit.ui.Font(10); // font 10 pixels
+             * font = font.resize("200%"); // two times higher font
+             * ```
+             */
+            this.resize = function(size) {
+                var nsize = decodeSize(size, this.height);
+                if (nsize == null) {
+                    throw new Error("Invalid font size : " + size);
+                }
+                return new this.clazz(this.family, this.style, nsize);
+            };
+
+            this.restyle = function(style) {
+                return new this.clazz(this.family, style, this.height + "px");
+            };
+        }
+    ]);
+
+
+    function computeFontMetrics(font) {
+        var res     = {},
+            $fmText = pkg.Font.$fmText;
+
+        if ($fmText.style.font !== font) {
+            $fmText.style.font = font;
         }
 
-        if (this.size == null) {
-            this.size = pkg.Font.height + "px";
-        }
-
-        if (this.s == null) {
-            this.s = ((this.style != null) ? this.style + " ": "") +
-                     this.size + " " +
-                     this.family;
-        }
-
-        var $fmText = pkg.Font.$fmText;
-        if ($fmText.style.font !== this.s) {
-            $fmText.style.font = this.s;
-        }
-
-        /**
-         * Height of the font
-         * @attribute height
-         * @readOnly
-         * @type {Integer}
-         */
-        this.height = $fmText.offsetHeight;
+        res.height = $fmText.offsetHeight;
 
         //!!!
         // Something weird is going sometimes in IE10 !
         // Sometimes the property offsetHeight is 0 but
         // second attempt to access to the property gives
         // proper result
-        if (this.height === 0) {
-            this.height = $fmText.offsetHeight;
+        if (res.height === 0) {
+            res.height = $fmText.offsetHeight;
         }
 
-        /**
-         * Ascent of the font
-         * @attribute ascent
-         * @readOnly
-         * @type {Integer}
-         */
-        this.ascent = pkg.Font.$fmImage.offsetTop - $fmText.offsetTop + 1;
-    };
+        res.ascent = pkg.Font.$fmImage.offsetTop - $fmText.offsetTop + 1;
+        return res;
+    }
 
-    /**
-     * Calculate the given string width in pixels
-     * @param  {String} s a string whose width has to be computed
-     * @return {Integer} a string size in pixels
-     * @method stringWidth
-     * @for zebkit.ui.Font
-     */
-    pkg.Font.prototype.stringWidth = function(s) {
-        if (s.length === 0) {
-            return 0;
-        }
-
-        if (pkg.Font.$fmCanvas.font !== this.s) {
-            pkg.Font.$fmCanvas.font = this.s;
-        }
-
-        return (pkg.Font.$fmCanvas.measureText(s).width + 0.5) | 0;
-    };
-
-    /**
-     * Calculate the specified substring width
-     * @param  {String} s a string
-     * @param  {Integer} off fist character index
-     * @param  {Integer} len length of substring
-     * @return {Integer} a substring size in pixels
-     * @method charsWidth
-     * @for zebkit.ui.Font
-     */
-    pkg.Font.prototype.charsWidth = function(s, off, len) {
-        if (pkg.Font.$fmCanvas.font !== this.s) {
-            pkg.Font.$fmCanvas.font = this.s;
-        }
-
-        return ( pkg.Font.$fmCanvas.measureText(len === 1 ? s[off]
-                                                          : s.substring(off, off + len)).width + 0.5) | 0;
-    };
-
-    /**
-     * Returns CSS font representation
-     * @return {String} a CSS representation of the given Font
-     * @method toString
-     * @for zebkit.ui.Font
-     */
-    pkg.Font.prototype.toString = function() {
-        return this.s;
-    };
-
-    /**
-     * Resize font and return new instance of font class with new size.
-     * @param  {Integer | String} size can be specified in pixels as integer value or as
-     * a percentage from the given font:
-     * @return {zebkit.ui.Font} a font
-     * @for zebkit.ui.Font
-     * @method resize
-     * @example
-     *
-     * ```javascript
-     * var font = new zebkit.ui.Font(10); // font 10 pixels
-     * font = font.resize("200%"); // two times higher font
-     * ```
-     */
-    pkg.Font.prototype.resize = function(size) {
-        var nsize = decodeSize(size, this.height);
-        if (nsize == null) {
-            throw new Error("Invalid font size : " + size);
-        }
-        return new pkg.Font(this.family, this.style, nsize);
-    };
-
-    pkg.Font.prototype.restyle = function(style) {
-        return new pkg.Font(this.family, style, this.height + "px");
-    };
-
-    // default values
-    pkg.Font.family = "Arial, Helvetica";
-    pkg.Font.style  =  null;
-    pkg.Font.height =  14;
 
     // initialize font specific structures
-
     var jn = zebkit.join();
 
     pkg.Font.$fmCanvas = document.createElement("canvas").getContext("2d");

@@ -95,12 +95,9 @@ zebkit.package("ui", function(pkg, Class) {
                 function(icon, caption) {
                     if (arguments.length === 0) {
                         caption = "";
-                    }
-                    else {
-                        if (arguments.length === 1) {
-                            caption = icon;
-                            icon = null;
-                        }
+                    } else if (arguments.length === 1) {
+                        caption = icon;
+                        icon = null;
                     }
 
                     var tp = new this.clazz.TabPan();
@@ -452,11 +449,8 @@ zebkit.package("ui", function(pkg, Class) {
 
                 if (this.selectedIndex === pageIndex && tabon != null) {
                     tabon.paint(g, b.x, b.y, b.width, b.height, page);
-                }
-                else {
-                    if (tab != null) {
-                        tab.paint(g, b.x, b.y, b.width, b.height, page);
-                    }
+                } else if (tab != null) {
+                    tab.paint(g, b.x, b.y, b.width, b.height, page);
                 }
 
                 if (this.overTab >= 0 && this.overTab === pageIndex && tabover != null) {
@@ -487,8 +481,7 @@ zebkit.package("ui", function(pkg, Class) {
                 if (this.orient === "bottom" || this.orient === "top"){
                     max.width = Math.max(max.width, 2 * this.sideSpace + this.tabAreaWidth);
                     max.height += this.tabAreaHeight + this.sideSpace;
-                }
-                else {
+                } else {
                     max.width += this.tabAreaWidth + this.sideSpace;
                     max.height = Math.max(max.height, 2 * this.sideSpace + this.tabAreaHeight);
                 }
@@ -508,8 +501,7 @@ zebkit.package("ui", function(pkg, Class) {
                     if (this.orient === "bottom") {
                         this.repaintY -= (this.border != null ? this.border.getBottom() : 0);
                     }
-                }
-                else {
+                } else {
                     this.repaintX = this.tabAreaX = (this.orient === "left" ? left : this.width - right - this.tabAreaWidth);
                     this.repaintY = this.tabAreaY = top ;
                     if (this.orient === "right") {
@@ -536,8 +528,7 @@ zebkit.package("ui", function(pkg, Class) {
                                 r.y -= (this.border != null ? this.border.getBottom() : 0);
                             }
                         }
-                    }
-                    else {
+                    } else {
                         yy += r.height;
                         if (i === this.selectedIndex) {
                             yy -= sp;
@@ -556,8 +547,7 @@ zebkit.package("ui", function(pkg, Class) {
                         r.y -= ((this.orient === "top") ? this.sideSpace : 0);
                         dt = (r.x < left) ? left - r.x
                                           : (r.x + r.width > this.width - right) ? this.width - right - r.x - r.width : 0;
-                    }
-                    else {
+                    } else {
                         r.x -= (this.orient === "left") ? this.sideSpace : 0;
                         r.y -= this.sideSpace;
                         dt = (r.y < top) ? top - r.y
@@ -579,15 +569,13 @@ zebkit.package("ui", function(pkg, Class) {
                                         ((this.orient === "top") ? top + this.repaintHeight : top) + this.vgap,
                                         this.width - left - right - 2 * this.hgap,
                                         this.height - this.repaintHeight - top - bottom - 2 * this.vgap);
-                        }
-                        else {
+                        } else {
                             l.setBounds(((this.orient === "left") ? left + this.repaintWidth : left) + this.hgap,
                                         top + this.vgap,
                                         this.width - this.repaintWidth - left - right - 2 * this.hgap,
                                         this.height - top - bottom - 2 * this.vgap);
                         }
-                    }
-                    else {
+                    } else {
                         l.setSize(0, 0);
                     }
                 }
@@ -617,8 +605,7 @@ zebkit.package("ui", function(pkg, Class) {
                             r.height = ps.height + vadd;
                             if (ps.width + hadd > max) max = ps.width + hadd;
                             this.tabAreaHeight += r.height;
-                        }
-                        else {
+                        } else {
                             r.width = ps.width + hadd;
                             if (ps.height + vadd > max) max = ps.height + vadd;
                             this.tabAreaWidth += r.width;
@@ -639,8 +626,7 @@ zebkit.package("ui", function(pkg, Class) {
                         this.repaintWidth   = this.tabAreaWidth + (this.border != null ? (b === "left" ? this.border.getLeft()
                                                                                                        : this.border.getRight())
                                                                                        : 0);
-                    }
-                    else {
+                    } else {
                         this.tabAreaWidth += (2 * this.sideSpace);
                         this.tabAreaHeight = this.sideSpace + max;
                         this.repaintWidth  = this.tabAreaWidth;
@@ -657,8 +643,7 @@ zebkit.package("ui", function(pkg, Class) {
                             r.width += this.sideSpace +  (this.border != null ? (b === "left" ? this.border.getLeft()
                                                                                               : this.border.getRight())
                                                                               : 0);
-                        }
-                        else {
+                        } else {
                             r.height += this.sideSpace + (this.border != null ? (b === "top" ? this.border.getTop()
                                                                                              : this.border.getBottom())
                                                                               : 0);
@@ -904,8 +889,7 @@ zebkit.package("ui", function(pkg, Class) {
             if (this.selectedIndex >= 0){
                 var r = this.getTabBounds(this.selectedIndex);
                 this.repaint(r.x, r.y, r.width, r.height);
-            }
-            else {
+            } else {
                 if (this.hasFocus() === false) {
                     this.select(this.next(0, 1));
                 }
@@ -929,8 +913,7 @@ zebkit.package("ui", function(pkg, Class) {
             var render = null;
             if (zebkit.instanceOf(constr, this.clazz.TabView)) {
                 render = constr;
-            }
-            else {
+            } else {
                 render = new this.clazz.TabView((constr == null ? "Page " + index
                                                                  : constr ));
                 render.ownerChanged(this); // TODO: a little bit ugly but setting an owner is required to
@@ -961,7 +944,7 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function setSize(w,h){
-            if (this.width != w || this.height != h){
+            if (this.width != w || this.height != h) {
                 if (this.orient === "right" || this.orient === "bottom") {
                     this.tabAreaX =  -1;
                 }

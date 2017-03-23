@@ -145,17 +145,17 @@ zebkit.package("ui", function(pkg, Class) {
         function $clazz() {
             this.isDragable = true;
 
-            var SB = Class(pkg.ArrowButton, [
+            this.ArrowButton = Class(pkg.ArrowButton, [
                 function $prototype() {
                     this.isFireByPress  = true;
                     this.firePeriod     = 20;
                 }
             ]);
 
-            this.VIncButton = Class(SB, []);
-            this.VDecButton = Class(SB, []);
-            this.HIncButton = Class(SB, []);
-            this.HDecButton = Class(SB, []);
+            this.VIncButton = Class(this.ArrowButton, []);
+            this.VDecButton = Class(this.ArrowButton, []);
+            this.HIncButton = Class(this.ArrowButton, []);
+            this.HDecButton = Class(this.ArrowButton, []);
 
             this.VBundle = Class(pkg.Panel, []);
             this.HBundle = Class(pkg.Panel, []);
@@ -339,7 +339,7 @@ zebkit.package("ui", function(pkg, Class) {
                     b      = (this.orient === "horizontal"),
                     ps1    = pkg.$getPS(this.decBt),
                     ps2    = pkg.$getPS(this.incBt),
-                    minbs  = pkg.Scroll.MIN_BUNDLE_SIZE;
+                    minbs  = this.clazz.MIN_BUNDLE_SIZE;
 
                 this.decBt.setBounds(left, top, b ? ps1.width
                                                   : ew,
@@ -419,10 +419,7 @@ zebkit.package("ui", function(pkg, Class) {
 
         function(t) {
             if (arguments.length > 0) {
-                if (t !== "vertical" && t !== "horizontal") {
-                    throw new Error("" + t + "(alignment)");
-                }
-                this.orient = t;
+                this.orient = zebkit.util.$validateValue(t, "vertical", "horizontal");
             }
 
             /**
@@ -459,39 +456,32 @@ zebkit.package("ui", function(pkg, Class) {
             this.setPosition(new zebkit.util.SingleColPosition(this));
         },
 
-        function kidAdded(index,ctr,lw){
+        function kidAdded(index,ctr,lw) {
             this.$super(index, ctr, lw);
 
-            if ("center" === ctr) this.bundle = lw;
-            else {
-                if ("bottom" === ctr) {
-                    this.incBt = lw;
-                    this.incBt.bind(this);
-                }
-                else {
-                    if ("top" === ctr) {
-                        this.decBt = lw;
-                        this.decBt.bind(this);
-                    }
-                    else throw new Error("Invalid constraints : " + ctr);
-                }
+            if ("center" === ctr) {
+                this.bundle = lw;
+            } else if ("bottom" === ctr) {
+                this.incBt = lw;
+                this.incBt.bind(this);
+            } else if ("top" === ctr) {
+                this.decBt = lw;
+                this.decBt.bind(this);
+            } else {
+                throw new Error("Invalid constraints : " + ctr);
             }
         },
 
-        function kidRemoved(index,lw){
+        function kidRemoved(index,lw) {
             this.$super(index, lw);
             if (lw === this.bundle) {
                 this.bundle = null;
-            } else {
-                if (lw === this.incBt){
-                    this.incBt.unbind(this);
-                    this.incBt = null;
-                } else {
-                    if(lw === this.decBt){
-                        this.decBt.unbind(this);
-                        this.decBt = null;
-                    }
-                }
+            } else if (lw === this.incBt) {
+                this.incBt.unbind(this);
+                this.incBt = null;
+            } else if (lw === this.decBt) {
+                this.decBt.unbind(this);
+                this.decBt = null;
             }
         }
     ]);
@@ -539,8 +529,7 @@ zebkit.package("ui", function(pkg, Class) {
                                 w  = t.parent.hBar != null ? ps.width : t.width,
                                 h  = t.parent.vBar != null ? ps.height : t.height;
                             kid.setSize(w, h);
-                        }
-                        else {
+                        } else {
                             kid.toPreferredSize();
                         }
                     };
@@ -916,14 +905,10 @@ zebkit.package("ui", function(pkg, Class) {
             else {
                 if ("bottom" === ctr || "top" === ctr){
                     this.hBar = c;
-                }
-                else {
-                    if ("left" === ctr || "right" === ctr) {
-                        this.vBar = c;
-                    }
-                    else  {
-                        throw new Error("Invalid constraints");
-                    }
+                } else if ("left" === ctr || "right" === ctr) {
+                    this.vBar = c;
+                }  else  {
+                    throw new Error("Invalid constraints");
                 }
 
                 // valid for scroll bar only

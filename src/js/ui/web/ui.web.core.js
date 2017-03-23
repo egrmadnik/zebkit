@@ -13,6 +13,132 @@ zebkit.package("ui.web", function(pkg, Class) {
      * @extends {zebkit.ui.Panel}
      */
     pkg.HtmlElement = Class(ui.Panel, [
+        function(e) {
+            if (e == null) {
+                e = "div";
+            }
+
+            if (zebkit.isString(e)) {
+                e = document.createElement(e);
+                if (this.clazz.CLASS_NAME != null) {
+                    e.setAttribute("class", this.clazz.CLASS_NAME);
+                }
+                e.style.border   = "0px solid transparent";   // clean up border
+                e.style.fontSize = this.clazz.$bodyFontSize;  // DOM element is wrapped with a container that
+                                                              // has zero sized font, so let's set body  font
+                                                              // for the created element
+            }
+
+            // sync padding and margin of the DOM element with
+            // what appropriate properties are set
+            e.style.margin = e.style.padding = "0px";
+
+            /**
+             * Reference to HTML element the UI component wraps
+             * @attribute element
+             * @readOnly
+             * @type {HTMLElement}
+             */
+            this.element = e;
+
+            // this is set to make possible to use set z-index for HTML element
+            this.element.style.position = "relative";
+
+            if (e.parentNode != null && e.parentNode.getAttribute("data-zebcont") != null) {
+                throw new Error("DOM element '" + e + "' already has container");
+            }
+
+            // container is a DIV element that is used as a wrapper around original one
+            // it is done to make HtmlElement implementation more universal making
+            // all DOM elements capable to be a container for another one
+            this.$container = document.createElement("div");
+
+            // prevent stretching to a parent container element
+            this.$container.style.display = "inline-block";
+
+            // cut content
+            this.$container.style.overflow = "hidden";
+
+            // it fixes problem with adding, for instance, DOM element as window what can prevent
+            // showing components added to popup layer
+            this.$container.style["z-index"] = "0";
+
+
+            // coordinates have to be set to initial zero value in CSS
+            // otherwise the DOM layout can be wrong !
+            this.$container.style.left = this.$container.style.top = "0px";
+
+            this.$container.visibility = "hidden";  // before the component will be attached
+                                                    // to parent hierarchy the component has to be hidden
+
+            // container div will always few pixel higher than its content
+            // to prevent the bloody effect set font to zero
+            // border and margin also have to be zero
+            this.$container.style.fontSize = this.$container.style.padding = this.$container.style.padding = "0px";
+
+            // add id
+            this.$container.setAttribute("id", "container-" + this.toString());
+
+            // mark wrapper with a special attribute to recognize it exists later
+            this.$container.setAttribute("data-zebcont", "true");
+
+            // let html element interact
+            this.$container.style["pointer-events"] = "auto";
+
+            // if passed DOM element already has parent
+            // attach it to container first and than
+            // attach the container to the original parent element
+            if (e.parentNode != null) {
+                // !!!
+                // Pay attention container position cannot be set to absolute
+                // since how the element has to be laid out is defined by its
+                // original parent
+                e.parentNode.replaceChild(this.$container, e);
+                this.$container.appendChild(e);
+            } else {
+                // to force all children element be aligned
+                // relatively to the wrapper we have to set
+                // position CSS to absolute or absolute
+                this.$container.style.position = "absolute";
+                this.$container.appendChild(e);
+            }
+
+            // set ID if it has not been already defined
+            if (e.getAttribute("id") === null) {
+                e.setAttribute("id", this.toString());
+            }
+
+            this.$super();
+
+            // attach listeners
+            if (this.$initListeners != null) {
+                this.$initListeners();
+            }
+
+            var fe = this.$getElementRootFocus();
+
+            // TODO: may be this code should be moved to web place
+            //
+            // reg native focus listeners for HTML element that can hold focus
+            if (fe != null) {
+                var $this = this;
+
+                zebkit.web.$focusin(fe, function(e) {
+                    // sync native focus with zebkit focus if necessary
+                    if ($this.hasFocus() === false) {
+                        $this.requestFocus();
+                    }
+                }, false);
+
+                zebkit.web.$focusout(fe, function(e) {
+                    // sync native focus with zebkit focus if necessary
+                    if ($this.hasFocus()) {
+                        ui.focusManager.requestFocus(null);
+                    }
+                }, false);
+            }
+        },
+
         function $clazz() {
             this.CLASS_NAME = null;
             this.$bodyFontSize = window.getComputedStyle(document.body, null).getPropertyValue('font-size');
@@ -384,134 +510,8 @@ zebkit.package("ui.web", function(pkg, Class) {
             } else {
                 this.$blur();
             }
-        },
-
-        function(e) {
-            if (e == null) {
-                e = "div";
-            }
-
-            if (zebkit.isString(e)) {
-                e = document.createElement(e);
-                if (this.clazz.CLASS_NAME != null) {
-                    e.setAttribute("class", this.clazz.CLASS_NAME);
-                }
-                e.style.border   = "0px solid transparent";   // clean up border
-                e.style.fontSize = this.clazz.$bodyFontSize;  // DOM element is wrapped with a container that
-                                                              // has zero sized font, so let's set body  font
-                                                              // for the created element
-            }
-
-            // sync padding and margin of the DOM element with
-            // what appropriate properties are set
-            e.style.margin = e.style.padding = "0px";
-
-            /**
-             * Reference to HTML element the UI component wraps
-             * @attribute element
-             * @readOnly
-             * @type {HTMLElement}
-             */
-            this.element = e;
-
-            // this is set to make possible to use set z-index for HTML element
-            this.element.style.position = "relative";
-
-            if (e.parentNode != null && e.parentNode.getAttribute("data-zebcont") != null) {
-                throw new Error("DOM element '" + e + "' already has container");
-            }
-
-            // container is a DIV element that is used as a wrapper around original one
-            // it is done to make HtmlElement implementation more universal making
-            // all DOM elements capable to be a container for another one
-            this.$container = document.createElement("div");
-
-            // prevent stretching to a parent container element
-            this.$container.style.display = "inline-block";
-
-            // cut content
-            this.$container.style.overflow = "hidden";
-
-            // it fixes problem with adding, for instance, DOM element as window what can prevent
-            // showing components added to popup layer
-            this.$container.style["z-index"] = "0";
-
-
-            // coordinates have to be set to initial zero value in CSS
-            // otherwise the DOM layout can be wrong !
-            this.$container.style.left = this.$container.style.top = "0px";
-
-            this.$container.visibility = "hidden";  // before the component will be attached
-                                                    // to parent hierarchy the component has to be hidden
-
-            // container div will always few pixel higher than its content
-            // to prevent the bloody effect set font to zero
-            // border and margin also have to be zero
-            this.$container.style.fontSize = this.$container.style.padding = this.$container.style.padding = "0px";
-
-            // add id
-            this.$container.setAttribute("id", "container-" + this.toString());
-
-            // mark wrapper with a special attribute to recognize it exists later
-            this.$container.setAttribute("data-zebcont", "true");
-
-            // let html element interact
-            this.$container.style["pointer-events"] = "auto";
-
-            // if passed DOM element already has parent
-            // attach it to container first and than
-            // attach the container to the original parent element
-            if (e.parentNode != null) {
-                // !!!
-                // Pay attention container position cannot be set to absolute
-                // since how the element has to be laid out is defined by its
-                // original parent
-                e.parentNode.replaceChild(this.$container, e);
-                this.$container.appendChild(e);
-            } else {
-                // to force all children element be aligned
-                // relatively to the wrapper we have to set
-                // position CSS to absolute or absolute
-                this.$container.style.position = "absolute";
-                this.$container.appendChild(e);
-            }
-
-            // set ID if it has not been already defined
-            if (e.getAttribute("id") === null) {
-                e.setAttribute("id", this.toString());
-            }
-
-            this.$super();
-
-            // attach listeners
-            if (this.$initListeners != null) {
-                this.$initListeners();
-            }
-
-            var fe = this.$getElementRootFocus();
-
-            // TODO: may be this code should be moved to web place
-            //
-            // reg native focus listeners for HTML element that can hold focus
-            if (fe != null) {
-                var $this = this;
-
-                zebkit.web.$focusin(fe, function(e) {
-                    // sync native focus with zebkit focus if necessary
-                    if ($this.hasFocus() === false) {
-                        $this.requestFocus();
-                    }
-                }, false);
-
-                zebkit.web.$focusout(fe, function(e) {
-                    // sync native focus with zebkit focus if necessary
-                    if ($this.hasFocus()) {
-                        ui.focusManager.requestFocus(null);
-                    }
-                }, false);
-            }
         }
-    ]);
+    ]).hashable();
 
     /**
      *  This special private manager that plays key role in integration of HTML ELement into zebkit UI hierarchy.
@@ -692,7 +692,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                         callback.call(this, e);
                     } else {
                         // prevent unnecessary method call by condition
-                        if (e.$domKids != null) {
+                        if (typeof e.$domKids !== 'undefined') {
                             $domElements(e, callback);
                         }
                     }
@@ -719,12 +719,10 @@ zebkit.package("ui.web", function(pkg, Class) {
                 if (c.isDOMElement === true) {
                     c.$container.style.visibility = c.isVisible === false || $isInInvisibleState(c) ? "hidden"
                                                                                                     : "visible";
-                } else {
-                    if (c.$domKids != null) {
-                        $domElements(c, function(e) {
-                            e.$container.style.visibility = e.isVisible === false || $isInInvisibleState(e) ? "hidden" : "visible";
-                        });
-                    }
+                } else if (typeof c.$domKids !== 'undefined') {
+                    $domElements(c, function(e) {
+                        e.$container.style.visibility = e.isVisible === false || $isInInvisibleState(e) ? "hidden" : "visible";
+                    });
                 }
             };
 
@@ -744,12 +742,10 @@ zebkit.package("ui.web", function(pkg, Class) {
                         cont.style.left = ((parseInt(cont.style.left, 10) || 0) - dx) + "px";
                         cont.style.top  = ((parseInt(cont.style.top,  10) || 0) - dy) + "px";
                     }
-                } else {
-                    if (c.$domKids != null) {
-                        $domElements(c, function(e) {
-                            $adjustLocation(e);
-                        });
-                    }
+                } else if (typeof c.$domKids !== 'undefined') {
+                    $domElements(c, function(e) {
+                        $adjustLocation(e);
+                    });
                 }
             };
 
@@ -757,9 +753,9 @@ zebkit.package("ui.web", function(pkg, Class) {
                 // DOM parent means the detached element doesn't
                 // have upper parents since it is relative to the
                 // DOM element
-                if (p.isDOMElement !== true && p.$domKids != null) {
+                if (p.isDOMElement !== true && typeof p.$domKids !== 'undefined') {
                     // delete from parent
-                    delete p.$domKids[c];
+                    delete p.$domKids[c.$hash$];
 
                     // parent is not DOM and doesn't have kids anymore
                     // what means the parent has to be also detached
@@ -776,7 +772,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             }
 
             function isLeaf(c) {
-                if (c.$domKids != null) {
+                if (typeof c.$domKids !== 'undefined') {
                     for(var k in c.$domKids) {
                         if (c.$domKids.hasOwnProperty(k)) return false;
                     }
@@ -786,7 +782,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
             function removeDOMChildren(c) {
                 // DOM element cannot have children dependency tree
-                if (c.isDOMElement !== true && c.$domKids != null) {
+                if (c.isDOMElement !== true && typeof c.$domKids !== 'undefined') {
                     for(var k in c.$domKids) {
                         if (c.$domKids.hasOwnProperty(k)) {
                             var kid = c.$domKids[k];
@@ -824,7 +820,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                 if (c.isDOMElement === true) {
                     $resolveDOMParent(c);
                 } else {
-                    if (c.$domKids != null) {
+                    if (typeof c.$domKids !== 'undefined') {
                         $domElements(c, function(e) {
                             $resolveDOMParent(e);
                         });
@@ -838,19 +834,20 @@ zebkit.package("ui.web", function(pkg, Class) {
                     // inserted children is DOM element or an element that
                     // embeds DOM elements
                     while (p != null && p.isDOMElement !== true) {
-                        if (p.$domKids == null) {
+                        if (typeof p.$domKids === 'undefined') {
                             // if reference to kid DOM element or kid DOM elements holder
                             // has bot been created we have to continue go up to parent of
                             // the parent to register the whole chain of DOM and DOM holders
                             p.$domKids = {};
-                            p.$domKids[c] = c;
+                            p.$domKids[c.$genHash()] = c;
                             c = p;
                             p = p.parent;
                         } else {
-                            if (p.$domKids.hasOwnProperty(c)) {
+                            var id = c.$genHash();
+                            if (p.$domKids.hasOwnProperty(id)) {
                                 throw new Error("Inconsistent state for " + c + ", " + c.clazz.$name);
                             }
-                            p.$domKids[c] = c;
+                            p.$domKids[id] = c;
                             break;
                         }
                     }

@@ -1010,9 +1010,9 @@
         function cpMethods(src, dest, clazz) {
             var overriddenAbstractMethods = 0;
             for(var name in src) {
-                if (src.hasOwnProperty(name) &&
-                    name   !== pkg.CNAME     &&
-                    name   !== "clazz"         )
+                if (name   !== pkg.CNAME     &&
+                    name   !== "clazz"       &&
+                    src.hasOwnProperty(name)   )
                 {
                     var method = src[name];
                     if (typeof method === "function" && method !== $toString) {
@@ -1023,7 +1023,6 @@
 
                             // TODO analyze if we overwrite existent field
                             if (old != null) {
-
                                 // abstract method is overridden, let's skip abstract method
                                 // stub implementation
                                 if (method.$isAbstract === true) {
@@ -1093,7 +1092,6 @@
 
             // instances of the constructor also has to be unique
             // so force toString method population
-            templateConstructor.prototype.toString    = $toString;
             templateConstructor.prototype.constructor = templateConstructor; // set constructor of instances to the template
 
             // setup parent entities
@@ -1115,14 +1113,11 @@
 
                     // if parent has own parents copy the parents references
                     for(var k in toInherit.$parents) {
-                        // some interfaces like abstract can require don't be inherited in kids
-                        if (toInherit.$parents[k].$lostMe !== true) {
-                            if (typeof templateConstructor.$parents[k] !== "undefined") {
-                                throw Error("Duplicate inherited class or interface: " + k);
-                            }
-
-                            templateConstructor.$parents[k] = toInherit.$parents[k];
+                        if (typeof templateConstructor.$parents[k] !== "undefined") {
+                            throw Error("Duplicate inherited class or interface: " + k);
                         }
+
+                        templateConstructor.$parents[k] = toInherit.$parents[k];
                     }
                 }
             }
@@ -1349,7 +1344,7 @@
          * @for  zebkit
          */
         pkg.newInstance = function(clazz, args) {
-            if (args && args.length > 0) {
+            if (arguments.length > 1 && args.length > 0) {
                 function f() {}
                 f.prototype = clazz.prototype;
                 var o = new f();
@@ -1594,75 +1589,6 @@
             return $Interface;
         });
 
-        // TODO: not clear if the code should allow classes instantiation
-        // (classes that inherit the abstract interface)
-        var $Abstract = pkg.Interface();
-        $Abstract.$lostMe  = true;
-        $Abstract.$fromPkg = null;
-
-        $Abstract.newAbstractInstance = function newAbstractInstance(clazz, args) {
-            var foundClazz = null;
-
-            function visit(target) {
-                for(var k in target) {
-                    if (target.hasOwnProperty(k) && k[0] !== '$') {
-                        var clz = target[k];
-                        if (clz != null) {
-                            if (clz.clazz === zebkit.Class)  {
-                                if (clz.clazz !== clazz && clz.isInherit(clazz) && clz.$isAbstract !== true) {
-                                    foundClazz = clz;
-                                    return true;
-                                }
-                            } else if (clz instanceof Package) {
-                                if (visit(clz) === true) {
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                return false;
-            }
-
-            // TODO: not very good and performance implementation
-            if (this.$fromPkg !== null) {
-                visit(this.$fromPkg);
-            } else {
-                var rp = typeof clazz.$pkg === 'undefined' ? zebkit : clazz.$pkg;
-                visit(rp);
-                if (foundClazz == null && rp !== zebkit) {
-                    visit(zebkit);
-                }
-            }
-
-            if (foundClazz !== null) {
-                return pkg.newInstance(foundClazz, args);
-            } else {
-                if (clazz.prototype[pkg.CNAME] != null) {
-                    var fakeImpl = zebkit.Class(clazz,[]);
-                    return pkg.newInstance(fakeImpl, args);
-                } else {
-                    throw new Error("Abstract class implementation cannot be found");
-                }
-            }
-        };
-
-        pkg.Abstract = function(pkg) {
-            if (arguments.length === 0) {
-                return $Abstract;
-            } else {
-                var ab = $Abstract();
-
-                if (pkg instanceof Package) {
-                    ab.$fromPkg = pkg;
-                } else {
-                    throw new Error("Invalid lookup package '" +  pkg + "'");
-                }
-                return ab;
-            }
-        };
-
         /**
          * Core method method to declare a zebkit class following easy OOP approach. The easy OOP concept
          * supports the following OOP features:
@@ -1784,23 +1710,21 @@
                 // map user defined constructor to internal constructor name
                 if (methodName === pkg.CDNAME) {
                     methodName = pkg.CNAME;
-                } else {
-                    if (methodName[0] === "$") {
-                        // populate prototype fields if a special method has been defined
-                        if (methodName === "$prototype") {
-                            method.call(clazz.prototype, clazz);
-                            if (clazz.prototype[pkg.CDNAME]) {
-                                clazz.prototype[pkg.CNAME] = clazz.prototype[pkg.CDNAME];
-                                delete clazz.prototype[pkg.CDNAME];
-                            }
-                            continue;
+                } else if (methodName[0] === '$') {
+                    // populate prototype fields if a special method has been defined
+                    if (methodName === "$prototype") {
+                        method.call(clazz.prototype, clazz);
+                        if (clazz.prototype[pkg.CDNAME]) {
+                            clazz.prototype[pkg.CNAME] = clazz.prototype[pkg.CDNAME];
+                            delete clazz.prototype[pkg.CDNAME];
                         }
+                        continue;
+                    }
 
-                        // populate class level fields if a special method has been defined
-                        if (methodName === "$clazz") {
-                            method.call(clazz);
-                            continue;
-                        }
+                    // populate class level fields if a special method has been defined
+                    if (methodName === "$clazz") {
+                        method.call(clazz);
+                        continue;
                     }
                 }
 
@@ -1867,10 +1791,9 @@
 
             // define Class (function) that has to be used to instantiate the class instance
             var classTemplate = make_template(pkg.Class, function() {
-                // TODO: this unique string building takes time
-                // in general this is not required except the case of tree component model and UI tree
-                // component where component instance is stored as key in {} object
-                this.$hash$ = "$ZkIo" + ($$$++);
+                if (classTemplate.$uniqueness === true) {
+                    this.$hash$ = "$ZkIo" + ($$$++);
+                }
 
                 if (arguments.length > 0) {
                     var a = arguments[arguments.length - 1];
@@ -1917,19 +1840,10 @@
                     }
                 }
 
-                // abstract class
-                var abstract = this.clazz.$parents[$Abstract];
-                if (abstract != null) {
-                    return abstract.newAbstractInstance(this.clazz, arguments);
-                }
-
                 // call class constructor
-                var res;
-                if (this[pkg.CNAME] != null) {
-                    res = this[pkg.CNAME].apply(this, arguments);
+                if (typeof this.$ !== 'undefined') { // TODO: hard-coded constructor name to speed up
+                    return this.$.apply(this, arguments);
                 }
-
-                return res;
             }, toInherit);
 
             // prepare fields that caches the class properties
@@ -2037,13 +1951,7 @@
                     }
 
                     cpMethods(I.prototype, this, clazz);
-
                     clazz.$parents[I.$hash$] = I;
-
-                    // call interface initializer
-                    if (I.prototype[pkg.CNAME] != null) {
-                        I.prototype[pkg.CNAME].call(this);
-                    }
                 }
                 return this;
             };
@@ -2074,14 +1982,11 @@
              */
             classTemplate.prototype.$super = function() {
                if ($caller !== null) {
-                    var $s = $caller.boundTo.$parent;
-
-                    while ($s !== null) {
+                    for (var $s = $caller.boundTo.$parent; $s !== null; $s = $s.$parent) {
                         var m = $s.prototype[$caller.methodName];
-                        if (m != null) {
+                        if (typeof m !== 'undefined') {
                             return m.apply(this, arguments);
                         }
-                        $s = $s.$parent;
                     }
 
                     // handle method not found error
@@ -2098,13 +2003,11 @@
             // TODO: not stable API, $super that doesn't throw exception is there is no super implementation
             classTemplate.prototype.$$super = function() {
                if ($caller !== null) {
-                    var $s = $caller.boundTo.$parent;
-                    while ($s !== null) {
+                    for(var $s = $caller.boundTo.$parent; $s !== null; $s = $s.$parent) {
                         var m = $s.prototype[$caller.methodName];
-                        if (m != null) {
+                        if (typeof m !== 'undefined') {
                             return m.apply(this, arguments);
                         }
-                        $s = $s.$parent;
                     }
                 } else {
                     throw new Error("$super is called outside of class context");
@@ -2120,17 +2023,22 @@
              */
             classTemplate.prototype.$getSuper = function(name) {
                if ($caller !== null) {
-                   var $s = $caller.boundTo.$parent;
-                    while ($s !== null) {
+                    for(var $s = $caller.boundTo.$parent; $s !== null; $s = $s.$parent) {
                         var m = $s.prototype[name];
                         if (m != null) {
                             return m;
                         }
-                        $s = $s.$parent;
                     }
                     return null;
                 }
                 throw new Error("$super is called outside of class context");
+            };
+
+            classTemplate.prototype.$genHash = function() {
+                if (typeof this.$hash$ === 'undefined') {
+                    this.$hash$ = "$ZeInGen" + ($$$++);
+                }
+                return this.$hash$;
             };
 
             classTemplate.prototype.$clone = function(map) {
@@ -2157,7 +2065,11 @@
                 map.clear();
 
                 nobj.constructor = this.constructor;
-                nobj.$hash$ = "$zObj_" + ($$$++);
+
+                if (typeof nobj.$hash$ !== 'undefined') {
+                    nobj.$hash$ = "$zObj_" + ($$$++);
+                }
+
                 nobj.clazz = this.clazz;
                 return nobj;
             };
@@ -2222,6 +2134,8 @@
             // populate static fields
             // TODO: exclude the basic static methods and static constant
             // static inheritance
+
+            classTemplate.$uniqueness = false;
             if (parentClass != null) {
                 for (var key in parentClass) {
                     if (key[0] !== '$' &&
@@ -2231,7 +2145,27 @@
                         classTemplate[key] = pkg.clone(parentClass[key]);
                     }
                 }
+
+                if (parentClass.$uniqueness === true) {
+                    classTemplate.hashable();
+                }
             }
+
+            classTemplate.hashable = function() {
+                if (this.$uniqueness !== true) {
+                    this.$uniqueness = true;
+                    this.prototype.toString = $toString;
+                }
+                return this;
+            };
+
+            classTemplate.hashless = function() {
+                if (this.$uniqueness === true) {
+                    this.$uniqueness = false;
+                    this.prototype.toString = Object.prototype.toString;
+                }
+                return this;
+            };
 
             // add extend method later to avoid the method be inherited as a class static field
             classTemplate.extend = function() {
@@ -2292,14 +2226,13 @@
                 if (this !== clazz) {
                     // detect class
                     if (clazz.clazz === this.clazz) {
-                        var p = this;
-                        while ((p = p.$parent) != null) {
+                        for (var p = this.$parent; p != null; p = p.$parent) {
                             if (p === clazz) {
                                 return true;
                             }
                         }
                     } else { // detect interface
-                        if (this.$parents[clazz] === clazz) {
+                        if (this.$parents[clazz.$hash$] === clazz) {
                             return true;
                         }
                     }
@@ -2307,6 +2240,7 @@
                 return false;
             };
 
+            // assign proper name to class
             classTemplate.clazz.$name = "zebkit.Class";
 
             // copy methods from interfaces
@@ -2338,7 +2272,7 @@
          */
         pkg.$cache = function(key) {
             // don't cache global objects
-            if (pkg.$global[key]) {
+            if (pkg.$global.hasOwnProperty(key)) {
                 return pkg.$global[key];
             }
 
@@ -2422,12 +2356,15 @@
          */
         pkg.instanceOf = function(obj, clazz) {
             if (clazz != null) {
-                if (obj == null || typeof obj.clazz === 'undefined') {
+                if (obj == null)  {
                     return false;
+                } else if (typeof obj.clazz === 'undefined') {
+                    return (obj instanceof clazz);
+                } else {
+                    return obj.clazz != null &&
+                           (obj.clazz === clazz ||
+                            obj.clazz.$parents.hasOwnProperty(clazz.$hash$));
                 }
-
-                var c = obj.clazz;
-                return c != null && (c === clazz || typeof c.$parents[clazz.$hash$] !== "undefined");
             }
 
             throw new Error("instanceOf(): null class");
@@ -2482,4 +2419,3 @@
 
     return zebkit;
 })();
-

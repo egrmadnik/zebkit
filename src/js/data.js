@@ -699,7 +699,6 @@ zebkit.package("data", function(pkg, Class) {
      */
     pkg.Item = Class([
         function(v) {
-
             /**
              * Array of children items of the item element
              * @attribute kids
@@ -726,7 +725,8 @@ zebkit.package("data", function(pkg, Class) {
              * @readOnly
              */
         }
-    ]);
+    ]).hashable();
+
 
     /**
      * Tree model class. The class is simple and handy way to keep hierarchical structure.

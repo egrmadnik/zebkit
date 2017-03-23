@@ -622,10 +622,21 @@ if (typeof(zebkit) === "undefined") {
             }
 
             var h = {};
-            var A = new Class([]);
+            var A = new Class([]).hashable();
             var B = new Class(A, [
                 function a() { return 10; }
             ]);
+
+            assert(A.$uniqueness, true, "test_unique 1");
+            assert(B.$uniqueness, true, "test_unique 2");
+            assert(B.prototype.toString.toString().indexOf("$hash$") > 0, true, "test_unique 3");
+            assert(A.prototype.toString.toString().indexOf("$hash$") > 0, true, "test_unique 4");
+
+            var C = new Class(B, [
+                function a() { return 10; }
+            ]).hashless();
+            assert(C.$uniqueness, false, "test_unique 5");
+            assert(C.prototype.toString.toString().indexOf("$hash$") < 0, true, "test_unique 6");
 
             h[A] = true;
             var C = new Class([]);
@@ -1792,7 +1803,7 @@ if (typeof(zebkit) === "undefined") {
         },
 
 
-        function test_abstract() {
+        function _test_abstract() {
             zebkit.package("tst", function(tst) {
                 tst.A = Class(zebkit.Abstract(), [
                     function () {
@@ -1822,19 +1833,19 @@ if (typeof(zebkit) === "undefined") {
             var tst = zebkit.tst;
             var a   = new tst.A();
 
-            assert(zebkit.instanceOf(a, tst.A), true);
-            assert(zebkit.instanceOf(a, tst.B), true);
-            assert(a.clazz, tst.B);
-            assert(a.aval, "test");
-            assert(a.bval, "1");
+            assert(zebkit.instanceOf(a, tst.A), true, "test abstract 1");
+            assert(zebkit.instanceOf(a, tst.B), true, "test abstract 2");
+            assert(a.clazz, tst.B, "test abstract 3");
+            assert(a.aval, "test", "test abstract 4");
+            assert(a.bval, "1", "test abstract 5");
 
             var aa = zebkit.newInstance(tst.A);
-            assert(zebkit.instanceOf(aa, tst.A), true);
-            assert(zebkit.instanceOf(aa, tst.B), true);
-            assert(aa.clazz, tst.B);
-            assert(aa.aval, "test");
-            assert(aa.bval, "1");
-            assert(aa !== a, true);
+            assert(zebkit.instanceOf(aa, tst.A), true, "test abstract 6");
+            assert(zebkit.instanceOf(aa, tst.B), true, "test abstract 7");
+            assert(aa.clazz, tst.B, "test abstract 8");
+            assert(aa.aval, "test", "test abstract 9");
+            assert(aa.bval, "1", "test abstract 10");
+            assert(aa !== a, true, "test abstract 11");
         },
 
         function test_class_extending() {
@@ -2960,25 +2971,25 @@ if (typeof(zebkit) === "undefined") {
         },
 
         function test_clone() {
-            assert(zebkit.clone(null), null);
-            assert(zebkit.clone(undefined), undefined);
-            assert(zebkit.clone(true), true);
-            assert(zebkit.clone(1), 1);
-            assert(zebkit.clone("abc"), "abc");
+            assert(zebkit.clone(null), null, "test_clone 1");
+            assert(zebkit.clone(undefined), undefined, "test_clone 2");
+            assert(zebkit.clone(true), true, "test_clone 3");
+            assert(zebkit.clone(1), 1, "test_clone 4");
+            assert(zebkit.clone("abc"), "abc", "test_clone 5");
 
             var arr = [1,2,3, ["A", "B" ] ], carr = zebkit.clone(arr);
-            assert(arr != carr, true);
-            assert(arr.length, carr.length);
-            assert(arr[arr.length-1] != carr[carr.length-1], true);
-            assertObjEqual(arr, carr);
-            assertObjEqual(arr[arr.length-1], carr[carr.length-1]);
-            assertObjEqual(arr[arr.length-1].length, carr[carr.length-1].length);
+            assert(arr != carr, true, "test_clone 6");
+            assert(arr.length, carr.length, "test_clone 7");
+            assert(arr[arr.length-1] != carr[carr.length-1], true, "test_clone 8");
+            assertObjEqual(arr, carr, "test_clone 9");
+            assertObjEqual(arr[arr.length-1], carr[carr.length-1], "test_clone 10");
+            assertObjEqual(arr[arr.length-1].length, carr[carr.length-1].length, "test_clone 11");
 
             var o = { a: "1", b: true, c : [ 3,4,5] }, co = zebkit.clone(o);
-            assert(o != co, true);
-            assert(o.c != co.c, true);
-            assertObjEqual(o, co);
-            assertObjEqual(o.c, co.c);
+            assert(o != co, true, "test_clone 12");
+            assert(o.c != co.c, true, "test_clone 13");
+            assertObjEqual(o, co, "test_clone 14");
+            assertObjEqual(o.c, co.c, "test_clone 15");
 
             var A = Class([
                 function $clazz() {
@@ -3017,14 +3028,14 @@ if (typeof(zebkit) === "undefined") {
 
                     return a;
                 }
-            ]), a = new A(), aa = zebkit.clone(a);
+            ]).hashable(), a = new A(), aa = zebkit.clone(a);
 
-            assert(a != aa, true);
-            assert(a.$hash$ != null, true);
-            assert(aa.$hash$ != null, true);
-            assert(a.$hash$ != aa.$hash$, true);
+            assert(a != aa, true, "test_clone 16");
+            assert(a.$hash$ != null, true, "test_clone 17");
+            assert(aa.$hash$ != null, true, "test_clone 18");
+            assert(a.$hash$ != aa.$hash$, true, "test_clone 19");
             a.$hash$ = aa.$hash$
-            assertObjEqual(a, aa);
+            assertObjEqual(a, aa, "test_clone 20");
 
 
             assert(a.b != aa.b, true);
@@ -3091,6 +3102,72 @@ if (typeof(zebkit) === "undefined") {
             assertObjEqual(d2.a, dr);
             assertObjEqual(d1.a, dr);
             assertObjEqual(d1, d2);
+        },
+
+        function test_isInherit() {
+            var I1 = Interface();
+            var I2 = Interface();
+            var A = Class(I1, I2, []);
+            var B = Class(A, []);
+            var C = Class(B, []);
+            var D = Class(I2, []);
+
+            assert(A.isInherit(I1), true);
+            assert(A.isInherit(I2), true);
+            assert(A.isInherit(B), false);
+            assert(A.isInherit(C), false);
+            assert(A.isInherit(D), false);
+            assert(A.isInherit(A), false);
+
+            assert(B.isInherit(A), true);
+            assert(B.isInherit(I1), true);
+            assert(B.isInherit(I2), true);
+            assert(B.isInherit(B), false);
+            assert(B.isInherit(C), false);
+            assert(B.isInherit(D), false);
+
+            assert(C.isInherit(A), true);
+            assert(C.isInherit(I1), true);
+            assert(C.isInherit(I2), true);
+            assert(C.isInherit(B), true);
+            assert(C.isInherit(C), false);
+            assert(C.isInherit(D), false);
+
+            assert(D.isInherit(A), false);
+            assert(D.isInherit(I1), false);
+            assert(D.isInherit(I2), true);
+            assert(D.isInherit(B), false);
+            assert(D.isInherit(C), false);
+            assert(D.isInherit(D), false);
+        },
+
+        function _test_perf() {
+            var I = Interface();
+            var AP = Class([]).hashless();
+            var B = Class(A, []);
+
+            var C = function() {};
+
+
+            var t = new Date().getTime();
+            for(var i = 0; i < 1000000; i++) {
+                new AP();
+            }
+            var dt2 = (new Date().getTime()) - t;
+
+
+            // var t = new Date().getTime();
+            // for(var i = 0; i < 1000000; i++) {
+            //     new C();
+            // }
+            // var dt1 = (new Date().getTime()) - t;
+
+
+
+
+           // console.log("dt1 = " + dt1);
+            console.log("dt2 = " + dt2);
+
         }
     );
 //});

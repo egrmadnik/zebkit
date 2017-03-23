@@ -279,110 +279,115 @@ zebkit.package("util", function(pkg, Class) {
      * @constructor
      * @class zebkit.util.rgb
      */
-    pkg.rgb = function (r, g, b, a) {
-        /**
-         * Red color intensity
-         * @attribute r
-         * @type {Integer}
-         * @readOnly
-         */
+    pkg.rgb = Class([
+        function (r, g, b, a) {
+            /**
+             * Red color intensity
+             * @attribute r
+             * @type {Integer}
+             * @readOnly
+             */
 
-        /**
-         * Green color intensity
-         * @attribute g
-         * @type {Integer}
-         * @readOnly
-         */
+            /**
+             * Green color intensity
+             * @attribute g
+             * @type {Integer}
+             * @readOnly
+             */
 
-        /**
-         * Blue color intensity
-         * @attribute b
-         * @type {Integer}
-         * @readOnly
-         */
+            /**
+             * Blue color intensity
+             * @attribute b
+             * @type {Integer}
+             * @readOnly
+             */
 
-        /**
-         * Alpha
-         * @attribute a
-         * @type {Float}
-         * @readOnly
-         */
-
-        /**
-         * Indicates if the color is opaque
-         * @attribute isOpaque
-         * @readOnly
-         * @type {Boolean}
-         */
-        this.isOpaque = true;
-
-        if (arguments.length === 1) {
-            if (zebkit.isString(r)) {
-                this.s = r;
-                if (r[0] === '#') {
-                    r = parseInt(r.substring(1), 16);
-                } else {
-                    if (r[0] === 'r' && r[1] === 'g' && r[2] === 'b') {
-                        var i = r.indexOf('(', 3), p = r.substring(i + 1, r.indexOf(')', i + 1)).split(",");
-                        this.r = parseInt(p[0].trim(), 10);
-                        this.g = parseInt(p[1].trim(), 10);
-                        this.b = parseInt(p[2].trim(), 10);
-                        if (p.length > 3) {
-                            this.a = parseInt(p[3].trim(), 10);
-                            this.isOpaque = (this.a === 1);
+            /**
+             * Alpha
+             * @attribute a
+             * @type {Float}
+             * @readOnly
+             */
+            if (arguments.length === 1) {
+                if (zebkit.isString(r)) {
+                    this.s = r;
+                    if (r[0] === '#') {
+                        r = parseInt(r.substring(1), 16);
+                    } else {
+                        if (r[0] === 'r' && r[1] === 'g' && r[2] === 'b') {
+                            var i = r.indexOf('(', 3), p = r.substring(i + 1, r.indexOf(')', i + 1)).split(",");
+                            this.r = parseInt(p[0].trim(), 10);
+                            this.g = parseInt(p[1].trim(), 10);
+                            this.b = parseInt(p[2].trim(), 10);
+                            if (p.length > 3) {
+                                this.a = parseInt(p[3].trim(), 10);
+                                this.isOpaque = (this.a === 1);
+                            }
+                            return;
                         }
-                        return;
                     }
                 }
+                this.r =  r >> 16;
+                this.g = (r >> 8) & 0xFF;
+                this.b = (r & 0xFF);
+            } else {
+                this.r = r;
+                this.g = g;
+                this.b = b;
+                if (arguments.length > 3) this.a = a;
             }
-            this.r =  r >> 16;
-            this.g = (r >> 8) & 0xFF;
-            this.b = (r & 0xFF);
-        } else {
-            this.r = r;
-            this.g = g;
-            this.b = b;
-            if (arguments.length > 3) this.a = a;
+
+            if (this.s == null) {
+                this.s = (typeof this.a !== "undefined") ? 'rgba(' + this.r + "," + this.g +  "," +
+                                                                     this.b + "," + this.a + ")"
+                                                         : '#' +
+                                                           ((this.r < 16) ? "0" + this.r.toString(16) : this.r.toString(16)) +
+                                                           ((this.g < 16) ? "0" + this.g.toString(16) : this.g.toString(16)) +
+                                                           ((this.b < 16) ? "0" + this.b.toString(16) : this.b.toString(16));
+            }
+        },
+
+        function $prototype() {
+            /**
+             * Indicates if the color is opaque
+             * @attribute isOpaque
+             * @readOnly
+             * @type {Boolean}
+             */
+            this.isOpaque = true;
+
+            this.toString = function() {
+                return this.s;
+            };
+        },
+
+        function $clazz() {
+            /**
+             * Black color constant
+             * @attribute black
+             * @type {zebkit.util.rgb}
+             * @static
+             */
+
+            this.black       = new this(0);
+            this.white       = new this(0xFFFFFF);
+            this.red         = new this(255,0,0);
+            this.blue        = new this(0,0,255);
+            this.green       = new this(0,255,0);
+            this.gray        = new this(128,128,128);
+            this.lightGray   = new this(211,211,211);
+            this.darkGray    = new this(169,169,169);
+            this.orange      = new this(255,165,0);
+            this.yellow      = new this(255,255,0);
+            this.pink        = new this(255,192,203);
+            this.cyan        = new this(0,255,255);
+            this.magenta     = new this(255,0,255);
+            this.darkBlue    = new this(0, 0, 140);
+            this.transparent = new this(0, 0, 0, 0.0);
+
+            this.entire = true;
         }
-
-        if (this.s == null) {
-            this.s = (typeof this.a !== "undefined") ? 'rgba(' + this.r + "," + this.g +  "," +
-                                                                 this.b + "," + this.a + ")"
-                                                     : '#' +
-                                                       ((this.r < 16) ? "0" + this.r.toString(16) : this.r.toString(16)) +
-                                                       ((this.g < 16) ? "0" + this.g.toString(16) : this.g.toString(16)) +
-                                                       ((this.b < 16) ? "0" + this.b.toString(16) : this.b.toString(16));
-        }
-    };
-
-    var rgb = pkg.rgb;
-    pkg.rgb.prototype.toString = function() {
-        return this.s;
-    };
-
-    /**
-     * Black color constant
-     * @attribute black
-     * @type {zebkit.util.rgb}
-     * @static
-     */
-    rgb.black       = new rgb(0);
-
-
-    rgb.white       = new rgb(0xFFFFFF);
-    rgb.red         = new rgb(255,0,0);
-    rgb.blue        = new rgb(0,0,255);
-    rgb.green       = new rgb(0,255,0);
-    rgb.gray        = new rgb(128,128,128);
-    rgb.lightGray   = new rgb(211,211,211);
-    rgb.darkGray    = new rgb(169,169,169);
-    rgb.orange      = new rgb(255,165,0);
-    rgb.yellow      = new rgb(255,255,0);
-    rgb.pink        = new rgb(255,192,203);
-    rgb.cyan        = new rgb(0,255,255);
-    rgb.magenta     = new rgb(255,0,255);
-    rgb.darkBlue    = new rgb(0, 0, 140);
-    rgb.transparent = new rgb(0, 0, 0, 0.0);
+    ]);
 
     /**
      * Compute intersection of the two given rectangular areas
@@ -1461,11 +1466,12 @@ zebkit.package("util", function(pkg, Class) {
             this.tasks = Array(arguments.length > 0 ? c : 5);
 
             // pre-fill tasks pool
-            for (var i = 0; i < this.tasks.length; i++) {
+            for(var i = 0; i < this.tasks.length; i++) {
                 this.tasks[i] = new this.clazz.Task(this);
             }
         }
     ]);
+
 
     /**
      * Predefined default tasks set.
@@ -1474,6 +1480,7 @@ zebkit.package("util", function(pkg, Class) {
      * @for zebkit.util
      */
     pkg.tasksSet = new pkg.TasksSet(7);
+
 
     /**
      * JSON object loader class is a handy way to load hierarchy of objects encoded with
@@ -1889,7 +1896,7 @@ zebkit.package("util", function(pkg, Class) {
                 // equality means nor arguments neither properties has got async call
                 if (this.$runner.$busy === busy && this.$runner.$tasks.length === tasks) {
                     var inst = zebkit.newInstance(clz, args);
-                    this.merge(inst, props);
+                    this.merge(inst, props, true);
                     return inst;
                 } else {
                     var $this = this;
@@ -1916,7 +1923,7 @@ zebkit.package("util", function(pkg, Class) {
                         }
                     }).then(function(args, props) {
                         var inst = zebkit.newInstance(clz, args);
-                        $this.merge(inst, props);
+                        $this.merge(inst, props, true);
                         return inst;
                     });
                 }
@@ -2072,16 +2079,24 @@ zebkit.package("util", function(pkg, Class) {
                 // setter has to be placed in queue to let
                 // value resolves its DoIts
                 this.$runner.then(function(res) {
-                    if (Array.isArray(v)) m.apply(o, v);
-                    else                  m.call (o, v);
+                    if (Array.isArray(v)) {
+                        m.apply(o, v);
+                    } else {
+                        m.call (o, v);
+                    }
                     return res;
                 });
             };
 
-            this.merge = function(dest, src) {
+            this.merge = function(dest, src, recursively) {
+                if (arguments.length < 3) {
+                    recursively = true;
+                }
+
                 for (var k in src) {
                     if (src.hasOwnProperty(k)) {
-                        var sv = src[k];
+                        var sv = src[k],
+                            dv = dest[k];
 
                         if (this.usePropertySetters === true) {
                             var m = zebkit.getPropertySetter(dest, k);
@@ -2091,13 +2106,16 @@ zebkit.package("util", function(pkg, Class) {
                             }
                         }
 
-                        var dv = dest[k];
                         if (dv == null || this.$isAtomic(dv) || Array.isArray(dv) ||
                             sv == null || this.$isAtomic(sv) || Array.isArray(sv)   )
                         {
                             this.$assignValue(dest, k, sv);
-                        } else {
-                            this.merge(dest[k], sv);
+                        } else if (recursively === true) {
+                            if (dv != null && dv.clazz != null && dv.clazz.entire === true) {
+                                this.$assignValue(dest, k, sv);
+                            } else {
+                                this.merge(dv, sv);
+                            }
                         }
                     }
                 }
@@ -2105,11 +2123,7 @@ zebkit.package("util", function(pkg, Class) {
             };
 
             this.mixin = function(dest, src) {
-                console.log("mixin() " + JSON.stringify(dest) + "," + arguments.length);
-                console.log(src);
-
                 for (var k in src) {
-                    console.log("mixin() : k = " + k + ", " + src[k]);
                     if (src.hasOwnProperty(k)) {
                         if (typeof dest[k] === 'undefined') {
                             this.$assignValue(dest, k, src[k]);

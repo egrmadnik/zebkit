@@ -23,6 +23,35 @@ zebkit.package("ui", function(pkg, Class) {
      * @extends zebkit.ui.Label
      */
     pkg.TextField = Class(pkg.Label, [
+        function (render, maxCol){
+            this.history = Array(100);
+            this.historyPos = -1;
+            this.redoCounter = this.undoCounter = this.curY = this.curW = this.curH = 0;
+            this.scrollManager = new pkg.ScrollManager(this);
+
+            if (arguments.length === 1) {
+                if (zebkit.isNumber(render)) {
+                    maxCol = render;
+                    this.$super(new pkg.TextRender(new zebkit.data.SingleLineTxt("", maxCol)));
+                } else {
+                    maxCol = -1;
+                    this.$super(zebkit.isString(render) ? new pkg.TextRender(new zebkit.data.SingleLineTxt(render))
+                                                       : (zebkit.instanceOf(render, zebkit.data.TextModel) ?  new pkg.TextRender(render)
+                                                                                                         : render));
+                }
+            } else {
+                // 2 arguments or zero arguments
+                if (arguments.length === 0) {
+                    maxCol = -1;
+                }
+                this.$super(new pkg.TextRender(new zebkit.data.SingleLineTxt(render, maxCol)));
+            }
+
+            if (maxCol > 0) {
+                this.setPSByRowsCols(-1, maxCol);
+            }
+        },
+
         function $clazz() {
             /**
              * Text field hint text render
@@ -37,9 +66,12 @@ zebkit.package("ui", function(pkg, Class) {
          * @for zebkit.ui.TextField
          */
         function $prototype() {
-            this.vkMode = "indirect";
+            this.hint = null;
+
+
+            this.vkMode    = "indirect";
             this.startLine = this.startCol = this.endLine = this.endCol = this.curX = 0;
-            this.startOff = this.endOff = -1;
+            this.startOff  = this.endOff = -1;
 
             /**
              * Selection color
@@ -106,7 +138,7 @@ zebkit.package("ui", function(pkg, Class) {
                     period = 500;
                 }
 
-                if (period != this.blinkingPeriod) {
+                if (period !== this.blinkingPeriod) {
                     this.blinkingPeriod = period;
                     this.repaintCursor();
                 }
@@ -120,7 +152,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setTextAlignment = function(a) {
-                if (this.textAlign != a) {
+                if (this.textAlign !== a) {
                     this.textAlign = a;
                     this.vrp();
                 }
@@ -137,7 +169,7 @@ zebkit.package("ui", function(pkg, Class) {
                         //      only if real text update has happened
                         //   -- update can make selection start and end location invalid, so we have to take in
                         //      account before we remove it
-                        if (this.startOff != this.endOff) {
+                        if (this.startOff !== this.endOff) {
                             var start = this.startOff < this.endOff ? this.startOff : this.endOff,
                                 end   = this.startOff > this.endOff ? this.startOff : this.endOff;
 
@@ -225,8 +257,8 @@ zebkit.package("ui", function(pkg, Class) {
                 col += d;
                 if (col < 0 && line > 0) {
                     return { row: line - 1, col : t.getLine(line - 1).length };
-                } else {
-                    if (col > ln.length && line < t.getLines() - 1) return { row : line + 1, col : 0 };
+                } else if (col > ln.length && line < t.getLines() - 1) {
+                    return { row : line + 1, col : 0 };
                 }
 
                 var b = false;
@@ -249,17 +281,20 @@ zebkit.package("ui", function(pkg, Class) {
             // start - start offset
             // end   - end offset
             this.getSubString = function(r, start, end){
-                var res = [], sr = start.row, er = end.row, sc = start.col, ec = end.col;
+                var res = [],
+                    sr = start.row,
+                    er = end.row;
+
                 for(var i = sr; i < er + 1; i++){
                     var ln = r.getLine(i);
-                    if (i != sr) {
+                    if (i !== sr) {
                         res.push('\n');
                     } else {
-                        ln = ln.substring(sc);
+                        ln = ln.substring(start.col);
                     }
 
                     if (i === er) {
-                        ln = ln.substring(0, ec - ((sr === er) ? sc : 0));
+                        ln = ln.substring(0, end.col - ((sr === er) ? start.col : 0));
                     }
                     res.push(ln);
                 }
@@ -641,7 +676,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.paintOnTop = function(g) {
-                if (this.hint != null && this.getMaxOffset() === 0) {
+                if (this.hint !== null && this.getMaxOffset() === 0) {
                     var ps = this.hint.getPreferredSize(),
                         yy = Math.floor((this.height - ps.height)/2),
                         xx = ("left" === this.textAlign) ? this.getLeft() + this.curW
@@ -675,14 +710,20 @@ zebkit.package("ui", function(pkg, Class) {
                     var h = this.history[this.historyPos];
 
                     this.historyPos--;
-                    if (h[0] === 1) this.remove(h[1], h[2]);
-                    else            this.write (h[1], h[2]);
+                    if (h[0] === 1) {
+                        this.remove(h[1], h[2]);
+                    }
+                    else {
+                        this.write (h[1], h[2]);
+                    }
 
                     this.undoCounter -= 2;
                     this.redoCounter++;
 
                     this.historyPos--;
-                    if (this.historyPos < 0) this.historyPos = this.history.length - 1;
+                    if (this.historyPos < 0) {
+                        this.historyPos = this.history.length - 1;
+                    }
 
                     this.repaint();
                 }
@@ -755,7 +796,7 @@ zebkit.package("ui", function(pkg, Class) {
                 if (this.position.offset < 0) {
                     this.position.setOffset(this.textAlign === "left" || this.getLines() > 1 ? 0 : this.getMaxOffset());
                 } else {
-                    if (this.hint != null) {
+                    if (this.hint !== null) {
                         this.repaint();
                     } else {
                         this.repaintCursor();
@@ -783,7 +824,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.focusLost = function(e) {
                 this.repaintCursor();
                 if (this.isEditable === true) {
-                    if (this.hint) this.repaint();
+                    if (this.hint !== null) this.repaint();
 
                     if (this.blinkingPeriod > 0) {
                         if (this.blinkTask != null) {
@@ -1001,33 +1042,6 @@ zebkit.package("ui", function(pkg, Class) {
                 }
                 g.translate(-sx, -sy);
             };
-        },
-
-        function (render, maxCol){
-            this.history = Array(100);
-            this.historyPos = -1;
-            this.redoCounter = this.undoCounter = this.curY = this.curW = this.curH = 0;
-            this.scrollManager = new pkg.ScrollManager(this);
-
-            if (arguments.length === 1) {
-                if (zebkit.isNumber(render)) {
-                    maxCol = render;
-                    this.$super(new pkg.TextRender(new zebkit.data.SingleLineTxt("", maxCol)));
-                } else {
-                    maxCol = -1;
-                    this.$super(zebkit.isString(render) ? new pkg.TextRender(new zebkit.data.SingleLineTxt(render))
-                                                       : (zebkit.instanceOf(render, zebkit.data.TextModel) ?  new pkg.TextRender(render)
-                                                                                                         : render));
-                }
-            } else {
-                // 2 arguments or zero arguments
-                if (arguments.length === 0) {
-                    maxCol = -1;
-                }
-                this.$super(new pkg.TextRender(new zebkit.data.SingleLineTxt(render, maxCol)));
-            }
-
-            if (maxCol > 0) this.setPSByRowsCols(-1, maxCol);
         },
 
         function setView(v){

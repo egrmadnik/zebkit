@@ -121,8 +121,34 @@ zebkit.package("ui", function(pkg, Class) {
       */
 
     pkg.ArrowButton = Class(pkg.EvStatePan, pkg.ButtonRepeatMix, [
+        function(direction) {
+            this._ = new zebkit.util.Listeners();
+            this.cursorType = pkg.Cursor.HAND;
+
+            if (arguments.length > 0) {
+                this.direction = zebkit.util.$validateValue(direction, "left", "right", "top", "bottom");
+            }
+
+            var clz = this.clazz;
+            this.setView({
+                "out"          : new clz.ArrowView(this.direction, clz.colors["out"]),
+                "over"         : new clz.ArrowView(this.direction, clz.colors["over"]),
+                "pressed.over" : new clz.ArrowView(this.direction, clz.colors["pressed.over"]),
+                "disabled"     : new clz.ArrowView(this.direction, clz.colors["disabled"])
+            });
+            this.$super();
+            this.syncState(this.state, this.state);
+        },
+
         function $clazz() {
             this.ArrowView = Class(pkg.ArrowView, []);
+
+            this.colors = {
+                "out"          : "red",
+                "over"         : "red",
+                "pressed.over" : "black",
+                "disabled"     : "lightGray"
+            };
         },
 
         function $prototype() {
@@ -172,24 +198,6 @@ zebkit.package("ui", function(pkg, Class) {
                     }
                 }
             };
-        },
-
-        function(direction) {
-            this._ = new zebkit.util.Listeners();
-            this.cursorType = pkg.Cursor.HAND;
-
-            if (arguments.length > 0) {
-                this.direction = zebkit.util.$validateValue(direction, "left", "right", "top", "bottom");
-            }
-
-            this.setView({
-                "out"          : new this.clazz.ArrowView(this.direction, "black"),
-                "over"         : new this.clazz.ArrowView(this.direction, "red"),
-                "pressed.over" : new this.clazz.ArrowView(this.direction, "black"),
-                "disabled"     : new this.clazz.ArrowView(this.direction, "lightGray")
-            });
-            this.$super();
-            this.syncState(this.state, this.state);
         }
     ]);
 
@@ -633,9 +641,10 @@ zebkit.package("ui", function(pkg, Class) {
         function keyPressed(e){
             if (zebkit.instanceOf(this.manager, pkg.Group) && this.getValue()){
                 var d = 0;
-                if (e.code === "ArrowLeft" || e.code === "ArrowUp") d = -1;
-                else {
-                    if (e.code === "ArrowRight" || e.code === "ArrowDown") d = 1;
+                if (e.code === "ArrowLeft" || e.code === "ArrowUp") {
+                    d = -1;
+                } else if (e.code === "ArrowRight" || e.code === "ArrowDown") {
+                    d = 1;
                 }
 
                 if (d !== 0) {
@@ -689,7 +698,6 @@ zebkit.package("ui", function(pkg, Class) {
         }
     ]);
 
-
     /**
      * UI link component class.
      * @class zebkit.ui.Link
@@ -698,10 +706,12 @@ zebkit.package("ui", function(pkg, Class) {
      * @extends zebkit.ui.Button
      */
     pkg.Link = Class(pkg.Button, [
-        function(s){
+        function(s) {
             // do it before super
             this.view = new pkg.DecoratedTextRender(s);
             this.overDecoration = "underline";
+
+
             this.$super(null);
 
             // if colors have not been set with default property set it here
@@ -734,9 +744,11 @@ zebkit.package("ui", function(pkg, Class) {
              * @method setFont
              * @chainable
              */
-            this.setFont = function() {
-                var old = this.view.font;
-                this.view.setFont.apply(this, arguments);
+            this.setFont = function(f) {
+                var old = this.view != null ? this.view.font
+                                            : null;
+
+                this.view.setFont.apply(this.view, arguments);
                 if (old != this.view.font) {
                     this.vrp();
                 }
@@ -782,11 +794,11 @@ zebkit.package("ui", function(pkg, Class) {
                 b = true;
             }
 
-            if (this.overDecoration != null && this.isEnabled) {
+            if (this.view.decorations != null && this.overDecoration != null && this.isEnabled) {
                 if (n === "over") {
                     this.view.setDecoration(this.overDecoration, this.colors[k]);
                     b = true;
-                } else if ( this.view.decorations[this.overDecoration] != null) {
+                } else if (this.view.decorations[this.overDecoration] != null) {
                     this.view.setDecoration(this.overDecoration, null);
                     b = true;
                 }
@@ -797,6 +809,10 @@ zebkit.package("ui", function(pkg, Class) {
             }
         }
     ]);
+
+    // cannot be declared in Button.$clazz since Link appears later and link inherits Button class
+    pkg.Button.Link = Class(pkg.Link, []);
+
 
     /**
      * Toolbar UI component. Handy way to place number of click able elements

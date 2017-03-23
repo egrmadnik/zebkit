@@ -7,6 +7,21 @@ zebkit.package("ui", function(pkg, Class) {
      * @extends {zebkit.ui.Panel}
      */
     pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
+        function (o) {
+            this._ = new zebkit.util.Listeners();
+            this.views = {};
+            if (arguments.length > 0) {
+                this.orient = zebkit.util.$validateValue(o, "vertical", "horizontal");
+            }
+            this.setValues(0, 20, [0, 5, 10], 2, 1);
+            this.setScaleStep(1);
+
+            this.$super();
+            this.views.bundle = (this.orient === "horizontal" ? this.views.hbundle : this.views.vbundle);
+
+            this.provider = new this.clazz.ViewProvider();
+        },
+
         function $clazz() {
             this.ViewProvider = Class([
                 function $prototype() {
@@ -301,9 +316,12 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.recalc = function(){
-                var ps = this.views.bundle != null ? this.views.bundle.getPreferredSize() : { width: 0, height:0 },
+                var ps = this.views.bundle != null ? this.views.bundle.getPreferredSize()
+                                                   : { width: 0, height:0 },
                     ns = this.isShowScale ? (this.gap + 2 * this.netSize) : 0,
-                    dt = this.max - this.min, hMax = 0, wMax = 0;
+                    dt = this.max - this.min,
+                    hMax = 0,
+                    wMax = 0;
 
                 if (this.isShowTitle && this.intervals.length > 0){
                     for(var i = 0;i < this.intervals.length; i ++ ){
@@ -482,21 +500,6 @@ zebkit.package("ui", function(pkg, Class) {
         function invalidate(){
             this.pl = null;
             this.$super();
-        },
-
-        function (o) {
-            this._ = new zebkit.util.Listeners();
-            this.views = {};
-            if (arguments.length > 0) {
-                this.orient = o;
-            }
-            this.setValues(0, 20, [0, 5, 10], 2, 1);
-            this.setScaleStep(1);
-
-            this.$super();
-            this.views.bundle = (this.orient === "horizontal" ? this.views.hbundle : this.views.vbundle);
-
-            this.provider = new this.clazz.ViewProvider();
         }
     ]);
 });

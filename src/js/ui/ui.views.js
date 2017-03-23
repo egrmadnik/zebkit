@@ -454,6 +454,21 @@ zebkit.package("ui", function(pkg, Class) {
         }
     ]);
 
+    pkg.TriangleShape = Class(pkg.Shape, [
+        function $prototype() {
+            this.outline = function(g,x,y,w,h,d) {
+                g.beginPath();
+                w -= 2 * this.width;
+                h -= 2 * this.width;
+                g.moveTo(x + w - 1, y);
+                g.lineTo(x + w - 1, y + h - 1);
+                g.lineTo(x, y + h - 1);
+                g.closePath();
+                return true;
+            };
+        }
+    ]);
+
     /**
      * Border view. Can be used to render CSS-like border. Border can be applied to any
      * zebkit UI component by calling setBorder method:
@@ -472,7 +487,7 @@ zebkit.package("ui", function(pkg, Class) {
      * @extends zebkit.ui.View
      */
     pkg.Border = Class(pkg.View, [
-        function (c,w,r) {
+        function(c, w, r) {
             if (arguments.length > 0) this.color = c;
             if (arguments.length > 1) this.width = this.gap = w;
             if (arguments.length > 2) this.radius = r;
@@ -656,11 +671,17 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.color = null;
 
+            this.fillColor = null;
+
             this.paint = function(g,x,y,w,h,d) {
                 if (this.color != null && this.width > 0) {
                     this.outline(g,x,y,w,h,d);
                     g.setColor(this.color);
                     g.stroke();
+                    if (this.fillColor !== null) {
+                       g.setColor(this.fillColor);
+                       g.fill();
+                    }
                 }
             };
 
@@ -679,7 +700,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.getPreferredSize = function() {
-                var s = this.lineWidth * 8;
+                var s = this.width * 8;
                 return  {
                     width : s, height : s
                 };
@@ -767,7 +788,7 @@ zebkit.package("ui", function(pkg, Class) {
     * @extends zebkit.ui.View
     */
     pkg.Gradient = Class(pkg.View, [
-        function(){
+        function() {
             /**
              * Gradient orientation: vertical or horizontal
              * @attribute orient
@@ -900,8 +921,7 @@ zebkit.package("ui", function(pkg, Class) {
                 this.y = y;
                 this.width  = w;
                 this.height = h;
-            }
-            else {
+            } else {
                 this.x = this.y = this.width = this.height = 0;
             }
         },
@@ -912,8 +932,7 @@ zebkit.package("ui", function(pkg, Class) {
                     if (this.width > 0) {
                         g.drawImage(this.target, this.x, this.y,
                                     this.width, this.height, x, y, w, h);
-                    }
-                    else {
+                    } else {
                         g.drawImage(this.target, x, y, w, h);
                     }
                 }
@@ -1265,12 +1284,9 @@ zebkit.package("ui", function(pkg, Class) {
                 if (this.side === "top") {
                     g.moveTo(x, y + d);
                     g.lineTo(x + w - 1, y + d);
-                }
-                else {
-                    if (this.side === "bottom") {
-                        g.moveTo(x, y + h - d);
-                        g.lineTo(x + w - 1, y + h - d);
-                    }
+                } else if (this.side === "bottom") {
+                    g.moveTo(x, y + h - d);
+                    g.lineTo(x + w - 1, y + h - d);
                 }
                 g.stroke();
             };
@@ -1299,7 +1315,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.width = this.height = 6;
             this.direction = "bottom";
 
-            this.outline  = function(g, x, y, w, h, d) {
+            this.outline = function(g, x, y, w, h, d) {
                 x += this.gap;
                 y += this.gap;
                 w -= this.gap * 2;
@@ -1316,34 +1332,25 @@ zebkit.package("ui", function(pkg, Class) {
                     g.lineTo(x + w - 1, y + dt);
                     g.lineTo(x + w2, y + h - dt);
                     g.lineTo(x + dt, y + dt);
+                } else if ("top" === this.direction) {
+                    g.moveTo(x, y + h - dt);
+                    g.lineTo(x + w - 1, y + h - dt);
+                    g.lineTo(x + w2, y);
+                    g.lineTo(x + dt, y + h - dt);
+                } else if ("left" === this.direction) {
+                    g.moveTo(x + w - dt, y);
+                    g.lineTo(x + w - dt, y + h - 1);
+                    g.lineTo(x, y + h2);
+                    g.lineTo(x + w + dt, y);
+                } else if ("right" === this.direction) {
+                    g.moveTo(x + dt, y);
+                    g.lineTo(x + dt, y + h - 1);
+                    g.lineTo(x + w, y + h2);
+                    g.lineTo(x - dt, y);
+                } else {
+                    throw new Error("" + this.direction);
                 }
-                else {
-                    if ("top" === this.direction) {
-                        g.moveTo(x, y + h - dt);
-                        g.lineTo(x + w - 1, y + h - dt);
-                        g.lineTo(x + w2, y);
-                        g.lineTo(x + dt, y + h - dt);
-                    }
-                    else {
-                        if ("left" === this.direction) {
-                            g.moveTo(x + w - dt, y);
-                            g.lineTo(x + w - dt, y + h - 1);
-                            g.lineTo(x, y + h2);
-                            g.lineTo(x + w + dt, y);
-                        }
-                        else {
-                            if ("right" === this.direction) {
-                                g.moveTo(x + dt, y);
-                                g.lineTo(x + dt, y + h - 1);
-                                g.lineTo(x + w, y + h2);
-                                g.lineTo(x - dt, y);
-                            }
-                            else {
-                                throw new Error("" + this.direction);
-                            }
-                        }
-                    }
-                }
+
                 return true;
             };
 
@@ -1359,8 +1366,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                 if (this.fill === true) {
                     g.fill();
-                }
-                else {
+                } else {
                     g.stroke();
                 }
             };
@@ -1418,13 +1424,11 @@ zebkit.package("ui", function(pkg, Class) {
              * @method setFont
              */
             this.setFont = function(f) {
-                var old = this.font;
-
                 if (zebkit.instanceOf(f, pkg.Font) === false && f != null) {
                     f = zebkit.newInstance(pkg.Font, arguments);
                 }
 
-                if (f != old) {
+                if (f != this.font) {
                     this.font = f;
 
                     if (this.owner != null && this.owner.isValid === true) {
@@ -1580,8 +1584,6 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.getLine = function(l) {
-                console.log("l = " + l);
-
                 if (l < 0 || l > 1) {
                     throw new RangeError();
                 }
@@ -1749,8 +1751,7 @@ zebkit.package("ui", function(pkg, Class) {
                             p2 = this.startInvLine + this.invLines - ful - updatedLines;
                         this.invLines = ((p1 > 0) ? p1 : 0) + ((p2 > 0) ? p2 : 0) + 1;
                         this.startInvLine = this.startInvLine < ful ? this.startInvLine : ful;
-                    }
-                    else {
+                    } else {
                         this.startInvLine = ful;
                         this.invLines = 1;
                     }
@@ -1758,8 +1759,7 @@ zebkit.package("ui", function(pkg, Class) {
                     if (this.owner != null && this.owner.isValid !== true) {
                         this.owner.invalidate();
                     }
-                }
-                else {
+                } else {
                     if (this.invLines > 0){
                         if (ful <= this.startInvLine) this.startInvLine += (updatedLines - 1);
                         else {
@@ -1791,8 +1791,7 @@ zebkit.package("ui", function(pkg, Class) {
                     if (this.invLines === 0){
                         this.startInvLine = start;
                         this.invLines = size;
-                    }
-                    else {
+                    } else {
                         var e = this.startInvLine + this.invLines;
                         this.startInvLine = start < this.startInvLine ? start : this.startInvLine;
                         this.invLines     = Math.max(start + size, e) - this.startInvLine;
@@ -1870,9 +1869,8 @@ zebkit.package("ui", function(pkg, Class) {
                                             if (p1.row === p2.row) {
                                                 lw -= this.font.charsWidth(s, p2.col, s.length - p2.col);
                                             }
-                                        }
-                                        else {
-                                            if (line === p2.row) lw = this.font.charsWidth(s, 0, p2.col);
+                                        } else if (line === p2.row) {
+                                            lw = this.font.charsWidth(s, 0, p2.col);
                                         }
                                         this.paintSelection(g, xx, y, lw === 0 ? 1 : lw, lilh, line, d);
 
@@ -1979,13 +1977,11 @@ zebkit.package("ui", function(pkg, Class) {
                             if (direction < 0) break;
                             else direction = 1;
                             breakIndex ++;
-                        }
-                        else if (substrLen > w) {
+                        } else if (substrLen > w) {
                             breakIndex--;
                             if (direction > 0) break;
                             else               direction = -1;
-                        }
-                        else {
+                        } else {
                             break;
                         }
                     }
@@ -2049,29 +2045,34 @@ zebkit.package("ui", function(pkg, Class) {
     ]);
 
     pkg.DecoratedTextRender = zebkit.Class(pkg.TextRender, [
-        function setDecoration(id, color) {
-            if (id == null) throw new Error();
-            this.decorations[id] = color;
-            return this;
+        function(text) {
+            this.decorations = {};
+            this.$super(text);
         },
 
-        function setDecorations(d) {
-            this.decorations = zebkit.clone(d);
-            return this;
+        function $prototype() {
+            this.lineWidth = 1;
+
+            this.setDecoration = function(id, color) {
+                if (id == null) throw new Error();
+                this.decorations[id] = color;
+                return this;
+            };
+
+            this.setDecorations = function(d) {
+                this.decorations = zebkit.clone(d);
+                return this;
+            };
         },
 
         function paintLine(g,x,y,line,d) {
             this.$super(g,x,y,line,d);
-
             var lw = this.calcLineWidth(line),
                 lh = this.getLineHeight(line);
 
             if (this.decorations.underline != null) {
                 g.lineWidth = this.lineWidth;
                 g.setColor(this.decorations.underline);
-
-                console.log("UNDERLINE: color = " + this.decorations.underline );
-
                 g.drawLine(x, y + lh - 1, x + lw, y  + lh - 1);
             }
 
@@ -2081,15 +2082,8 @@ zebkit.package("ui", function(pkg, Class) {
                 g.lineWidth = this.lineWidth;
                 g.drawLine(x, yy, x + lw, yy);
             }
-        },
-
-        function(text) {
-            this.decorations = {};
-            this.lineWidth = 1;
-            this.$super(text);
         }
     ]);
-
 
     pkg.BoldTextRender = Class(pkg.TextRender, [
         function $clazz() {
@@ -2585,8 +2579,7 @@ zebkit.package("ui", function(pkg, Class) {
                         this.target.paint(g, x, y, xx - x, yy - y, d);
                         g.restore();
                     }
-                }
-                else {
+                } else {
                     this.target.paint(g, x, y, w, h, d);
                 }
             };
@@ -2724,13 +2717,19 @@ zebkit.package("ui", function(pkg, Class) {
             this.width = this.height = 12;
 
             this.paint = function(g, x, y, w, h, d) {
-                if (this.br !== null) {
-                    this.br.outline(g, x, y, w, h, d);
+                if (this.bg !== null && (this.br === null || this.br.outline(g, x, y, w, h, d) === false)) {
+                    g.beginPath();
+                    g.rect(x, y, w, h);
                 }
 
-                g.setColor(this.bg);
-                g.fill();
-                this.br.paint(g, x, y, w, h, d);
+                if (this.bg !== null) {
+                    g.setColor(this.bg);
+                    g.fill();
+                }
+
+                if (this.br !== null) {
+                    this.br.paint(g, x, y, w, h, d);
+                }
 
                 g.setColor(this.color);
                 g.lineWidth = 2;

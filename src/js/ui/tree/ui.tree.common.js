@@ -111,10 +111,11 @@ zebkit.package("ui.tree", function(pkg, Class) {
              * @attribute tf
              * @type {zebkit.ui.TextField}
              */
-            this.tf = new ui.TextField(new zebkit.data.SingleLineTxt(""));
-            this.tf.setBackground("white");
-            this.tf.setBorder(null);
-            this.tf.setPadding(0);
+            this.tf = new this.clazz.TextField(new zebkit.data.SingleLineTxt(""));
+        },
+
+        function $clazz() {
+            this.TextField = Class(ui.TextField, []);
         },
 
         function $prototype() {
@@ -937,8 +938,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
                             g.translate(sx, sy);
                             this.paintTree(g, this.firstVisible);
                             g.translate(-sx,  -sy);
-                        }
-                        catch(e) {
+                        } catch(e) {
                             g.translate(-sx,  -sy);
                             throw e;
                         }
@@ -1196,9 +1196,6 @@ zebkit.package("ui.tree", function(pkg, Class) {
          * @chainable
          */
         function setViews(v) {
-            console.log("BaseTree.setViews() " + v);
-
-
             // setting to 0 prevents exception when on/off view is not defined
             this.viewSizes.on  = { width: 0, height : 0};
             this.viewSizes.off = { width: 0, height : 0};

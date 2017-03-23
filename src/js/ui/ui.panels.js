@@ -572,12 +572,10 @@ zebkit.package("ui", function(pkg, Class) {
 
             if ((ctr == null && this.leftComp == null) || "left" === ctr) {
                 this.leftComp = c;
-            }
-            else {
+            } else {
                 if ((ctr == null && this.rightComp == null) || "right" === ctr) {
                     this.rightComp = c;
-                }
-                else {
+                } else {
                     if ("center" === ctr) this.gripper = c;
                     else throw new Error("" + ctr);
                 }

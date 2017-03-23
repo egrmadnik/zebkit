@@ -14,8 +14,6 @@
         "white"      : "#FFFFFF",
         "black"      : "#000000",
         "fontColor"  : "#808080",
-        "background" :  { "$zebkit.ui.Gradient": [ "white", "#F0F0F0", "horizontal" ] },
-        "borderColor": "#AAAAAA",
         "gray1"      : "#A1A1A1",
         "gray2"      : "#AAAAAA",
         "gray3"      : "#C7C7C7",
@@ -32,8 +30,6 @@
         "plain"  : { "$zebkit.ui.Border": [ "red", 1, 6 ] },
         "dot"    : { "$zebkit.ui.Dotted" : []  }
     },
-
-    "icons" : "%{<img> zebkit.png}",
 
     "shortcuts" : {
         "$ ? zebkit.ui.ShortcutManager" :{
@@ -76,6 +72,18 @@
     },
 
     "Button": {
+        "Link": {
+            "font":  { "$zebkit.ui.Font" : ["Arial", "bold italic", 16] },
+            "colors"      : {
+                "pressed.over" : "white",
+                "out"          : "white",
+                "over"         : "white",
+                "pressed.out"  : "lightGray",
+                "disabled"     : "gray"
+            },
+            "canHaveFocus": false
+        },
+
         "Label": {
             "font": { "$zebkit.ui.Font" : ["Arial", "bold", 16] },
             "disabledColor": "white",
@@ -235,14 +243,14 @@
 
         "VBundle": {
             "padding":1,
-            "preferredSize" : [6, -1],
-            "background" : { "$zebkit.ui.BunldeView": [ "vertical", "white"] }
+            "preferredSize" : [4, -1],
+            "background" : { "$zebkit.ui.BunldeView": [ "vertical", "#DD2255"] }
         },
 
         "HBundle": {
             "padding":1,
             "preferredSize" : [ -1, 6 ],
-            "background" : { "$zebkit.ui.BunldeView": [ "horizontal", "white" ] }
+            "background" : { "$zebkit.ui.BunldeView": [ "horizontal", "#DD2255" ] }
         },
 
         "background":  null,
@@ -250,8 +258,8 @@
         "border"    : { "$zebkit.ui.Border": [ null, 0, 4 ] }
     },
 
-
     "mscroll": { "$ ? zebkit.ui.MobileScrollMan":[] },
+
 
     "ScrollPan": {
         "autoHide": "%{<js> window.innerWidth < 600}"
@@ -259,7 +267,9 @@
 
     "TextField": {
         "HintRender" : {
-            "font"  : { "$zebkit.ui.Font": ["Arial", "bold italic", 12] },
+            "font": {
+                "$zebkit.ui.Font": ["Arial", "bold italic", 12]
+            },
             "color" : "#C1C1C1"
         },
 
@@ -274,7 +284,7 @@
         "curW"          : 2,
         "font"          : "%{font}",
         "cursorView"    : "white",
-        "padding"      : [4, 4, 4, 4]
+        "padding"       : [4,4,4,4]
     },
 
     "TextArea" : {
@@ -360,7 +370,7 @@
             "color": "white"
         },
 
-        "padding":2,
+        "padding": 2,
 
         "layout"  : { "$zebkit.layout.ListLayout":[ 4 ] }
     },
@@ -387,7 +397,7 @@
             },
 
             "padding": 4,
-            "layout": { "$zebkit.layout.BorderLayout": 0 }
+            "layout" : { "$zebkit.layout.BorderLayout": 0 }
         },
 
         "Button": {
@@ -465,15 +475,15 @@
         },
         "views" : {
              "gauge"  : { "$zebkit.ui.Border" : "red" },
-             "hbundle": { "$zebkit.ui.Picture": [ "%{icons}", 49,0,11,18 ] },
-             "vbundle": { "$zebkit.ui.Picture": [ "%{icons}", 61,0,18,11 ] }
+             "hbundle": { "$zebkit.ui.RoundBorder": [ "red", 2 ], "fillColor" : "orange"  },
+             "vbundle": { "$zebkit.ui.RoundBorder": [ "red", 2 ], "fillColor" : "orange"  }
         },
         "scaleColor": "red",
         "padding"   : 4
     },
 
     "Link": {
-        "font"        : "%{boldFont}",
+        "font":  { "$zebkit.ui.Font" : [ "Arial", "italic", 14]},
         "colors"      : {
             "pressed.over" : "red",
             "out"          : "red",
@@ -573,7 +583,6 @@
         "border"     : { "$zebkit.ui.Tooltip.TooltipBorder" : [ "white", 1 ]},
         "layout"     : { "$zebkit.layout.FlowLayout": [ "center", "top" ] }
     },
-
 
     "Toolbar": {
         "Combo": {
@@ -702,9 +711,10 @@
             "layout": { "$zebkit.layout.FlowLayout":["right","center"] }
         },
 
-        "SizerIcon": {
+        "SizerPan": {
             "padding" : [0,0,1,2],
-            "image"    : { "$zebkit.ui.Picture": [ "%{icons}",0,32,9,8 ] }
+            "preferredSize" : [18,16],
+            "view"    : { "$zebkit.ui.TriangleShape": [ "red", 2 ] }
         },
 
         "Icon": {
@@ -717,9 +727,9 @@
         "padding"   : [0,0,2,0],
         "buttons"   : {
             "close": {
-                "over"   : { "$zebkit.ui.Picture": [ "%{icons}",16,0,16,16   ]},
-                "out"    : { "$zebkit.ui.Picture": [ "%{icons}",0,0,16,16    ]},
-                "pressed": { "$zebkit.ui.Picture": [ "%{icons}",32,0,16,16   ]}
+                "over"   : { "$zebkit.ui.CheckboxView": [ "white" ] },
+                "out"    : { "$zebkit.ui.CheckboxView": [ "white" ] },
+                "pressed": { "$zebkit.ui.CheckboxView": [ "white" ] }
             }
         }
     },

@@ -1,5 +1,4 @@
 {
-
     "DefViews": {
         "color" : "@palette.gray1",
         "font"  : "12px 'Lucida Grande', 'Lucida Sans', Arial, sans-serif"
@@ -8,13 +7,13 @@
     "BaseTree" : {
         "lineColor" : "red",
         "color"     : "red",
+        "itemGapX"  : 4,
+        "itemGapY"  : 4,
         "views": {
-            "close2"   : { "$zebkit.ui.Picture": [ "%{zebkit.ui.icons}", 61 ,20 ,16,14, true ] },
-            "open2"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.icons}", 49 ,34,16,14, true ] },
-            "leaf2"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.icons}", 49 ,20 ,16,14, true ] },
-            "off"     : { "$zebkit.ui.ToggleView": [ true, "white", "orange", 14 ] },
-            "on"      : { "$zebkit.ui.ToggleView": [ false, "white", "orange", 14 ] },
-            "aselect" : [ [ "rgb(228, 244, 252)", { "$zebkit.ui.Border": "rgb(200,180,200)" } ] ]
+            "off"     : { "$zebkit.ui.ToggleView": [ true, "white", "red", 14 ], "br" : { "$zebkit.ui.RoundBorder": [ "orange" ] }  },
+            "on"      : { "$zebkit.ui.ToggleView": [ false, "lightGray", "red", 14 ], "br" : { "$zebkit.ui.RoundBorder": [ "orange" ] }  },
+            "aselect" : { "$zebkit.ui.Border" : [ "orange", 2, 6 ] },
+            "iselect" : { "$zebkit.ui.Border" : [ "gray", 2, 6 ] }
         }
     },
 
@@ -22,7 +21,6 @@
         "color" : "red",
         "font"  : "bold"
     },
-
 
     "Tree": {
         "inheritProperties" : true
