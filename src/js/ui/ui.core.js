@@ -63,8 +63,8 @@ zebkit.package("ui", function(pkg, Class) {
      * @for zebkit.ui
      */
     pkg.$getPS = function(l) {
-        return l != null && l.isVisible === true ? l.getPreferredSize()
-                                                 : { width:0, height:0 };
+        return l !== null && l.isVisible === true ? l.getPreferredSize()
+                                                  : { width:0, height:0 };
     };
 
     /**
@@ -82,7 +82,7 @@ zebkit.package("ui", function(pkg, Class) {
     pkg.$cvp = function(c, r) {
         if (c.width > 0 && c.height > 0 && c.isVisible === true){
             var p = c.parent, px = -c.x, py = -c.y;
-            if (r == null) {
+            if (arguments.length < 2) {
                 r = { x:0, y:0, width : c.width, height : c.height };
             } else {
                 r.x = r.y = 0;
@@ -90,7 +90,7 @@ zebkit.package("ui", function(pkg, Class) {
                 r.height = c.height;
             }
 
-            while (p != null && r.width > 0 && r.height > 0) {
+            while (p !== null && r.width > 0 && r.height > 0) {
                 var xx = r.x > px ? r.x : px,
                     yy = r.y > py ? r.y : py,
                     w1 = r.x + r.width,
@@ -614,6 +614,8 @@ zebkit.package("ui", function(pkg, Class) {
       */
     pkg.Panel = Class(zebkit.layout.Layoutable, [
         function $prototype() {
+            this.border = null;
+
             // TODO: not stable api, probably it should be moved to static
             // this.wrapWithCanvas = function() {
             //     var c = new pkg.HtmlCanvas();
@@ -642,14 +644,14 @@ zebkit.package("ui", function(pkg, Class) {
                 // step I: skip invisible components and components that are not in hierarchy
                 //         don't initiate repainting thread for such sort of the components,
                 //         but don't forget for zCanvas whose parent field is null, but it has $context
-                if (this.isVisible === true && (this.parent != null || this.$context != null)) {
+                if (this.isVisible === true && (this.parent !== null || this.$context != null)) {
                     //!!! find context buffer that holds the given component
 
                     var canvas = this;
                     for(; canvas.$context == null; canvas = canvas.parent) {
                         // component either is not in visible state or is not in hierarchy
                         // than stop repaint procedure
-                        if (canvas.isVisible === false || canvas.parent == null) {
+                        if (canvas.isVisible === false || canvas.parent === null) {
                             return;
                         }
                     }
@@ -664,7 +666,7 @@ zebkit.package("ui", function(pkg, Class) {
                     // step II: calculate new actual dirty area
                     if (w > 0 && h > 0) {
                         var r = pkg.$cvp(this, temporary);
-                        if (r != null) {
+                        if (r !== null) {
                             zebkit.util.intersection(r.x, r.y, r.width, r.height, x, y, w, h, r);
                             if (r.width > 0 && r.height > 0) {
                                 x = r.x;
@@ -759,7 +761,7 @@ zebkit.package("ui", function(pkg, Class) {
             // control on its child composite component)
             this.getEventDestination = function() {
                 var c = this, p = this;
-                while ((p = p.parent) != null) {
+                while ((p = p.parent) !== null) {
                     if (p.catchInput != null && (p.catchInput === true || (p.catchInput !== false && p.catchInput(c)))) {
                         c = p;
                     }
@@ -785,12 +787,12 @@ zebkit.package("ui", function(pkg, Class) {
                         this.validate();
                     }
 
-                    var b = this.bg != null && (this.parent == null || this.bg != this.parent.bg);
+                    var b = this.bg != null && (this.parent === null || this.bg != this.parent.bg);
 
                     // if component defines shape and has update, [paint?] or background that
                     // differs from parent background try to apply the shape and than build
                     // clip from the applied shape
-                    if ( (this.border != null && this.border.outline != null) &&
+                    if ( (this.border !== null && this.border.outline != null) &&
                          (b || this.update != null)                           &&
                          this.border.outline(g, 0, 0, this.width, this.height, this))
                     {
@@ -816,7 +818,7 @@ zebkit.package("ui", function(pkg, Class) {
                         }
                     }
 
-                    if (this.border != null) {
+                    if (this.border !== null) {
                         this.border.paint(g, 0, 0, this.width, this.height, this);
                     }
 
@@ -917,7 +919,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.getCanvas = function() {
                 var c = this;
-                for(; c != null && c.$isRootCanvas !== true; c = c.parent);
+                for(; c !== null && c.$isRootCanvas !== true; c = c.parent);
                 return c;
             };
 
@@ -990,7 +992,7 @@ zebkit.package("ui", function(pkg, Class) {
                         var kid = this.kids[i];
                         kid = kid.getComponentAt(x - kid.x,
                                                  y - kid.y);
-                        if (kid != null) return kid;
+                        if (kid !== null) return kid;
                     }
                 }
                 return this.contains == null || this.contains(x, y) === true ? this : null;
@@ -1004,29 +1006,29 @@ zebkit.package("ui", function(pkg, Class) {
                 this.invalidate();
 
                 // extra condition to save few millisecond on repaint() call
-                if (this.isVisible === true && this.parent != null) {
+                if (this.isVisible === true && this.parent !== null) {
                     this.repaint();
                 }
             };
 
             this.getTop = function() {
-                return this.border != null ? this.top + this.border.getTop()
-                                           : this.top;
+                return this.border !== null ? this.top + this.border.getTop()
+                                            : this.top;
             };
 
             this.getLeft = function() {
-                return this.border != null ? this.left + this.border.getLeft()
-                                           : this.left;
+                return this.border !== null ? this.left + this.border.getLeft()
+                                            : this.left;
             };
 
             this.getBottom = function() {
-                return this.border != null ? this.bottom + this.border.getBottom()
-                                           : this.bottom;
+                return this.border !== null ? this.bottom + this.border.getBottom()
+                                            : this.bottom;
             };
 
             this.getRight  = function() {
-                return this.border != null ? this.right  + this.border.getRight()
-                                           : this.right;
+                return this.border !== null ? this.right  + this.border.getRight()
+                                            : this.right;
             };
 
             //TODO: the method is not used yet
@@ -1104,7 +1106,7 @@ zebkit.package("ui", function(pkg, Class) {
                     w = this.width,
                     h = this.height;
 
-                if (p != null && w > 0 && h > 0) {
+                if (p !== null && w > 0 && h > 0) {
                     var x = this.x,
                         y = this.y,
                         nx = x < px ? x : px,
@@ -1142,7 +1144,7 @@ zebkit.package("ui", function(pkg, Class) {
                 COMP_EVENT.prevHeight = ph;
                 pkg.events.fireEvent("compSized", COMP_EVENT);
 
-                if (this.parent != null) {
+                if (this.parent !== null) {
                     this.parent.repaint(this.x, this.y,
                                         ((this.width  > pw) ? this.width  : pw),
                                         ((this.height > ph) ? this.height : ph));
@@ -1190,14 +1192,14 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setVisible = function (b) {
-                if (this.isVisible != b) {
+                if (this.isVisible !== b) {
                     this.isVisible = b;
                     this.invalidate();
 
                     COMP_EVENT.source = this;
                     pkg.events.fireEvent("compShown", COMP_EVENT);
 
-                    if (this.parent != null) {
+                    if (this.parent !== null) {
                         if (b) this.repaint();
                         else {
                             this.parent.repaint(this.x, this.y, this.width, this.height);
@@ -1215,7 +1217,7 @@ zebkit.package("ui", function(pkg, Class) {
              *  @chainable
              */
             this.setEnabled = function (b){
-                if (this.isEnabled != b){
+                if (this.isEnabled !== b){
                     this.isEnabled = b;
 
                     COMP_EVENT.source = this;
@@ -1346,7 +1348,7 @@ zebkit.package("ui", function(pkg, Class) {
                     this.border = v;
                     this.notifyRender(old, v);
 
-                    if ( old == null || v == null         ||
+                    if ( old === null || v === null       ||
                          old.getTop()    != v.getTop()    ||
                          old.getLeft()   != v.getLeft()   ||
                          old.getBottom() != v.getBottom() ||
@@ -1355,7 +1357,7 @@ zebkit.package("ui", function(pkg, Class) {
                         this.invalidate();
                     }
 
-                    if (v != null && v.activate != null) {
+                    if (v !== null && v.activate != null) {
                         v.activate(this.hasFocus() ?  "focuson": "focusoff");
                     }
 
@@ -1451,7 +1453,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.focused = function() {
                 // extents of activate method indicates it is
-                if (this.border != null && this.border.activate != null) {
+                if (this.border !== null && this.border.activate != null) {
                     var id = this.hasFocus() ? "focuson" : "focusoff" ;
                     if (typeof this.border.views[id] !== 'undefined') {
                         this.border.activate(id);
@@ -1499,7 +1501,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.toFront = function(){
-                if (this.parent != null && this.parent.kids[this.parent.kids.length-1] !== this){
+                if (this.parent !== null && this.parent.kids[this.parent.kids.length-1] !== this){
                     var p = this.parent;
                     p.kids.splice(p.indexOf(this), 1);
                     p.kids[p.kids.length] = this;
@@ -1514,7 +1516,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.toBack = function(){
-                if (this.parent != null && this.parent.kids[0] !== this){
+                if (this.parent !== null && this.parent.kids[0] !== this){
                     var p = this.parent;
                     p.kids.splice(p.indexOf(this), 1);
                     p.kids.unshift(this);

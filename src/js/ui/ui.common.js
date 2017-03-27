@@ -77,7 +77,7 @@ zebkit.package("ui", function(pkg, Class) {
             //  Text
 
             var m = desc.match(/^(\[[x ]?\])/);
-            if (m != null) {
+            if (m !== null) {
                 var txt = desc.substring(m[1].length),
                     ch  = instance != null && instance.clazz.Checkbox != null ? new instance.clazz.Checkbox(txt)
                                                                               : new pkg.Checkbox(txt);
@@ -85,7 +85,7 @@ zebkit.package("ui", function(pkg, Class) {
                 return ch;
             } else {
                 var m = desc.match(/^@\((.*)\)(\:[0-9]+x[0-9]+)?/);
-                if (m != null) {
+                if (m !== null) {
                     var path = m[1],
                         txt  = desc.substring(path.length + 3 + (m[2] != null ? m[2].length : 0)).trim(),
                         img  = instance != null && instance.clazz.ImagePan != null ? new instance.clazz.ImagePan(path)
@@ -228,84 +228,66 @@ zebkit.package("ui", function(pkg, Class) {
      */
     pkg.ImagePan = Class(pkg.ViewPan, [
         function(img, w, h) {
-            this.$runner = null;
-            this.setImage(img != null ? img : null);
+            this.setImage(arguments.length > 0 ? img : null);
             this.$super();
             if (arguments.length > 2) {
                 this.setPreferredSize(w, h);
             }
         },
 
-        /**
-         * Set image to be rendered in the UI component
-         * @method setImage
-         * @param {String|Image|zebkit.ui.Picture} img a path or direct reference to an
-         * image or zebkit.ui.Picture render.
-         * If the passed parameter is string it considered as path to an image.
-         * In this case the image will be loaded using the passed path
-         * @chainable
-         */
-        function setImage(img) {
-            if (img != null) {
-                var $this     = this,
-                    isPic     = zebkit.instanceOf(img, pkg.Picture),
-                    imgToLoad = isPic ? img.target : img ;
+        function $prototype() {
+            this.$runner = null;
 
-                this.$runner = zebkit.environment.loadImage(imgToLoad);
-                this.$runner.then(function(i) {
-                    $this.$runner = null;
-                    $this.setView(isPic ? img : new pkg.Picture(i));
-                    $this.vrp();
+            /**
+             * Set image to be rendered in the UI component
+             * @method setImage
+             * @param {String|Image|zebkit.ui.Picture} img a path or direct reference to an
+             * image or zebkit.ui.Picture render.
+             * If the passed parameter is string it considered as path to an image.
+             * In this case the image will be loaded using the passed path
+             * @chainable
+             */
+            this.setImage = function(img) {
+                if (img !== null) {
+                    var $this     = this,
+                        isPic     = zebkit.instanceOf(img, pkg.Picture),
+                        imgToLoad = isPic ? img.target : img ;
 
-                    if ($this.imageLoaded != null) {
-                        $this.imageLoaded(img);
-                    }
+                    this.$runner = zebkit.environment.loadImage(imgToLoad);
+                    this.$runner.then(function(i) {
+                        $this.$runner = null;
+                        $this.setView(isPic ? img : new pkg.Picture(i));
+                        $this.vrp();
 
-                    // fire imageLoaded event to children
-                    for(var t = $this.parent; t != null; t = t.parent){
-                        if (t.childImageLoaded != null) {
-                            t.childImageLoaded(img);
+                        if ($this.imageLoaded != null) {
+                            $this.imageLoaded(img);
                         }
-                    }
-                }).catch(function(e) {
-                    console.log(img);
-                    console.log(zebkit.dumpError(e));
 
-                    $this.$runner = null;
-                    $this.setView(null);
-                });
+                        // fire imageLoaded event to children
+                        for(var t = $this.parent; t !== null; t = t.parent){
+                            if (t.childImageLoaded != null) {
+                                t.childImageLoaded(img);
+                            }
+                        }
+                    }).catch(function(e) {
+                        console.log(img);
+                        console.log(zebkit.dumpError(e));
 
-
-                // if (this.$runner === null) {
-                //     this.$runner = new zebkit.DoIt();
-                // }
-
-                // this.$runner.then(function() {
-                //                       zebkit.environment.loadImage(imgToLoad, this.join());
-                //                   })
-                //             .then(function(p, b, i) {
-                //                       $this.$runner = null;
-                //                       if (b) {
-                //                           $this.setView(isPic ? img : new pkg.Picture(i));
-                //                           $this.vrp();
-                //                       }
-
-                //                   })
-                //             .catch(function() {
-                //                 this.$runner = null;
-                //                 $this.setView(null);
-                //             });
-            } else {
-                if (this.$runner === null) {
-                    this.setView(null);
-                } else {
-                    var $this = this;
-                    this.$runner.then(function() {
+                        $this.$runner = null;
                         $this.setView(null);
                     });
+                } else {
+                    if (this.$runner === null) {
+                        this.setView(null);
+                    } else {
+                        var $this = this;
+                        this.$runner.then(function() {
+                            $this.setView(null);
+                        });
+                    }
                 }
-            }
-            return this;
+                return this;
+            };
         }
     ]);
 
@@ -449,7 +431,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method getModel
              */
             this.getModel = function() {
-                return this.view != null ? this.view.target : null;
+                return this.view !== null ? this.view.target : null;
             };
 
             /**
@@ -477,7 +459,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setValue = function(s){
-                if (s == null) s = "";
+                if (s === null) s = "";
 
                 var old = this.view.getValue();
                 if (old !== s) {
@@ -602,7 +584,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.setCaption = function(c) {
                 var lab = this.getByConstraints("label");
                 lab.setValue(c);
-                lab.setVisible(c != null);
+                lab.setVisible(c !== null);
                 return this;
             };
 
@@ -615,7 +597,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.setImage = function(p) {
                 var lab = this.getByConstraints("image");
                 image.setImage(p);
-                image.setVisible(p != null);
+                image.setVisible(p !== null);
                 return this;
             };
 
@@ -627,7 +609,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.setFont = function() {
                 var lab = this.getByConstraints("label");
-                if (lab != null) {
+                if (lab !== null) {
                     lab.setFont.apply(lab, arguments);
                 }
                 return this;
@@ -641,7 +623,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.setColor = function (c) {
                 var lab = this.getByConstraints("label");
-                if (lab != null) {
+                if (lab !== null) {
                     lab.setColor(c);
                 }
                 return this;
@@ -653,7 +635,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method getCaption
              */
             this.getCaption = function () {
-                return lab == null ? null : this.getByConstraints("label").getValue();
+                return this.getByConstraints("label");
             };
 
             /**
@@ -745,84 +727,6 @@ zebkit.package("ui", function(pkg, Class) {
      *  @param {Integer} oldValue a progress bar previous value
      */
     pkg.Progress = Class(pkg.Panel, [
-        function $prototype() {
-            /**
-             * Gap between bundle elements
-             * @default 2
-             * @attribute gap
-             * @type {Integer}
-             * @readOnly
-             */
-            this.gap = 2;
-
-            /**
-             * Progress bar orientation
-             * @default "horizontal"
-             * @attribute orient
-             * @type {String}
-             * @readOnly
-             */
-            this.orient = "horizontal";
-
-            this.paint = function(g){
-                var left = this.getLeft(), right = this.getRight(),
-                    top = this.getTop(), bottom = this.getBottom(),
-                    rs = (this.orient === "horizontal") ? this.width - left - right
-                                                        : this.height - top - bottom,
-                    bundleSize = (this.orient === "horizontal") ? this.bundleWidth
-                                                                : this.bundleHeight;
-
-                if (rs >= bundleSize){
-                    var vLoc = Math.floor((rs * this.value) / this.maxValue),
-                        x = left, y = this.height - bottom, bundle = this.bundleView,
-                        wh = this.orient === "horizontal" ? this.height - top - bottom
-                                                              : this.width - left - right;
-
-                    while(x < (vLoc + left) && this.height - vLoc - bottom < y){
-                        if(this.orient === "horizontal"){
-                            bundle.paint(g, x, top, bundleSize, wh, this);
-                            x += (bundleSize + this.gap);
-                        }
-                        else{
-                            bundle.paint(g, left, y - bundleSize, wh, bundleSize, this);
-                            y -= (bundleSize + this.gap);
-                        }
-                    }
-
-                    if (this.titleView != null){
-                        var ps = this.bundleView.getPreferredSize();
-                        this.titleView.paint(g, Math.floor((this.width  - ps.width ) / 2),
-                                                Math.floor((this.height - ps.height) / 2),
-                                                ps.width, ps.height, this);
-                    }
-                }
-            };
-
-            this.calcPreferredSize = function(l){
-                var bundleSize = (this.orient === "horizontal") ? this.bundleWidth
-                                                                     : this.bundleHeight,
-                    v1 = (this.maxValue * bundleSize) + (this.maxValue - 1) * this.gap,
-                    ps = this.bundleView.getPreferredSize();
-
-                ps = (this.orient === "horizontal") ? {
-                                                         width :v1,
-                                                         height:(this.bundleHeight >= 0 ? this.bundleHeight
-                                                                                        : ps.height)
-                                                      }
-                                                    : {
-                                                        width:(this.bundleWidth >= 0 ? this.bundleWidth
-                                                                                     : ps.width),
-                                                        height: v1
-                                                      };
-                if (this.titleView != null) {
-                    var tp = this.titleView.getPreferredSize();
-                    ps.width  = Math.max(ps.width, tp.width);
-                    ps.height = Math.max(ps.height, tp.height);
-                }
-                return ps;
-            };
-        },
-
         function () {
             /**
              * Progress bar value
@@ -833,6 +737,11 @@ zebkit.package("ui", function(pkg, Class) {
             this.value = 0;
             this.setBundleView("darkBlue");
 
+            this._ = new zebkit.util.Listeners();
+            this.$super();
+        },
+
+        function $prototype() {
             /**
              * Progress bar bundle width
              * @attribute bundleWidth
@@ -848,8 +757,16 @@ zebkit.package("ui", function(pkg, Class) {
              * @readOnly
              * @default 6
              */
-
             this.bundleWidth = this.bundleHeight = 6;
+
+            /**
+             * Gap between bundle elements
+             * @default 2
+             * @attribute gap
+             * @type {Integer}
+             * @readOnly
+             */
+            this.gap = 2;
 
             /**
              * Progress bar maximal value
@@ -859,8 +776,79 @@ zebkit.package("ui", function(pkg, Class) {
              * @default 20
              */
             this.maxValue = 20;
-            this._ = new zebkit.util.Listeners();
-            this.$super();
+
+
+            this.bundleView = this.titleView = null;
+
+            /**
+             * Progress bar orientation
+             * @default "horizontal"
+             * @attribute orient
+             * @type {String}
+             * @readOnly
+             */
+            this.orient = "horizontal";
+
+            this.paint = function(g){
+                var left    = this.getLeft(),
+                    right   = this.getRight(),
+                    top     = this.getTop(),
+                    bottom  = this.getBottom(),
+                    rs      = (this.orient === "horizontal") ? this.width - left - right
+                                                             : this.height - top - bottom,
+                    bundleSize = (this.orient === "horizontal") ? this.bundleWidth
+                                                                : this.bundleHeight;
+
+                if (rs >= bundleSize){
+                    var vLoc   = Math.floor((rs * this.value) / this.maxValue),
+                        x      = left,
+                        y      = this.height - bottom,
+                        bundle = this.bundleView,
+                        wh     = this.orient === "horizontal" ? this.height - top - bottom
+                                                              : this.width - left - right;
+
+                    while (x < (vLoc + left) && this.height - vLoc - bottom < y){
+                        if (this.orient === "horizontal"){
+                            bundle.paint(g, x, top, bundleSize, wh, this);
+                            x += (bundleSize + this.gap);
+                        } else {
+                            bundle.paint(g, left, y - bundleSize, wh, bundleSize, this);
+                            y -= (bundleSize + this.gap);
+                        }
+                    }
+
+                    if (this.titleView !== null) {
+                        var ps = this.bundleView.getPreferredSize();
+                        this.titleView.paint(g, Math.floor((this.width  - ps.width ) / 2),
+                                                Math.floor((this.height - ps.height) / 2),
+                                                ps.width, ps.height, this);
+                    }
+                }
+            };
+
+            this.calcPreferredSize = function(l){
+                var bundleSize = (this.orient === "horizontal") ? this.bundleWidth
+                                                                : this.bundleHeight,
+                    v1 = (this.maxValue * bundleSize) + (this.maxValue - 1) * this.gap,
+                    ps = this.bundleView.getPreferredSize();
+
+                ps = (this.orient === "horizontal") ? {
+                                                         width :v1,
+                                                         height:(this.bundleHeight >= 0 ? this.bundleHeight
+                                                                                        : ps.height)
+                                                      }
+                                                    : {
+                                                        width:(this.bundleWidth >= 0 ? this.bundleWidth
+                                                                                     : ps.width),
+                                                        height: v1
+                                                      };
+                if (this.titleView !== null) {
+                    var tp = this.titleView.getPreferredSize();
+                    ps.width  = Math.max(ps.width, tp.width);
+                    ps.height = Math.max(ps.height, tp.height);
+                }
+                return ps;
+            };
         },
 
         /**

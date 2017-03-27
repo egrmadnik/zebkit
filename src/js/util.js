@@ -337,7 +337,7 @@ zebkit.package("util", function(pkg, Class) {
                 if (arguments.length > 3) this.a = a;
             }
 
-            if (this.s == null) {
+            if (this.s === null) {
                 this.s = (typeof this.a !== "undefined") ? 'rgba(' + this.r + "," + this.g +  "," +
                                                                      this.b + "," + this.a + ")"
                                                          : '#' +
@@ -348,6 +348,8 @@ zebkit.package("util", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.s = null;
+
             /**
              * Indicates if the color is opaque
              * @attribute isOpaque
@@ -459,7 +461,7 @@ zebkit.package("util", function(pkg, Class) {
 
     var letterRE = /[A-Za-z]/;
     pkg.isLetter = function (ch) {
-        if (ch.length != 1) throw new Error("Incorrect character");
+        if (ch.length !== 1) throw new Error("Incorrect character");
         return letterRE.test(ch);
     };
 
@@ -519,8 +521,10 @@ zebkit.package("util", function(pkg, Class) {
         if (args.length === 1) {
             var name = args[0];
 
+            clazz.prototype.v = null;
+
             clazz.prototype.add = function() {
-                if (this.v == null) this.v = [];
+                if (this.v === null) this.v = [];
 
                 var ctx = this,
                     l   = arguments[arguments.length - 1]; // last arguments are handler(s)
@@ -529,7 +533,7 @@ zebkit.package("util", function(pkg, Class) {
                     ctx = l;
                     l   = l[name];
 
-                    if (l == null || typeof l !== "function") {
+                    if (typeof l !== "function") {
                         return null;
                     }
                 }
@@ -558,7 +562,7 @@ zebkit.package("util", function(pkg, Class) {
             };
 
             clazz.prototype[name] = function() {
-                if (this.v != null) {
+                if (this.v !== null) {
                     for(var i = 0;i < this.v.length; i+=2) {
                         if (this.v[i + 1].apply(this.v[i], arguments) === true) {
                             return true;
@@ -573,8 +577,10 @@ zebkit.package("util", function(pkg, Class) {
                 names[args[i]] = true;
             }
 
+            clazz.prototype.methods = null;
+
             clazz.prototype.add = function(l) {
-                if (this.methods == null) this.methods = {};
+                if (this.methods === null) this.methods = {};
 
                 var n = null;
                 if (arguments.length > 1) {
@@ -583,7 +589,7 @@ zebkit.package("util", function(pkg, Class) {
                 }
 
                 if (typeof l === 'function') {
-                    if (n == null) n = zebkit.$FN(l);
+                    if (n === null) n = zebkit.$FN(l);
                     if (n !== '' && names.hasOwnProperty(n) === false) {
                         throw new Error("Unknown event type " + n);
                     }
@@ -617,7 +623,7 @@ zebkit.package("util", function(pkg, Class) {
 
                     this[name] = (function(name) {
                         return function() {
-                            if (this.methods != null) {
+                            if (this.methods !== null) {
                                 var c = this.methods[name];
                                 if (c != null) {
                                     for(var i = 0; i < c.length; i += 2) {
@@ -647,7 +653,7 @@ zebkit.package("util", function(pkg, Class) {
             clazz.prototype.addEvents.apply(clazz.prototype, args);
 
             clazz.prototype.remove = function(l) {
-                if (this.methods != null) {
+                if (this.methods !== null) {
                     if (arguments.length === 0) {
                         for(var k in this.methods) {
                             if (this.methods.hasOwnProperty(k)) this.methods[k].length = 0;
@@ -845,14 +851,14 @@ zebkit.package("util", function(pkg, Class) {
                     }
                 }
 
-                if (o != this.offset){
+                if (o !== this.offset){
                     var prevOffset = this.offset,
                         prevLine   = this.currentLine,
                         prevCol    = this.currentCol,
                         p          = this.getPointByOffset(o);
 
                     this.offset = o;
-                    if (p != null){
+                    if (p !== null){
                         this.currentLine = p[0];
                         this.currentCol  = p[1];
                     } else {
@@ -882,7 +888,7 @@ zebkit.package("util", function(pkg, Class) {
              * @method setRowCol
              */
             this.setRowCol = function(r, c) {
-                if (r != this.currentLine || c != this.currentCol){
+                if (r !== this.currentLine || c !== this.currentCol){
                     var prevOffset = this.offset,
                         prevLine = this.currentLine,
                         prevCol = this.currentCol;
@@ -1121,7 +1127,7 @@ zebkit.package("util", function(pkg, Class) {
                     }
                 }
 
-                if (o != this.offset) {
+                if (o !== this.offset) {
                     var prevOffset = this.offset,
                         prevLine   = this.currentLine,
                         prevCol    = this.currentCol;
@@ -1198,6 +1204,9 @@ zebkit.package("util", function(pkg, Class) {
              */
             this.Task = Class([
                 function $prototype() {
+                    this.task = null;
+                    this.ri = this.si  = 0;
+
                     /**
                      * Shutdown the given task.
                      * @return {Boolean} true if the task has been stopped
@@ -1213,7 +1222,7 @@ zebkit.package("util", function(pkg, Class) {
                      * @method pause
                      */
                     this.pause = function() {
-                        if (this.task == null) {
+                        if (this.task === null) {
                             throw new Error("Stopped task cannot be paused");
                         }
 
@@ -1231,7 +1240,7 @@ zebkit.package("util", function(pkg, Class) {
                      * @method resume
                      */
                     this.resume = function(t) {
-                        if (this.task == null) {
+                        if (this.task === null) {
                             throw new Error("Stopped task cannot be paused");
                         }
 
@@ -1254,9 +1263,6 @@ zebkit.package("util", function(pkg, Class) {
                      */
                     this.taskSet = set;
 
-
-                    this.task = null;
-                    this.ri = this.si  = 0;
 
                     /**
                      * Indicates if the task is executed (active)
@@ -1320,7 +1326,7 @@ zebkit.package("util", function(pkg, Class) {
              * @method shutdown
              */
             this.shutdown = function(t) {
-                if (t.task != null) {
+                if (t.task !== null) {
                     this.count--;
                     t.task = null;
                     t.isStarted = false;
@@ -1441,7 +1447,7 @@ zebkit.package("util", function(pkg, Class) {
                     var j = (i + this.count) % this.tasks.length,
                         t = this.tasks[j];
 
-                    if (t.task == null) {
+                    if (t.task === null) {
                         // initialize internal variables start in and repeat in
                         // arguments
                         t.si = (arguments.length > 1) ? si : 0;
@@ -1611,14 +1617,9 @@ zebkit.package("util", function(pkg, Class) {
      */
     pkg.Zson = zebkit.Class([
         function (root) {
-            /**
-             * Object that keeps loaded and resolved content of a JSON
-             * @readOnly
-             * @attribute root
-             * @type {Object}
-             * @default {}
-             */
-            this.root = (root != null ? root : null);
+            if (arguments.length > 0) {
+                this.root = root;
+            }
 
             /**
              * Map of aliases and appropriate classes
@@ -1631,6 +1632,15 @@ zebkit.package("util", function(pkg, Class) {
         },
 
         function $prototype() {
+            /**
+             * Object that keeps loaded and resolved content of a JSON
+             * @readOnly
+             * @attribute root
+             * @type {Object}
+             * @default {}
+             */
+            this.root = null;
+
             /**
              * Original JSON as a JS object
              * @attribute content
@@ -1852,7 +1862,7 @@ zebkit.package("util", function(pkg, Class) {
                 } else {
                     return d;
                 }
-            }
+            };
 
             this.$buildClass = function(k, d) {
                 var classname = k.substring(1).trim(),
@@ -1927,7 +1937,7 @@ zebkit.package("util", function(pkg, Class) {
                         return inst;
                     });
                 }
-            }
+            };
 
             this.$buildRef = function(d) {
                 if (d[2] === "<") {
@@ -2100,7 +2110,7 @@ zebkit.package("util", function(pkg, Class) {
 
                         if (this.usePropertySetters === true) {
                             var m = zebkit.getPropertySetter(dest, k);
-                            if (m != null) {
+                            if (m !== null) {
                                 this.$assignProperty(dest, m, sv);
                                 continue;
                             }
@@ -2238,7 +2248,7 @@ zebkit.package("util", function(pkg, Class) {
 
                     $this.$assignValue($this, "content", $this.buildValue($this.content));
                 }).then(function() {
-                    if ($this.root != null) {
+                    if ($this.root !== null) {
                         $this.merge($this.root, $this.content);
                     } else {
                         $this.root = $this.content;
@@ -2246,7 +2256,7 @@ zebkit.package("util", function(pkg, Class) {
                     return $this;
                 });
 
-                if (fn != null) {
+                if (arguments.length > 1) {
                     this.$runner.then(fn);
                 }
 

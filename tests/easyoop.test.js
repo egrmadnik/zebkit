@@ -8,7 +8,7 @@ if (typeof(zebkit) === "undefined") {
     require(path.join(base, 'misc', 'tools.js'));
 }
 
-
+(function() {
     var assertException = zebkit.assertException, assert = zebkit.assert, assume = zebkit.assume,
         Class = zebkit.Class, Interface = zebkit.Interface, assertObjEqual = zebkit.assertObjEqual;
 
@@ -3139,35 +3139,139 @@ if (typeof(zebkit) === "undefined") {
             assert(D.isInherit(B), false);
             assert(D.isInherit(C), false);
             assert(D.isInherit(D), false);
+
+            assert(zebkit.instanceOf(null, A), false);
+            assert(zebkit.instanceOf(undefined, A), false);
+            assert(zebkit.instanceOf('', A), false);
+            assert(zebkit.instanceOf(1, A), false);
+            assert(zebkit.instanceOf("sdsd", A), false);
+
+            assertException(function() {
+                zebkit.instanceOf(a, "sdqweqwewqe");
+            }, Error);
+
+            assertException(function() {
+                zebkit.instanceOf(a, null);
+            }, Error);
+
+            assertException(function() {
+                zebkit.instanceOf(a, undefined);
+            }, Error);
+
+            var NAA = function() {};
+            var naa = new NAA();
+
+            assert(zebkit.instanceOf(naa, NAA), true);
+            assert(zebkit.instanceOf(naa, A), false);
+            assert(zebkit.instanceOf(naa, I1), false);
         },
 
         function _test_perf() {
-            var I = Interface();
-            var AP = Class([]).hashless();
-            var B = Class(A, []);
-
-            var C = function() {};
-
-
-            var t = new Date().getTime();
-            for(var i = 0; i < 1000000; i++) {
-                new AP();
+            var NA = function(argument) {
             }
-            var dt2 = (new Date().getTime()) - t;
+
+            zebkit.A33 = Class([
+            ]);
+
+            zebkit.A22 = Class([
+                function() {}
+            ]);
+
+            var B22 = Class(zebkit.A22, [  ]);
 
 
-            // var t = new Date().getTime();
-            // for(var i = 0; i < 1000000; i++) {
-            //     new C();
-            // }
-            // var dt1 = (new Date().getTime()) - t;
+            var d = new Date().getTime();
+            for (var i = 0; i < 5000000; i++) {
+                var n = new NA();
+            }
+            console.log("Native inst result :  " + (new Date().getTime() - d));
+
+
+            var d = new Date().getTime();
+            for (var i = 0; i < 5000000; i++) {
+                new zebkit.A33();
+            }
+            console.log("No constr inst :  " + (new Date().getTime() - d));
 
 
 
 
-           // console.log("dt1 = " + dt1);
-            console.log("dt2 = " + dt2);
+            var d = new Date().getTime();
+            for (var i = 0; i < 5000000; i++) {
+                new zebkit.A22();
+            }
+            console.log("Constr inst result :  " + (new Date().getTime() - d));
+
+            var d = new Date().getTime();
+            for (var i = 0; i < 5000000; i++) {
+                new B22();
+            }
+            console.log("Inherited constr inst result :  " + (new Date().getTime() - d));
+
+
+            return
+
+            var a = new zebkit.A22();
+            var b = new zebkit.B22();
+            var d = new Date().getTime();
+            for (var i = 0; i < 2000000; i++) {
+                //new zebkit.A22();/        zebkit.instanceOf(a, A22);
+                //new NA();
+                zebkit.instanceOf(b, zebkit.A22);
+            }
+            console.log("InstanceOf Result :  " + (new Date().getTime() - d));
+
+            var C = zebkit.Class(zebkit.B22, [
+                function a() {}
+            ]);
+            var c = new C();
+            var d = new Date().getTime();
+            for (var i = 0; i < 8000000; i++) {
+                //new zebkit.A22();/        zebkit.instanceOf(a, A22);
+                //new NA();
+                c.a();
+            }
+            console.log("Call proxy method Result :  " + (new Date().getTime() - d));
+
+            var I = zebkit.Interface();
+
+            I.entire = true;
+
+
+
+
+            var D = zebkit.Class(C, I, [
+                function a() { this.$super(); }
+            ]);
+
+            var DD = zebkit.Class(D, [
+                //function a() { this.$super(); }
+            ]);
+
+
+            var dd = new D([ function setAbc(a) {} ]);
+
+
+            console.log("D  " + D.entire);
+            console.log("D  " + DD.entire);
+
+            var d = new Date().getTime();
+            for (var i = 0; i < 8000000; i++) {
+                //new zebkit.A22();/        zebkit.instanceOf(a, A22);
+                //new NA();
+                dd.a();
+            }
+            console.log("Call super method Result :  " + (new Date().getTime() - d));
+
+
+            var d = new Date().getTime();
+            for (var i = 0; i < 8000000; i++) {
+                //new zebkit.A22();/        zebkit.instanceOf(a, A22);
+                //new NA();
+                zebkit.getPropertySetter(dd, "abc");
+            }
+            console.log("Property setter result :  " + (new Date().getTime() - d));
 
         }
     );
-//});
+})();

@@ -111,7 +111,7 @@ zebkit.package("ui", function(pkg, Class) {
                         // if the icon has zero width and height the repaint
                         // doesn't trigger validation. So let's do it on
                         // parent level
-                        if ($this.owner != null && $this.owner.parent != null) {
+                        if ($this.owner !== null && $this.owner.parent !== null) {
                             $this.owner.repaint();
                         }
                     };
@@ -165,7 +165,7 @@ zebkit.package("ui", function(pkg, Class) {
                 },
 
                 function vrp() {
-                    if (this.owner != null) this.owner.vrp();
+                    if (this.owner !== null) this.owner.vrp();
                 },
 
                 /**
@@ -249,7 +249,7 @@ zebkit.package("ui", function(pkg, Class) {
                  */
                 function setIcon(c) {
                     this.target.getImagePan().setImage(c);
-                    this.target.getImagePan().setVisible(c != null);
+                    this.target.getImagePan().setVisible(c !== null);
                     return this;
                 },
 
@@ -289,7 +289,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.pointerMoved = function(e) {
                 var i = this.getTabAt(e.x, e.y);
-                if (this.overTab != i) {
+                if (this.overTab !== i) {
                     this.overTab = i;
                     if (this.views.tabover != null) {
                         this.repaint(this.repaintX, this.repaintY,
@@ -305,7 +305,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.pointerDragEnded = function(e) {
                 var i = this.getTabAt(e.x, e.y);
-                if (this.overTab != i) {
+                if (this.overTab !== i) {
                     this.overTab = i;
                     if (this.views.tabover != null) {
                         this.repaint(this.repaintX, this.repaintY,
@@ -499,13 +499,13 @@ zebkit.package("ui", function(pkg, Class) {
                     this.repaintX = this.tabAreaX = left ;
                     this.repaintY = this.tabAreaY = (this.orient === "top") ? top : this.height - bottom - this.tabAreaHeight;
                     if (this.orient === "bottom") {
-                        this.repaintY -= (this.border != null ? this.border.getBottom() : 0);
+                        this.repaintY -= (this.border !== null ? this.border.getBottom() : 0);
                     }
                 } else {
                     this.repaintX = this.tabAreaX = (this.orient === "left" ? left : this.width - right - this.tabAreaWidth);
                     this.repaintY = this.tabAreaY = top ;
                     if (this.orient === "right") {
-                        this.repaintX -= (this.border != null ? this.border.getRight() : 0);
+                        this.repaintX -= (this.border !== null ? this.border.getRight() : 0);
                     }
                 }
 
@@ -525,7 +525,7 @@ zebkit.package("ui", function(pkg, Class) {
                         if (i === this.selectedIndex) {
                             xx -= sp;
                             if (this.orient === "bottom") {
-                                r.y -= (this.border != null ? this.border.getBottom() : 0);
+                                r.y -= (this.border !== null ? this.border.getBottom() : 0);
                             }
                         }
                     } else {
@@ -533,7 +533,7 @@ zebkit.package("ui", function(pkg, Class) {
                         if (i === this.selectedIndex) {
                             yy -= sp;
                             if (this.orient === "right") {
-                                r.x -= (this.border != null ? this.border.getRight() : 0);
+                                r.x -= (this.border !== null ? this.border.getRight() : 0);
                             }
                         }
                     }
@@ -623,16 +623,16 @@ zebkit.package("ui", function(pkg, Class) {
                         this.tabAreaWidth   = max + this.sideSpace;
                         this.tabAreaHeight += (2 * this.sideSpace);
                         this.repaintHeight  = this.tabAreaHeight;
-                        this.repaintWidth   = this.tabAreaWidth + (this.border != null ? (b === "left" ? this.border.getLeft()
+                        this.repaintWidth   = this.tabAreaWidth + (this.border !== null ? (b === "left" ? this.border.getLeft()
                                                                                                        : this.border.getRight())
-                                                                                       : 0);
+                                                                                        : 0);
                     } else {
                         this.tabAreaWidth += (2 * this.sideSpace);
                         this.tabAreaHeight = this.sideSpace + max;
                         this.repaintWidth  = this.tabAreaWidth;
-                        this.repaintHeight = this.tabAreaHeight + (this.border != null ? (b === "top" ? this.border.getTop()
+                        this.repaintHeight = this.tabAreaHeight + (this.border !== null ? (b === "top" ? this.border.getTop()
                                                                                                       : this.border.getBottom())
-                                                                                       : 0);
+                                                                                        : 0);
                     }
 
                     // make selected tab page title bigger
@@ -640,13 +640,13 @@ zebkit.package("ui", function(pkg, Class) {
                         var r = this.getTabBounds(this.selectedIndex);
                         if (b) {
                             r.height += 2 * this.sideSpace;
-                            r.width += this.sideSpace +  (this.border != null ? (b === "left" ? this.border.getLeft()
+                            r.width += this.sideSpace +  (this.border !== null ? (b === "left" ? this.border.getLeft()
                                                                                               : this.border.getRight())
-                                                                              : 0);
+                                                                               : 0);
                         } else {
-                            r.height += this.sideSpace + (this.border != null ? (b === "top" ? this.border.getTop()
+                            r.height += this.sideSpace + (this.border !== null ? (b === "top" ? this.border.getTop()
                                                                                              : this.border.getBottom())
-                                                                              : 0);
+                                                                               : 0);
                             r.width  += 2 * this.sideSpace;
                         }
                     }
@@ -914,7 +914,7 @@ zebkit.package("ui", function(pkg, Class) {
             if (zebkit.instanceOf(constr, this.clazz.TabView)) {
                 render = constr;
             } else {
-                render = new this.clazz.TabView((constr == null ? "Page " + index
+                render = new this.clazz.TabView((constr === null ? "Page " + index
                                                                  : constr ));
                 render.ownerChanged(this); // TODO: a little bit ugly but setting an owner is required to
                                            // keep tabs component informed when an icon has been updated

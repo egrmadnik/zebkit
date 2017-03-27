@@ -1,13 +1,10 @@
 (function() {
-
-'use strict'
-
     // Environment specific stuff
     var zenv = {},
         isInBrowser = typeof navigator !== "undefined",
-        $global     = (typeof window !== "undefined" && window != null) ? window
-                                                                        : (typeof global !== 'undefined' ? global
-                                                                                                         : this);
+        $global     = (typeof window !== "undefined" && window !== null) ? window
+                                                                         : (typeof global !== 'undefined' ? global
+                                                                                                          : this);
 
     if (typeof zebkitEnvironment === 'function') {
         zenv = zebkitEnvironment();
@@ -26,7 +23,7 @@
 
     Path.parseURL = function(url) {
         var m = url.match(/^([a-zA-Z]+\:)\/\/([^\/]*)(\/[^?]*)(\?[^?\/]*)?/);
-        if (m == null) {
+        if (m === null) {
             return null;
         }
 
@@ -43,13 +40,13 @@
             protocol: m[1].substring(0, m[1].length - 1),
             host    : m[2],
             path    : path.length === 0 ? null : path,
-            qs      : m[4] != null && m[4].length > 1 ? m[4].substring(1) : null
+            qs      : m[4] !== null && typeof m[4] !== 'undefined' && m[4].length > 1 ? m[4].substring(1) : null
         };
     };
 
     Path.toURL = function(protocol, host, path, qs) {
-        var res = protocol + "://" + (host == null ? '' : host) + "/" + path;
-        if (qs != null) {
+        var res = protocol + "://" + (host === null ? '' : host) + "/" + path;
+        if (arguments.length > 3 && qs !== null) {
             res = res + '?' + qs;
         }
         return res;
@@ -289,7 +286,7 @@
                     // TODO: not a graceful solution. It has been done to let call "join" out
                     // outside of body. Sometimes it is required to provide proper level of
                     // execution since join calls schedule
-                    if (completed != null) {
+                    if (typeof completed === 'function') {
                         if (level === 0) {
                             try {
                                 if (args === null) completed.call(this);
@@ -341,7 +338,7 @@
          */
         error : function(e, pr) {
             if (arguments.length === 0) {
-                if (this.$error != null) {
+                if (this.$error !== null) {
                     zebkit.dumpError(e);
                 }
             } else {
@@ -639,18 +636,19 @@
     function lookupObjValue(obj, name) {
         if (arguments.length === 1) {
             name = obj;
-            obj = $global;
+            obj  = $global;
         }
 
-        if (name == null || name.trim().length === 0) {
+        if (typeof name === 'undefined' || name.trim().length === 0) {
             throw new Error("Invalid field name: '" + name + "'");
         }
 
         var names = name.trim().split('.');
         for(var i = 0; i < names.length; i++) {
             obj = obj[names[i]];
-            if (obj == null) {
-                return obj;
+
+            if (typeof obj === 'undefined' || ((i + 1) === names.length && obj === null)) {
+                throw new Error("'" + name + "' value cannot be detected");
             }
         }
         return obj;
@@ -672,7 +670,7 @@
 
     function $lsall(fn) {
         return $ls.call(this, function(k, v) {
-            if (v != null && v.clazz === zebkit.Class) {
+            if (v !== null && v.clazz === zebkit.Class) {
                 if (typeof v.$name === "undefined") {
                     v.$name = fn + k;
                     v.$pkg  = lookupObjValue($global, fn.substring(0, fn.length - 1));
@@ -719,7 +717,7 @@
             //
             var s  = document.getElementsByTagName('script'),
                 ss = s[s.length - 1].getAttribute('src'),
-                i  = ss == null ? -1 : ss.lastIndexOf("/"),
+                i  = ss === null ? -1 : ss.lastIndexOf("/"),
                 a = document.createElement('a');
 
             a.href = (i > 0) ? ss.substring(0, i + 1)
@@ -737,7 +735,7 @@
      */
     Package.prototype.fullname = function() {
         var n = [ this.$name ], p = this;
-        while(p.$parent != null) {
+        while(p.$parent !== null) {
             p = p.$parent;
             n.unshift(p.$name);
         }
@@ -765,7 +763,7 @@
                 pk = pk[pn];
             }
 
-            if (pk == null) {
+            if (typeof pk === 'undefined' || pk === null) {
                 throw new Error("Package path '" + path + "' cannot be resolved");
             }
         }
@@ -785,14 +783,8 @@
             var v = this[k];
             if (k !== "$parent" && this.hasOwnProperty(k) && v instanceof Package) {
 
-                if (callback.call(this, k, v) === true) {
+                if (callback.call(this, k, v) === true || (recursively === true && v.packages(callback, recursively) === true)) {
                     return true;
-                }
-
-                if (recursively === true) {
-                    if (v.packages(callback, recursively) === true) {
-                        return true;
-                    }
                 }
             }
         }
@@ -828,7 +820,7 @@
         if (arguments.length > 0) {
             for(var i = 0; i < arguments.length; i++) {
                 var v = lookupObjValue(this, arguments[i]);
-                if (v == null || !(v instanceof Package)) {
+                if ((v instanceof Package) === false) {
                     throw new Error("Package '" + arguments[i] + " ' cannot be found");
                 }
                 code.push(v.import());
@@ -863,20 +855,22 @@
      *
      */
     Package.prototype.require = function() {
-        var pkgs = [],
-            i    = 0,
-            fn   = arguments[arguments.length - 1];
+        var pkgs  = [],
+            $this = this,
+            fn    = arguments[arguments.length - 1];
 
-        while (isString(arguments[i])) {
+        if (typeof fn !== 'function') {
+            throw new Error("Invalid callback function");
+        }
+
+        for(var i = 0; isString(arguments[i]) && i < arguments.length; i++) {
             var pkg = lookupObjValue(this, arguments[i]);
-            if (pkg == null || !(pkg instanceof Package)) {
+            if ((pkg instanceof Package) === false) {
                 throw new Error("Package '" + arguments[i] + "' cannot be found");
             }
             pkgs.push(pkg);
-            i++;
         }
 
-        var $this = this;
         return this.then(function() {
             fn.apply($this, pkgs);
         });
@@ -884,7 +878,7 @@
 
     Package.prototype.then = function(f) {
         this.$ready.then(f).catch(function(e) {
-            zebkit.dumpError(e)
+            zebkit.dumpError(e);
             // re-start other waiting tasks
             this.restart();
         });
@@ -945,10 +939,8 @@
                 if (typeof p === "undefined") {
                     p = new Package(n, target);
                     target[n] = p;
-                } else {
-                    if ((p instanceof Package) === false) {
-                        throw new Error("Requested package '" + name +  "' conflicts with variable '" + n + "'");
-                    }
+                } else if ((p instanceof Package) === false) {
+                    throw new Error("Requested package '" + name +  "' conflicts with variable '" + n + "'");
                 }
                 target = p;
             }
@@ -974,6 +966,21 @@
     var zebkit = new Package("zebkit");
     zebkit.environment = zenv;
 
+    // declaring zebkit as a global variable has to be done before calling "package" method
+    // otherwise the method cannot find zebkit to resolve class names
+    //
+    // nodejs
+    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+        module.exports = zebkit;
+
+        // TODO: not a good pattern to touch global space, but zebkit has to be visible
+        // globally
+        if (typeof global !== 'undefined') {
+            global.zebkit = zebkit;
+        }
+    } else {
+        window.zebkit = zebkit;
+    }
 
     zebkit.package(function(pkg) {
         var $$$     = 11,  // hash code counter
@@ -1019,10 +1026,8 @@
                         if (name === "$prototype") {
                             method.call(dest, clazz);
                         } else {
-                            var old = dest[name];
-
                             // TODO analyze if we overwrite existent field
-                            if (old != null) {
+                            if (typeof dest[name] !== 'undefined') {
                                 // abstract method is overridden, let's skip abstract method
                                 // stub implementation
                                 if (method.$isAbstract === true) {
@@ -1030,7 +1035,7 @@
                                     continue;
                                 }
 
-                                if (old.boundTo === clazz) {
+                                if (dest[name].boundTo === clazz) {
                                     throw new Error("Method '" + name + "(...)'' bound to this class already exists");
                                 }
                             }
@@ -1095,7 +1100,7 @@
             templateConstructor.prototype.constructor = templateConstructor; // set constructor of instances to the template
 
             // setup parent entities
-            if (inheritanceList != null && inheritanceList.length > 0) {
+            if (arguments.length > 2 && inheritanceList.length > 0) {
                 for(var i = 0; i < inheritanceList.length; i++) {
                     var toInherit = inheritanceList[i];
                     if (toInherit == null                       ||
@@ -1136,7 +1141,7 @@
                 }
 
                 console.log(msg + "] : " + e);
-                if (e == null) {
+                if (e === null || typeof e === 'undefined') {
                     console.log("Unknown error");
                 } else {
                     console.log((e.stack ? e.stack : e));
@@ -1150,11 +1155,11 @@
         pkg.CDNAME = '';
 
         pkg.$FN = (isString.name !== "isString") ? (function(f) {  // IE stuff
-                                                        if (f.$methodName == null) { // test if name has been earlier detected
+                                                        if (typeof f.$methodName === 'undefined') { // test if name has been earlier detected
                                                             var mt = f.toString().match(/^function\s+([^\s(]+)/);
-                                                            f.$methodName = (mt == null) ? pkg.CDNAME
-                                                                                         : (typeof mt[1] === "undefined" ? pkg.CDNAME
-                                                                                                                         : mt[1]);
+                                                            f.$methodName = (mt === null) ? pkg.CDNAME
+                                                                                          : (typeof mt[1] === "undefined" ? pkg.CDNAME
+                                                                                                                          : mt[1]);
                                                         }
                                                         return f.$methodName;
                                                     })
@@ -1162,7 +1167,7 @@
 
 
         pkg.isIE    = isInBrowser && (Object.hasOwnProperty.call(window, "ActiveXObject") || !!window.ActiveXObject);
-        pkg.isFF    = isInBrowser && window.mozInnerScreenX != null;
+        pkg.isFF    = isInBrowser && window.mozInnerScreenX !== null;
         pkg.isMacOS = isInBrowser && navigator.platform.toUpperCase().indexOf('MAC') !== -1;
 
         /**
@@ -1368,7 +1373,7 @@
          */
         pkg.getPropertySetter = function(obj, name) {
             var pi = obj.constructor.$propertyInfo;
-            if (pi != null) {
+            if (typeof pi !== 'undefined') {
                 if (typeof pi[name] === "undefined") {
                     var m = obj[ "set" + name[0].toUpperCase() + name.substring(1) ];
                     pi[name] = (typeof m  === "function") ? m : null;
@@ -1403,7 +1408,7 @@
                             m = zebkit.getPropertySetter(target, k);
 
                         // value factory detected
-                        if (v !== null && v.$new != null) {
+                        if (v !== null && typeof v.$new !== 'undefined') {
                             v = v.$new();
                         }
 
@@ -1432,7 +1437,7 @@
                 };
             } else {
                 return function $prototype(clazz) {
-                    if (superProto != null) {
+                    if (superProto !== null) {
                         superProto.call(this, clazz);
                     }
 
@@ -1499,7 +1504,7 @@
                     }
                     return new (pkg.Class($Interface, arguments.length > 0 ? arguments[0] : []))();
                 }
-            }, null);
+            });
 
             if (arguments.length > 1) {
                 throw new Error("Invalid number of arguments. List of methods or properties is expected");
@@ -1538,7 +1543,7 @@
                             throw new Error("Constructor declaration is not allowed in interface");
                         }
 
-                        if (proto[name] != null) {
+                        if (typeof proto[name] !== 'undefined') {
                             throw new Error("Duplicated interface method '" + name + "(...)'");
                         }
 
@@ -1703,7 +1708,7 @@
                     methodName = pkg.$FN(method);
 
                 // detect if the passed method is proxy method
-                if (method.methodBody != null) {
+                if (typeof method.methodBody !== 'undefined') {
                     throw new Error("Proxy method '" + methodName + "' cannot be mixed in a class");
                 }
 
@@ -1739,7 +1744,7 @@
 
                 // if constructor doesn't have super definition than let's avoid proxy method
                 // overhead
-                if (existentMethod == null && methodName === pkg.CNAME) {
+                if (typeof existentMethod === 'undefined' && methodName === pkg.CNAME) {
                     clazz.prototype[methodName] = method;
                 } else {
                     // Create and set proxy method that is bound to the given class
@@ -1771,7 +1776,7 @@
                 toInherit    = [];
 
             // detect parent class in inheritance list as the first argument that has "clazz" set to Class
-            if (arguments.length > 0 && (arguments[0] == null || arguments[0].clazz === pkg.Class)) {
+            if (arguments.length > 0 && (arguments[0] === null || arguments[0].clazz === pkg.Class)) {
                 parentClass = arguments[0];
             }
 
@@ -1781,10 +1786,10 @@
 
                 // let's make sure we inherit interface
                 if (parentClass === null || i > 0) {
-                    if (toInherit[i] == null) {
+                    if (typeof toInherit[i] === 'undefined' || toInherit[i] === null) {
                         throw new ReferenceError("Undefined inherited interface [" + i + "] " );
                     } else if (toInherit[i].clazz !== pkg.Interface) {
-                        throw new ReferenceError("Inherited interface is not an Interface ( [" + i + "] " + toInherit[i] + ")");
+                        throw new ReferenceError("Inherited interface is not an Interface ( [" + i + "] '" + toInherit[i] + "'')");
                     }
                 }
             }
@@ -1864,8 +1869,10 @@
                 for(var k in parentClass.prototype) {
                     if (parentClass.prototype.hasOwnProperty(k)) {
                         var f = parentClass.prototype[k];
-                        classTemplate.prototype[k] = (f != null && f.methodBody != null) ? ProxyMethod(f.methodName, f.methodBody, f.boundTo)
-                                                                                         : f;
+                        classTemplate.prototype[k] = (typeof f !== 'undefined' &&
+                                                      f !== null &&
+                                                      f.hasOwnProperty("methodBody")) ? ProxyMethod(f.methodName, f.methodBody, f.boundTo)
+                                                                                      : f;
                     }
                 }
             }
@@ -1933,7 +1940,7 @@
                         }
                     }
 
-                    if (init != null) {
+                    if (init !== null) {
                         init.call(this);
                     }
                     l--;
@@ -1946,7 +1953,7 @@
                     }
 
                     var I = arguments[i];
-                    if (clazz.$parents[I.$hash$] != null) {
+                    if (typeof clazz.$parents[I.$hash$] !== 'undefined') {
                         throw new Error("Interface has been already inherited");
                     }
 
@@ -2025,7 +2032,7 @@
                if ($caller !== null) {
                     for(var $s = $caller.boundTo.$parent; $s !== null; $s = $s.$parent) {
                         var m = $s.prototype[name];
-                        if (m != null) {
+                        if (typeof m === 'function') {
                             return m;
                         }
                     }
@@ -2093,7 +2100,7 @@
             // check if the method has been already defined in the class
             if (typeof classTemplate.prototype.bind === 'undefined') {
                 classTemplate.prototype.bind = function() {
-                    if (this._ == null) {
+                    if (typeof this._ === 'undefined') {
                         throw new Error(lans);
                     }
                     return this._.add.apply(this._, arguments);
@@ -2103,7 +2110,7 @@
             // check if the method has been already defined in the class
             if (typeof classTemplate.prototype.unbind === 'undefined') {
                 classTemplate.prototype.unbind = function() {
-                    if (this._ == null) {
+                    if (typeof this._ === 'undefined') {
                         throw new Error(lans);
                     }
                     this._.remove.apply(this._, arguments);
@@ -2136,7 +2143,7 @@
             // static inheritance
 
             classTemplate.$uniqueness = false;
-            if (parentClass != null) {
+            if (parentClass !== null) {
                 for (var key in parentClass) {
                     if (key[0] !== '$' &&
                         parentClass.hasOwnProperty(key) &&
@@ -2175,24 +2182,25 @@
                 // inject class
                 if (hasMethod && this.$isExtended !== true) {
                     // create intermediate class
-                    var srcClazz = this,
-                        A = this.$parent != null ? pkg.Class(this.$parent, [])
-                                                 : pkg.Class([]);
+                    var A = this.$parent !== null ? pkg.Class(this.$parent, [])
+                                                  : pkg.Class([]);
 
                     // copy this class prototypes methods to intermediate class A and re-define
                     // boundTo to the intermediate class A if they were bound to source class
                     // methods that have been  moved from source class to class have to be re-bound
                     // to A class
                     for(var name in this.prototype) {
-                        if (this.prototype.hasOwnProperty(name) === true && name !== "clazz") {
+                        if (name !== "clazz" && this.prototype.hasOwnProperty(name) ) {
                             var f = this.prototype[name];
-                            A.prototype[name] = f != null && f.methodBody != null ? ProxyMethod(name, f.methodBody, f.boundTo)
-                                                                                  : f;
+                            if (typeof f === 'function') {
+                                A.prototype[name] = typeof f.methodBody !== 'undefined' ? ProxyMethod(name, f.methodBody, f.boundTo)
+                                                                                        : f;
 
-                            if (A.prototype[name] != null && A.prototype[name].boundTo === this) {
-                                A.prototype[name].boundTo = A;
-                                if (f.boundTo === this) {
-                                    f.boundTo = A;
+                                if (A.prototype[name].boundTo === this) {
+                                    A.prototype[name].boundTo = A;
+                                    if (f.boundTo === this) {
+                                        f.boundTo = A;
+                                    }
                                 }
                             }
                         }
@@ -2209,11 +2217,11 @@
                 // add passed interfaces
                 for(var i = 0; i < arguments.length - (hasMethod ? 1 : 0); i++) {
                     var I = arguments[i];
-                    if (I == null || I.clazz !== zebkit.Interface) {
+                    if (I === null || typeof I === 'undefined' || I.clazz !== zebkit.Interface) {
                         throw new Error("Interface is expected");
                     }
 
-                    if (this.$parents[I.$hash$] != null) {
+                    if (typeof this.$parents[I.$hash$] !== 'undefined') {
                         throw new Error("Interface has been already inherited");
                     }
 
@@ -2226,7 +2234,7 @@
                 if (this !== clazz) {
                     // detect class
                     if (clazz.clazz === this.clazz) {
-                        for (var p = this.$parent; p != null; p = p.$parent) {
+                        for (var p = this.$parent; p !== null; p = p.$parent) {
                             if (p === clazz) {
                                 return true;
                             }
@@ -2247,7 +2255,7 @@
             if (toInherit.length > 0) {
                 // notify inherited class and interfaces that they have been inherited with the given class
                 for(var i = 0; i < toInherit.length; i++) {
-                    if (toInherit[i].inheritedWidth != null) {
+                    if (typeof toInherit[i].inheritedWidth === 'function') {
                         toInherit[i].inheritedWidth(classTemplate);
                     }
                 }
@@ -2355,13 +2363,13 @@
          * @for  zebkit
          */
         pkg.instanceOf = function(obj, clazz) {
-            if (clazz != null) {
-                if (obj == null)  {
+            if (clazz !== null && typeof clazz !== 'undefined') {
+                if (obj === null || typeof obj === 'undefined')  {
                     return false;
                 } else if (typeof obj.clazz === 'undefined') {
                     return (obj instanceof clazz);
                 } else {
-                    return obj.clazz != null &&
+                    return typeof obj.clazz !== 'undefined' && obj.clazz !== null &&
                            (obj.clazz === clazz ||
                             obj.clazz.$parents.hasOwnProperty(clazz.$hash$));
                 }
@@ -2402,19 +2410,6 @@
                 }
             }, 100);
         });
-    }
-
-    // nodejs
-    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-        module.exports = zebkit;
-
-        // TODO: not a good pattern to touch global space, but zebkit has to be visible
-        // globally
-        if (typeof global !== 'undefined') {
-            global.zebkit = zebkit;
-        }
-    } else {
-        window.zebkit = zebkit;
     }
 
     return zebkit;

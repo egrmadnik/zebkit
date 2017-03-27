@@ -14,7 +14,7 @@ zebkit.package("ui.web", function(pkg, Class) {
      */
     pkg.HtmlElement = Class(ui.Panel, [
         function(e) {
-            if (e == null) {
+            if (arguments.length === 0) {
                 e = "div";
             }
 
@@ -120,7 +120,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             // TODO: may be this code should be moved to web place
             //
             // reg native focus listeners for HTML element that can hold focus
-            if (fe != null) {
+            if (fe !== null) {
                 var $this = this;
 
                 zebkit.web.$focusin(fe, function(e) {
@@ -214,7 +214,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                 name = name.trim();
                 var i = name.indexOf(':');
                 if (i > 0) {
-                    if (zebkit[name.substring(0, i)] == null) {
+                    if (zebkit[name.substring(0, i)] !== true) {
                         return;
                     }
                     name = name.substring(i + 1);
@@ -347,7 +347,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             };
 
             this.canHaveFocus = function() {
-                return this.$getElementRootFocus() != null;
+                return this.$getElementRootFocus() !== null;
             };
 
             this.$focus = function() {
@@ -455,7 +455,7 @@ zebkit.package("ui.web", function(pkg, Class) {
         function setBorder(b) {
             b = ui.$view(b);
 
-            if (b == null) {
+            if (b === null) {
                this.setStyle("border", "none");
             } else {
                 this.setStyles({
@@ -494,7 +494,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
         function validate() {
             // lookup root canvas
-            if (this.$canvas == null && this.parent != null) {
+            if (this.$canvas == null && this.parent !== null) {
                 this.$canvas = this.getCanvas();
             }
 
@@ -587,18 +587,18 @@ zebkit.package("ui.web", function(pkg, Class) {
                     c.$container.parentNode == null ||
                     c.width       <= 0              ||
                     c.height      <= 0              ||
-                    c.parent      == null           ||
+                    c.parent      === null          ||
                     zebkit.web.$contains(c.$container) === false)
                 {
                     return true;
                 }
 
                 var p = c.parent;
-                while (p != null && p.isVisible === true && p.width > 0 && p.height > 0) {
+                while (p !== null && p.isVisible === true && p.width > 0 && p.height > 0) {
                     p = p.parent;
                 }
 
-                return p != null || ui.$cvp(c) == null;
+                return p !== null || ui.$cvp(c) === null;
             }
 
             // attach to appropriate DOM parent if necessary
@@ -607,7 +607,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                 // try to find an HTML element in zebkit (pay attention, in zebkit hierarchy !)
                 // hierarchy that has to be a DOM parent for the given component
                 var parentElement = null;
-                for(var p = c.parent; p != null; p = p.parent) {
+                for(var p = c.parent; p !== null; p = p.parent) {
                     if (p.isDOMElement === true) {
                         parentElement = p.$container;
                         break;
@@ -616,7 +616,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
                 // parentElement is null means the component has
                 // not been inserted into DOM hierarchy
-                if (parentElement != null && c.$container.parentNode == null) {
+                if (parentElement !== null && c.$container.parentNode == null) {
                     // parent DOM element of the component is null, but a DOM container
                     // for the element has been detected. We need to add it to DOM
                     // than we have to add the DOM to the found DOM parent element
@@ -627,14 +627,10 @@ zebkit.package("ui.web", function(pkg, Class) {
                 } else {
                     // test consistency whether the DOM element already has
                     // parent node that doesn't match the discovered
-                    if (parentElement           != null &&
-                        c.$container.parentNode != null &&
+                    if (parentElement           !== null &&
+                        c.$container.parentNode !=  null &&
                         c.$container.parentNode !== parentElement)
                     {
-                        console.log(">>>>>>>>>>>>>>>>>>>>>>");
-                        console.log(c);
-                        console.log(c.$container.parentNode);
-                        console.log(parentElement);
                         throw new Error("DOM parent inconsistent state ");
                     }
                 }
@@ -669,7 +665,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
                     // find a location relatively to the first parent HTML element
                     var p = c, xx = c.x, yy = c.y;
-                    while (((p = p.parent) != null) && p.isDOMElement !== true) {
+                    while (((p = p.parent) !== null) && p.isDOMElement !== true) {
                         xx += p.x;
                         yy += p.y;
                     }
@@ -761,7 +757,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                     // what means the parent has to be also detached
                     if (isLeaf(p)) {
                         // parent of parent is not null and is not a DOM element
-                        if (p.parent != null && p.parent.isDOMElement !== true) {
+                        if (p.parent !== null && p.parent.isDOMElement !== true) {
                             detachFromParent(p.parent, p);
                         }
 
@@ -833,7 +829,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                     // we come here if parent is not a DOM element and
                     // inserted children is DOM element or an element that
                     // embeds DOM elements
-                    while (p != null && p.isDOMElement !== true) {
+                    while (p !== null && p.isDOMElement !== true) {
                         if (typeof p.$domKids === 'undefined') {
                             // if reference to kid DOM element or kid DOM elements holder
                             // has bot been created we have to continue go up to parent of
@@ -866,17 +862,17 @@ zebkit.package("ui.web", function(pkg, Class) {
 
                 // when a meta key is pressed a canvas can lose native focus in Window IE/Chrome
                 // to double check the focus will be properly returned the code below is required
-                if (this.focusOwner != null) {
+                if (this.focusOwner !== null) {
                     if (this.focusOwner.isDOMElement !== true) {
                         var canvas = this.focusOwner.getCanvas();
                         if (canvas != null && document.activeElement !== canvas.element) {
                             canvas.element.focus();
                         }
                     }
-                } else if (c != null) {
+                } else if (c !== null) {
                     if (c.isDOMElement !== true) {
                         var canvas = c.getCanvas();
-                        if (canvas != null && document.activeElement !== canvas.element) {
+                        if (canvas !== null && document.activeElement !== canvas.element) {
                             canvas.element.focus();
                         }
                     }

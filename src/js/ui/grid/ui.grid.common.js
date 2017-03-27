@@ -147,7 +147,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
              * @readOnly
              * @protected
              */
-            this.render = (render == null ? new ui.StringRender("") : render);
+            this.render = (arguments.length === 0 ? new ui.StringRender("") : render);
             zebkit.properties(this, this.clazz);
         },
 
@@ -707,7 +707,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
             this.$super(p);
 
             this.metrics = this.orient = null;
-            if (p == null || zebkit.instanceOf(p, pkg.Metrics)) {
+            if (p === null || zebkit.instanceOf(p, pkg.Metrics)) {
                 this.metrics = p;
                 if (this.constraints != null) {
                     this.orient = (this.constraints === "top"   ||

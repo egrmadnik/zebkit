@@ -12,7 +12,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
      * @extends zebkit.ui.grid.BaseCaption
      */
     pkg.CompGridCaption = Class(pkg.BaseCaption, [
-        function $clazz(clazz) {
+        function $clazz() {
             this.Layout = Class(zebkit.layout.Layout, [
                 function $prototype() {
                     this.doLayout = function (target) {
@@ -85,7 +85,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
 
                 function getGridCaption() {
                     var c = this.parent;
-                    while(c != null && zebkit.instanceOf(c, pkg.BaseCaption) === false) {
+                    while(c !== null && zebkit.instanceOf(c, pkg.BaseCaption) === false) {
                         c = c.parent;
                     }
                     return c;

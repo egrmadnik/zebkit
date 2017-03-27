@@ -31,7 +31,7 @@ zebkit.package("ui", function(pkg, Class) {
      */
     pkg.BaseList = Class(pkg.Panel, zebkit.util.Position.Metric, pkg.$ViewsSetterMix, [
         function (m, b) {
-            if (b == null) b = false;
+            if (arguments.length < 2) b = false;
 
             if (m == null) {
                 m = [];
@@ -87,7 +87,7 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function $prototype() {
-            this.model = null;
+            this.position = this.model = null;
 
             this.canHaveFocus = true;
             /**
@@ -105,7 +105,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method setValue
              */
             this.setValue = function(v) {
-                if (v == null) {
+                if (v === null) {
                     this.select(-1);
                 } else if (this.model !== null) {
                     for(var i = 0; i < this.model.count(); i++) {
@@ -554,7 +554,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.setModel = function (m){
                 if (m !== this.model){
-                    if (m != null && Array.isArray(m)) {
+                    if (m !== null && Array.isArray(m)) {
                         m = new zebkit.data.ListModel(m);
                     }
 
@@ -575,7 +575,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.setPosition = function(c) {
                 if (c != this.position) {
-                    if (this.position != null) {
+                    if (this.position !== null) {
                         this.position.unbind(this);
                     }
                     this.position = c;
@@ -635,7 +635,7 @@ zebkit.package("ui", function(pkg, Class) {
                 var offset = this.position.offset;
                 if (offset >= 0) {
                     var vp = pkg.$cvp(this, {});
-                    if (vp != null) {
+                    if (vp !== null) {
                         var sum = 0, i = offset;
                         for(;i >= 0 && i <= this.position.metrics.getMaxOffset() && sum < vp.height; i += d){
                             sum += (this.getItemSize(i).height);
@@ -735,7 +735,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @private
              */
             this.firstVisibleY = this.psWidth_ = this.psHeight_ = 0;
-            this.heights = this.widths = this.vArea = null;
+
 
             /**
              * Internal flag to track list items visibility status. It is set
@@ -770,8 +770,8 @@ zebkit.package("ui", function(pkg, Class) {
 
                     this.text = new pkg.StringRender("");
                     zebkit.properties(this, this.clazz);
-                    if (f != null) this.text.setFont(f);
-                    if (c != null) this.text.setColor(c);
+                    if (arguments.length > 0) this.text.setFont(f);
+                    if (arguments.length > 1) this.text.setColor(c);
                 },
 
                 function $prototype() {
@@ -809,6 +809,8 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.heights = this.widths = this.vArea = null;
+
             /**
              * Extra list item side gaps
              * @type {Integer}
@@ -876,16 +878,16 @@ zebkit.package("ui", function(pkg, Class) {
                 this.psWidth_ = this.psHeight_ = 0;
                 if (this.model !== null) {
                     var count = this.model.count();
-                    if (this.heights == null || this.heights.length != count) {
+                    if (this.heights === null || this.heights.length !== count) {
                         this.heights = Array(count);
                     }
 
-                    if (this.widths  == null || this.widths.length  != count) {
+                    if (this.widths  === null || this.widths.length  !== count) {
                         this.widths = Array(count);
                     }
 
                     var provider = this.provider;
-                    if (provider != null) {
+                    if (provider !== null) {
                         var dg = 2*this.gap;
                         for(var i = 0;i < count; i++){
                             var ps = provider.getView(this, this.model.get(i), i).getPreferredSize();
@@ -911,11 +913,11 @@ zebkit.package("ui", function(pkg, Class) {
                 var prev = this.vArea;
                 this.vArea = pkg.$cvp(this, {});
 
-                if (this.vArea == null) {
+                if (this.vArea === null) {
                     this.firstVisible = -1;
                 } else  {
                     if (this.visValid === false ||
-                        (prev == null || prev.x != this.vArea.x ||
+                        (prev === null || prev.x !== this.vArea.x ||
                          prev.y != this.vArea.y || prev.width != this.vArea.width ||
                          prev.height != this.vArea.height))
                     {
@@ -969,7 +971,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.getItemIdxAt = function(x,y){
                 this.vVisibility();
-                if (this.vArea != null && this.firstVisible >= 0) {
+                if (this.vArea !== null && this.firstVisible >= 0) {
                     var yy    = this.firstVisibleY + this.scrollManager.getSY(),
                         hh    = this.height - this.getBottom(),
                         count = this.model.count();
@@ -1078,7 +1080,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.catchInput = function (child){
                 if (this.isComboMode !== true) {
                     var p = child;
-                    while (p != this) {
+                    while (p !== this) {
                         if (p.stopCatchInput === true) return false;
                         p = p.parent;
                     }
@@ -1135,7 +1137,7 @@ zebkit.package("ui", function(pkg, Class) {
                 ]);
 
                 this.$super(this.scrollManager);
-                if (this.position != null) {
+                if (this.position !== null) {
                     this.position.setMetric(zebkit.instanceOf(layout, zebkit.util.Position.Metric) ? layout : this);
                 }
             }

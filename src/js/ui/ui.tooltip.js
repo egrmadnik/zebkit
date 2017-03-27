@@ -25,7 +25,7 @@ zebkit.package("ui", function(pkg, Class) {
                     this.size = 2;
 
                     this.paint = function (g,x,y,w,h,d) {
-                        if (this.color != null) {
+                        if (this.color !== null) {
                             this.outline(g,x,y,w,h,d);
                             g.setColor(this.color);
                             g.lineWidth = this.size;
@@ -208,7 +208,7 @@ zebkit.package("ui", function(pkg, Class) {
     pkg.TooltipManager = Class(pkg.Manager, [
         function $prototype() {
             this.$tooltipX = this.$tooltipY = 0;
-            this.$targetTooltipLayer = this.$tooltip = this.$target = null;
+            this.$toolTask = this.$targetTooltipLayer = this.$tooltip = this.$target = null;
 
             /**
              * Indicates if a shown tooltip has to disappear by pointer pressed event
@@ -287,7 +287,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.pointerExited = function(e) {
                 // exited triggers tooltip hiding only for "info" tooltips
-                if (this.$target !== null && (this.$tooltip == null || this.$tooltip.winType === "info")) {
+                if (this.$target !== null && (this.$tooltip === null || this.$tooltip.winType === "info")) {
                     this.stopShowingTooltip();
                 }
             };
@@ -308,7 +308,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                     // wake up task try showing a tooltip
                     // at the new location
-                    if (this.$toolTask != null) {
+                    if (this.$toolTask !== null) {
                         this.$toolTask.resume(this.showTooltipIn);
                     }
                 }
@@ -400,7 +400,7 @@ zebkit.package("ui", function(pkg, Class) {
                     this.$target = null;
                 }
 
-                if (this.$toolTask != null) {
+                if (this.$toolTask !== null) {
                     this.$toolTask.shutdown();
                 }
 
@@ -427,7 +427,7 @@ zebkit.package("ui", function(pkg, Class) {
                 if (this.hideTooltipByPress === true &&
                     e.pointerType === "mouse" &&
                     this.$target !== null &&
-                    (this.$tooltip == null || this.$tooltip.winType === "info"))
+                    (this.$tooltip === null || this.$tooltip.winType === "info"))
                 {
                     this.stopShowingTooltip();
                 }
@@ -441,7 +441,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.pointerReleased = function(e) {
                 if ((this.hideTooltipByPress === false || e.pointerType !== "mouse") &&
                     this.$target !== null &&
-                    (this.$tooltip == null || this.$tooltip.winType === "info"))
+                    (this.$tooltip === null || this.$tooltip.winType === "info"))
                 {
                     this.stopShowingTooltip();
                 }

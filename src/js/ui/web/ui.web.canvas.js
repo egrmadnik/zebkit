@@ -6,7 +6,7 @@ zebkit.package("ui.web", function(pkg, Class) {
         COMP_EVENT = new ui.CompEvent();
 
     // keep pointer owners (the component where cursor/finger placed in)
-    pkg.$pointerOwner = {};
+    pkg.$pointerOwner        = {};
     pkg.$pointerPressedOwner = {};
 
     /**
@@ -66,6 +66,96 @@ zebkit.package("ui.web", function(pkg, Class) {
      * @event  canvasInitialized
      */
     ui.zCanvas = pkg.zCanvas = Class(pkg.HtmlCanvas, [
+        function(element, w, h) {
+            // no arguments
+            if (arguments.length === 0) {
+                w = 400;
+                h = 400;
+                element = null;
+            } else if (arguments.length === 1) {
+                w = -1;
+                h = -1;
+            } else if (arguments.length === 2) {
+                h = w;
+                w = element;
+                element = null;
+            }
+
+            // if passed element is string than consider it as
+            // an ID of an element that is already in DOM tree
+            if (element !== null && zebkit.isString(element)) {
+                var id = element;
+                element = document.getElementById(id);
+
+                // no canvas can be detected
+                if (element === null) {
+                    throw new Error("Canvas id='" + id + "' element cannot be found");
+                }
+            }
+
+            this.$super(element);
+
+            // since zCanvas is top level element it doesn't have to have
+            // absolute position
+            this.$container.style.position = "relative";
+
+            // let canvas zCanvas listen WEB event
+            this.$container.style["pointer-events"] = "auto";
+
+            // if canvas is not yet part of HTML let's attach it to
+            // body.
+            if (this.$container.parentNode == null) {
+                document.body.appendChild(this.$container);
+            }
+
+            // force canvas to have a focus
+            if (this.element.getAttribute("tabindex") === null) {
+                this.element.setAttribute("tabindex", "1");
+            }
+
+            if (w < 0) w = this.element.offsetWidth;
+            if (h < 0) h = this.element.offsetHeight;
+
+            // !!!
+            // save canvas in list of created Zebkit canvases
+            // do it before calling setSize(w,h) method
+            this.clazz.$canvases.push(this);
+
+            this.setSize(w, h);
+
+            // sync canvas visibility with what canvas style says
+            var cvis = (this.element.style.visibility === "hidden" ? false : true);
+            if (this.isVisible != cvis) {
+                this.setVisible(cvis);
+            }
+
+            // call event method if it is defined
+            if (this.canvasInitialized != null) {
+                this.canvasInitialized();
+            }
+
+            var $this = this;
+
+            // this method should clean focus if
+            // one of of a child DOM element gets focus
+            zebkit.web.$focusin(this.$container, function(e) {
+                if (e.target !== $this.$container &&
+                    e.target.parentNode != null &&
+                    e.target.parentNode.getAttribute("data-zebcont") == null)
+                {
+                    ui.focusManager.requestFocus(null);
+                } else {
+                    // clear focus if a focus owner component is placed in another zCanvas
+                    if (e.target === $this.$container &&
+                        ui.focusManager.focusOwner != null &&
+                        ui.focusManager.focusOwner.getCanvas() !== $this)
+                    {
+                        ui.focusManager.requestFocus(null);
+                    }
+                }
+            }, true);
+        },
+
         function $clazz () {
             this.CLASS_NAME = "zebcanvas";
             this.$canvases  = [];
@@ -152,7 +242,7 @@ zebkit.package("ui.web", function(pkg, Class) {
              * @return {Boolean}  true if the event has been processed
              */
             this.$keyTyped = function(e) {
-                if (ui.focusManager.focusOwner != null) {
+                if (ui.focusManager.focusOwner !== null) {
                     e.source = ui.focusManager.focusOwner;
                     return ui.events.fireEvent("keyTyped", e);
                 }
@@ -174,7 +264,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                     }
                 }
 
-                if (ui.focusManager.focusOwner != null) {
+                if (ui.focusManager.focusOwner !== null) {
                     e.source = ui.focusManager.focusOwner;
                     return ui.events.fireEvent("keyPressed", e);
                 } else {
@@ -193,7 +283,7 @@ zebkit.package("ui.web", function(pkg, Class) {
              * @return {Boolean}  true if the event has been processed
              */
             this.$keyReleased = function(e){
-                if (ui.focusManager.focusOwner != null) {
+                if (ui.focusManager.focusOwner !== null) {
                     e.source = ui.focusManager.focusOwner;
                     return ui.events.fireEvent("keyReleased", e);
                 }
@@ -227,7 +317,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
                     // if new pointer owner is not null and enabled
                     // generate pointer entered event ans set new pointer owner
-                    if (d != null && d.isEnabled === true){
+                    if (d !== null && d.isEnabled === true){
                         pkg.$pointerOwner[e.identifier] = d;
                         ui.events.fireEvent("pointerEntered", e.update(d, x, y));
                     }
@@ -266,7 +356,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
                 // check if pointer already inside a component
                 if (o != null) {
-                    if (d != o) {
+                    if (d !== o) {
                         pkg.$pointerOwner[e.identifier] = null;
                         b = ui.events.fireEvent("pointerExited", e.update(o, x, y));
 
@@ -275,12 +365,12 @@ zebkit.package("ui.web", function(pkg, Class) {
                             b = ui.events.fireEvent("pointerEntered", e.update(d, x, y)) || b;
                         }
                     } else {
-                        if (d != null && d.isEnabled === true) {
+                        if (d !== null && d.isEnabled === true) {
                             b = ui.events.fireEvent("pointerMoved", e.update(d, x, y));
                         }
                     }
                 } else {
-                    if (d != null && d.isEnabled === true) {
+                    if (d !== null && d.isEnabled === true) {
                         pkg.$pointerOwner[e.identifier] = d;
                         b = ui.events.fireEvent("pointerEntered", e.update(d, x, y));
                     }
@@ -302,7 +392,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
                 // if target component can be detected fire pointer start dragging and
                 // pointer dragged events to the component
-                if (d != null && d.isEnabled === true) {
+                if (d !== null && d.isEnabled === true) {
                     return ui.events.fireEvent("pointerDragStarted", e.update(d, x, y));
                 }
 
@@ -374,8 +464,8 @@ zebkit.package("ui.web", function(pkg, Class) {
                     return true;
                 }
 
-                return d != null ? ui.events.fireEvent("pointerClicked", e)
-                                 : false;
+                return d !== null ? ui.events.fireEvent("pointerClicked", e)
+                                  : false;
             };
 
             this.$pointerDoubleClicked = function(e) {
@@ -383,8 +473,8 @@ zebkit.package("ui.web", function(pkg, Class) {
                     y = this.$toElementY(e.pageX, e.pageY),
                     d = this.getComponentAt(x, y);
 
-                return d != null ? ui.events.fireEvent("pointerDoubleClicked", e.update(d, x, y))
-                                 : false;
+                return d !== null ? ui.events.fireEvent("pointerDoubleClicked", e.update(d, x, y))
+                                  : false;
             };
 
             /**
@@ -420,12 +510,12 @@ zebkit.package("ui.web", function(pkg, Class) {
                                                  this.$toElementY(e.pressPageX, e.pressPageY));
 
                     if (nd !== po) {
-                        if (po != null) {
+                        if (po !== null) {
                             pkg.$pointerOwner[e.identifier] = null;
                             ui.events.fireEvent("pointerExited", e.update(po, x, y));
                         }
 
-                        if (nd != null && nd.isEnabled === true){
+                        if (nd !== null && nd.isEnabled === true){
                             pkg.$pointerOwner[e.identifier] = nd;
                             ui.events.fireEvent("pointerEntered", e.update(nd, x, y));
                         }
@@ -461,7 +551,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                 }
 
                 var d = this.getComponentAt(x, y);
-                if (d != null && d.isEnabled === true) {
+                if (d !== null && d.isEnabled === true) {
                     if (pkg.$pointerOwner[e.identifier] !== d) {
                         pkg.$pointerOwner[e.identifier] = d;
                         ui.events.fireEvent("pointerEntered",  e.update(d, x, y));
@@ -482,9 +572,9 @@ zebkit.package("ui.web", function(pkg, Class) {
             this.getComponentAt = function(x, y){
                 for(var i = this.kids.length; --i >= 0; ){
                     var c = this.kids[i].getComponentAt(x, y);
-                    if (c != null) {
+                    if (c !== null) {
                         var p = c;
-                        while ((p = p.parent) != null) {
+                        while ((p = p.parent) !== null) {
                             if (p.catchInput != null && (p.catchInput === true || (p.catchInput !== false && p.catchInput(c)))) {
                                 c = p;
                             }
@@ -584,99 +674,6 @@ zebkit.package("ui.web", function(pkg, Class) {
                     this.setSize(ws.width, ws.height);
                 }
             };
-        },
-
-        function(element, w, h) {
-            // no arguments
-            if (arguments.length === 0) {
-                w = 400;
-                h = 400;
-            } else {
-                if (arguments.length === 1) {
-                    w = -1;
-                    h = -1;
-                } else {
-                    if (arguments.length === 2) {
-                        h = w;
-                        w = element;
-                        element = null;
-                    }
-                }
-            }
-
-            // if passed element is string than consider it as
-            // an ID of an element that is already in DOM tree
-            if (zebkit.isString(element)) {
-                var id = element;
-                element = document.getElementById(id);
-
-                // no canvas can be detected
-                if (element == null) {
-                    throw new Error("Canvas id='" + id + "' element cannot be found");
-                }
-            }
-
-            this.$super(element);
-
-            // since zCanvas is top level element it doesn't have to have
-            // absolute position
-            this.$container.style.position = "relative";
-
-            // let canvas zCanvas listen WEB event
-            this.$container.style["pointer-events"] = "auto";
-
-            // if canvas is not yet part of HTML let's attach it to
-            // body.
-            if (this.$container.parentNode == null) {
-                document.body.appendChild(this.$container);
-            }
-
-            // force canvas to have a focus
-            if (this.element.getAttribute("tabindex") === null) {
-                this.element.setAttribute("tabindex", "1");
-            }
-
-            if (w < 0) w = this.element.offsetWidth;
-            if (h < 0) h = this.element.offsetHeight;
-
-            // !!!
-            // save canvas in list of created Zebkit canvases
-            // do it before calling setSize(w,h) method
-            this.clazz.$canvases.push(this);
-
-            this.setSize(w, h);
-
-            // sync canvas visibility with what canvas style says
-            var cvis = (this.element.style.visibility === "hidden" ? false : true);
-            if (this.isVisible != cvis) {
-                this.setVisible(cvis);
-            }
-
-            // call event method if it is defined
-            if (this.canvasInitialized != null) {
-                this.canvasInitialized();
-            }
-
-            var $this = this;
-
-            // this method should clean focus if
-            // one of of a child DOM element gets focus
-            zebkit.web.$focusin(this.$container, function(e) {
-                if (e.target !== $this.$container &&
-                    e.target.parentNode != null &&
-                    e.target.parentNode.getAttribute("data-zebcont") == null)
-                {
-                    ui.focusManager.requestFocus(null);
-                } else {
-                    // clear focus if a focus owner component is placed in another zCanvas
-                    if (e.target === $this.$container &&
-                        ui.focusManager.focusOwner != null &&
-                        ui.focusManager.focusOwner.getCanvas() !== $this)
-                    {
-                        ui.focusManager.requestFocus(null);
-                    }
-                }
-            }, true);
         },
 
         function setSize(w, h) {

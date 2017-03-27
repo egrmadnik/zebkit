@@ -104,7 +104,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.paint = function(g){
-                if (this.pl == null){
+                if (this.pl === null){
                     this.pl = Array(this.intervals.length);
                     for(var i = 0, l = this.min;i < this.pl.length; i ++ ){
                         l += this.intervals[i];
@@ -241,9 +241,10 @@ zebkit.package("ui", function(pkg, Class) {
                     xy = this.height - xy;
                 }
 
-                if (xy < sl) xy = sl;
-                else {
-                    if (xy > sl + ss) xy = sl + ss;
+                if (xy < sl) {
+                    xy = sl;
+                } else if (xy > sl + ss) {
+                    xy = sl + ss;
                 }
 
                 return this.min + Math.floor(((this.max - this.min) * (xy - sl)) / ss);
@@ -255,9 +256,10 @@ zebkit.package("ui", function(pkg, Class) {
                 }
 
                 var v = value + (d * s);
-                if (v > this.max) v = this.max;
-                else {
-                    if (v < this.min) v = this.min;
+                if (v > this.max) {
+                    v = this.max;
+                } else if (v < this.min) {
+                    v = this.min;
                 }
 
                 return v;
@@ -418,16 +420,16 @@ zebkit.package("ui", function(pkg, Class) {
             this.repaint();
         },
 
-        function setScaleGap(g){
-            if (g != this.gap){
+        function setScaleGap(g) {
+            if (g !== this.gap){
                 this.gap = g;
                 this.vrp();
             }
             return this;
         },
 
-        function setScaleColor(c){
-            if (c != this.scaleColor) {
+        function setScaleColor(c) {
+            if (c !==  this.scaleColor) {
                 this.scaleColor = c;
                 if (this.provider === this) this.render.setColor(c);
                 this.repaint();
@@ -436,23 +438,23 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function setScaleStep(s){
-            if (s != this.scaleStep){
+            if (s !== this.scaleStep){
                 this.scaleStep = s;
                 this.repaint();
             }
             return this;
         },
 
-        function setShowScale(b){
-            if (this.isShowScale != b){
+        function setShowScale(b) {
+            if (this.isShowScale !== b){
                 this.isShowScale = b;
                 this.vrp();
             }
             return this;
         },
 
-        function setShowTitle(b){
-            if (this.isShowTitle != b){
+        function setShowTitle(b) {
+            if (this.isShowTitle !== b){
                 this.isShowTitle = b;
                 this.vrp();
             }
@@ -485,11 +487,11 @@ zebkit.package("ui", function(pkg, Class) {
             this.exactStep = exactStep;
             this.intervals = Array(intervals.length);
 
-            for(var i=0; i<intervals.length; i++){
+            for(var i = 0; i < intervals.length; i++){
                 this.intervals[i] = intervals[i];
             }
 
-            if(this.value < min || this.value > max) {
+            if (this.value < min || this.value > max) {
                 this.setValue(this.isIntervalMode ? min + intervals[0] : min);
             }
             this.vrp();

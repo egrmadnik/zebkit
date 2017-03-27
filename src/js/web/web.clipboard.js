@@ -53,75 +53,19 @@ zebkit.package("web", function(pkg, Class) {
      * @class zebkit.ui.ClipboardSupport
      */
     pkg.Clipboard = Class(zebkit.ui.Clipboard, [
-        function $clazz() {
-            this.id = "zebkitClipboardBuffer";
-        },
-
-        function $prototype() {
-            this.write = function(txt) {
-                try {
-                    this.$on(txt);
-                    if (typeof document.execCommand !== 'undefined' && document.execCommand("copy") !== true) {
-                        throw new Error("Unsupported 'copy' clipboard command");
-                    }
-                } finally {
-                    this.$off();
-                }
-            };
-
-            this.read = function() {
-                try {
-                    var clip = this.$on("");
-                    if (typeof document.execCommand !== 'undefined' && document.execCommand("paste", null, null)) {
-                        return clip.value;
-                    } else {
-                        throw new Error("Unsupported 'paste' clipboard command");
-                    }
-                } finally {
-                    this.$off();
-                }
-            };
-
-            this.$off = function() {
-                if (this.$clipboard.style.display !== "none") {
-                    this.$clipboard.value = "";
-                    this.$clipboard.style.display = "none";
-
-                    //!!! pass focus back to canvas
-                    //    it has to be done for the case when cmd+TAB (switch from browser to
-                    //    another application)
-                    this.$element.focus();
-                }
-            };
-
-            this.$on = function(txt) {
-                this.$off();
-
-                this.$element = document.activeElement;
-                this.$clipboard.style.display = "block";
-
-                // value has to be set, otherwise some browsers (Safari) do not generate
-                // "copy" event
-                this.$clipboard.value = arguments.length > 0 ? txt : "1";
-                this.$clipboard.select();
-                this.$clipboard.focus();
-                return this.$clipboard;
-            };
-        },
-
         function(triggerKeyCode) {
-            if (document.getElementById(this.clazz.id) != null) {
+            if (document.getElementById(this.clazz.id) !== null) {
                 throw new Error("Duplicated clipboard element");
             }
 
-            if (arguments.length > 0 && triggerKeyCode != null) {
+            if (arguments.length > 0 && triggerKeyCode !== null) {
                 this.triggerKeyCode = triggerKeyCode;
             } else {
                 this.triggerKeyCode = zebkit.isMacOS ? "MetaLeft"
                                                      : "Control";
             }
 
-            if (this.triggerKeyCode != null) {
+            if (this.triggerKeyCode !== null) {
                 this.$clipboard = document.createElement("textarea");
                 this.$clipboard.setAttribute("style", "display:none;position:fixed;left:-99em;top:-99em;");
                 this.$clipboard.setAttribute("id", this.clazz.id);
@@ -227,6 +171,64 @@ zebkit.package("web", function(pkg, Class) {
 
                 document.body.appendChild(this.$clipboard);
             }
+        },
+
+        function $clazz() {
+            this.id = "zebkitClipboardBuffer";
+        },
+
+        function $prototype() {
+            this.triggerKeyCode = null;
+
+            this.write = function(txt) {
+                try {
+                    this.$on(txt);
+                    if (typeof document.execCommand !== 'undefined' && document.execCommand("copy") !== true) {
+                        throw new Error("Unsupported 'copy' clipboard command");
+                    }
+                } finally {
+                    this.$off();
+                }
+            };
+
+            this.read = function() {
+                try {
+                    var clip = this.$on("");
+                    if (typeof document.execCommand !== 'undefined' && document.execCommand("paste", null, null)) {
+                        return clip.value;
+                    } else {
+                        throw new Error("Unsupported 'paste' clipboard command");
+                    }
+                } finally {
+                    this.$off();
+                }
+            };
+
+            this.$off = function() {
+                if (this.$clipboard.style.display !== "none") {
+                    this.$clipboard.value = "";
+                    this.$clipboard.style.display = "none";
+
+                    //!!! pass focus back to canvas
+                    //    it has to be done for the case when cmd+TAB (switch from browser to
+                    //    another application)
+                    this.$element.focus();
+                }
+            };
+
+            this.$on = function(txt) {
+                this.$off();
+
+                this.$element = document.activeElement;
+                this.$clipboard.style.display = "block";
+
+                // value has to be set, otherwise some browsers (Safari) do not generate
+                // "copy" event
+                this.$clipboard.value = arguments.length > 0 ? txt : "1";
+                this.$clipboard.select();
+                this.$clipboard.focus();
+                return this.$clipboard;
+            };
         }
     ]);
 

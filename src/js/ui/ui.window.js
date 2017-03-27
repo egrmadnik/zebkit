@@ -159,7 +159,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.layerPointerPressed = function(e) {
                 if (this.kids.length > 0) {
                     // I) check if  clicks has occurred on active window that is located on the top
-                    if (this.activeWin != null && this.indexOf(this.activeWin) === this.kids.length - 1) {
+                    if (this.activeWin !== null && this.indexOf(this.activeWin) === this.kids.length - 1) {
                         var x1 = this.activeWin.x,
                             y1 = this.activeWin.y,
                             x2 = x1 + this.activeWin.width,
@@ -195,7 +195,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                     // III) pressed has occurred outside window and no any modal
                     // window exists
-                    if (this.topModalIndex < 0 && this.activeWin != null) {
+                    if (this.topModalIndex < 0 && this.activeWin !== null) {
                         this.activate(null);
                         return false;
                     }
@@ -211,7 +211,7 @@ zebkit.package("ui", function(pkg, Class) {
                     e.code === "Tab"     &&
                     e.shiftKey              )
                 {
-                    if (this.activeWin == null) {
+                    if (this.activeWin === null) {
                         this.activate(this.kids[this.kids.length - 1]);
                     } else {
                         var winIndex = this.kids.indexOf(this.activeWin) - 1;
@@ -249,16 +249,16 @@ zebkit.package("ui", function(pkg, Class) {
              * @method activate
              */
             this.activate = function(c) {
-                if (c != null && (this.kids.indexOf(c) < 0 ||
-                                  c.winType === "info"))
+                if (c !== null && (this.kids.indexOf(c) < 0 ||
+                                   c.winType === "info"))
                 {
                     throw new Error("Window cannot be activated");
                 }
 
-                if (c != this.activeWin) {
+                if (c !== this.activeWin) {
                     var old = this.activeWin;
 
-                    if (c == null) {
+                    if (c === null) {
                         var type = this.activeWin.winType;
                         if (type === "modal") {
                             throw new Error("Modal window cannot be de-activated");
@@ -279,7 +279,7 @@ zebkit.package("ui", function(pkg, Class) {
                         this.activeWin = c;
                         this.activeWin.toFront();
 
-                        if (old != null) {
+                        if (old !== null) {
                             pkg.events.fireEvent("winActivated", WIN_EVENT.$fillWith(old, this, false, false));
                         }
 

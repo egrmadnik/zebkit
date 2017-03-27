@@ -8,7 +8,6 @@
     "DefEditors" : {
         "TextField": {
             "inheritProperties" : true,
-            "border": {"$zebkit.ui.Border":  "blue" },
             "background": null
         },
 

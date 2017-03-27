@@ -90,7 +90,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
             };
 
             this.childKeyTyped = function(e) {
-                if (this.selected != null){
+                if (this.selected !== null){
                     switch(e.key) {
                         case '+': if (this.isOpen(this.selected) === false) {
                             this.toggle(this.selected);
@@ -112,7 +112,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
                     var newSelection = (e.code === "ArrowDown") ? this.findNext(this.selected)
                                                                 : (e.code === "ArrowUp") ? this.findPrev(this.selected)
                                                                                          : null;
-                    if (newSelection != null) {
+                    if (newSelection !== null) {
                         this.select(newSelection);
                     }
                 }
@@ -125,9 +125,8 @@ zebkit.package("ui.tree", function(pkg, Class) {
                         var item = zebkit.data.TreeModel.findOne(this.model.root,
                                                                 zebkit.layout.getDirectChild(this,
                                                                                             e.source));
-                        if (item != null) this.select(item);
-                    }
-                    finally {
+                        if (item !== null) this.select(item);
+                    } finally {
                         this.$blockCIE = false;
                     }
                 }
@@ -151,7 +150,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
                     this.kids[i].setVisible(false);
                 }
 
-                if (this.firstVisible != null) {
+                if (this.firstVisible !== null) {
                     var $this = this, fvNode = this.getIM(this.firstVisible), started = 0;
 
                     this.model.iterate(this.model.root, function(item) {
@@ -199,7 +198,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
         function setModel(model) {
             var old = this.model;
 
-            if (model != null && zebkit.instanceOf(model, zebkit.data.TreeModel) === false) {
+            if (model !== null && zebkit.instanceOf(model, zebkit.data.TreeModel) === false) {
                 model = new zebkit.data.TreeModel(this.clazz.createModel(model, null, this));
             }
 
@@ -207,7 +206,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
 
             if (old != this.model) {
                 this.removeAll();
-                if (this.model != null) {
+                if (this.model !== null) {
                     var $this = this;
                     this.model.iterate(this.model.root, function(item) {
                         $this.add(item.value);
@@ -252,13 +251,13 @@ zebkit.package("ui.tree", function(pkg, Class) {
             if (this.isSelectable === true) {
                 var old = this.selected;
 
-                if (old != null && old.value.hasFocus()) {
+                if (old !== null && old.value.hasFocus()) {
                     ui.focusManager.requestFocus(null);
                 }
 
                 this.$super(item);
 
-                if (item != null) {
+                if (item !== null) {
                     item.value.requestFocus();
                 }
             }

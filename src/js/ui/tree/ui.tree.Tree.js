@@ -31,9 +31,36 @@ zebkit.package("ui.tree", function(pkg, Class) {
      * in opened state.
      */
     pkg.Tree = Class(pkg.BaseTree, [
+        function (d, b){
+            if (arguments.length < 2) {
+                b  = true;
+            }
+
+            this.setViewProvider(new pkg.DefViews());
+            this.$super(d, b);
+        },
+
         function $prototype() {
             this.itemGapY = 2;
             this.itemGapX = 4;
+
+            /**
+             * A tree model editor provider
+             * @readOnly
+             * @attribute editors
+             * @default null
+             * @type {zebkit.ui.tree.DefEditors}
+             */
+            this.editors = null;
+
+            /**
+             * A tree model items view provider
+             * @readOnly
+             * @attribute provider
+             * @default an instance of zebkit.ui.tree.DefsViews
+             * @type {zebkit.ui.tree.DefsViews}
+             */
+            this.provider = this.editedItem = this.pressedItem = null;
 
             this.setFont = function(f) {
                 this.provider.setFont(f);
@@ -57,7 +84,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
             this.catchScrolled = function (psx, psy){
                 if (this.kids.length > 0) this.stopEditing(false);
 
-                if (this.firstVisible == null) {
+                if (this.firstVisible === null) {
                     this.firstVisible = this.model.root;
                 }
                 this.firstVisible = (this.y < psy) ? this.nextVisible(this.firstVisible)
@@ -94,9 +121,9 @@ zebkit.package("ui.tree", function(pkg, Class) {
              * @private
              */
             this.se = function (item, e){
-                if (item != null){
+                if (item !== null){
                     this.stopEditing(true);
-                    if (this.editors != null && this.editors.shouldStartEdit(item, e)) {
+                    if (this.editors !== null && this.editors.shouldStartEdit(item, e)) {
                         this.startEditing(item);
                         return true;
                     }
@@ -114,7 +141,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
                 if (this.se(this.pressedItem, e)) {
                     this.pressedItem = null;
                 } else {
-                    if (this.selected != null &&
+                    if (this.selected !== null &&
                         this.getItemAt(this.firstVisible, e.x, e.y) === this.selected)
                     {
                         this.toggle(this.selected);
@@ -127,7 +154,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
             };
 
             this.keyTyped = function(e){
-                if (this.selected != null){
+                if (this.selected !== null){
                     switch(e.key) {
                         case '+': if (this.isOpen(this.selected) === false) {
                             this.toggle(this.selected);
@@ -148,11 +175,11 @@ zebkit.package("ui.tree", function(pkg, Class) {
                     case "ArrowLeft" : newSelection = this.findPrev(this.selected);break;
                     case "Home"      : if (e.ctrlKey) this.select(this.model.root);break;
                     case "End"       : if (e.ctrlKey) this.select(this.findLast(this.model.root));break;
-                    case "PageDown"  : if (this.selected != null) this.select(this.nextPage(this.selected, 1));break;
-                    case "PageUp"    : if (this.selected != null) this.select(this.nextPage(this.selected,  -1));break;
-                    //!!!!case "Enter": if(this.selected != null) this.toggle(this.selected);break;
+                    case "PageDown"  : if (this.selected !== null) this.select(this.nextPage(this.selected, 1));break;
+                    case "PageUp"    : if (this.selected !== null) this.select(this.nextPage(this.selected,  -1));break;
+                    //!!!!case "Enter": if(this.selected !== null) this.toggle(this.selected);break;
                 }
-                if (newSelection != null) this.select(newSelection);
+                if (newSelection !== null) this.select(newSelection);
                 this.se(this.selected, e);
             };
 
@@ -164,9 +191,9 @@ zebkit.package("ui.tree", function(pkg, Class) {
              */
             this.startEditing = function (item){
                 this.stopEditing(true);
-                if (this.editors != null){
+                if (this.editors !== null){
                     var editor = this.editors.getEditor(this, item);
-                    if (editor != null) {
+                    if (editor !== null) {
                         this.editedItem = item;
                         var b  = this.getItemBounds(this.editedItem),
                             ps = editor.getPreferredSize();
@@ -191,7 +218,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
              * @protected
              */
             this.stopEditing = function(applyData){
-                if (this.editors != null && this.editedItem != null) {
+                if (this.editors !== null && this.editedItem !== null) {
                     var item     = this.editedItem,
                         oldValue = item.value,
                         editor   = this.kids[0];
@@ -210,34 +237,6 @@ zebkit.package("ui.tree", function(pkg, Class) {
                     }
                 }
             };
-        },
-
-        function (d, b){
-            if (arguments.length < 2) {
-                b  = true;
-            }
-
-            this.provider = this.editedItem = this.pressedItem = null;
-
-            /**
-             * A tree model items view provider
-             * @readOnly
-             * @attribute provider
-             * @default an instance of zebkit.ui.tree.DefsViews
-             * @type {zebkit.ui.tree.DefsViews}
-             */
-
-            /**
-             * A tree model editor provider
-             * @readOnly
-             * @attribute editors
-             * @default null
-             * @type {zebkit.ui.tree.DefEditors}
-             */
-
-            this.editors = null;
-            this.setViewProvider(new pkg.DefViews());
-            this.$super(d, b);
         },
 
         function toggle(item) {

@@ -22,7 +22,27 @@ zebkit.package("ui.grid", function(pkg, Class) {
      * @extends {zebkit.ui.Panel}
      */
     pkg.GridStretchPan = Class(ui.Panel, [
+        function (grid){
+            this.$super(this);
+
+            /**
+             * Target grid component
+             * @type {zebkit.ui.Grid}
+             * @readOnly
+             * @attribute grid
+             */
+            this.grid = grid;
+
+            this.$widths = [];
+            this.$props = this.$strPs = null;
+            this.$prevWidth = 0;
+            this.$propW = -1;
+            this.add(grid);
+        },
+
         function $prototype() {
+            this.grid = null;
+
             this.calcPreferredSize = function(target) {
                 this.recalcPS();
                 return (target.kids.length === 0 ||
@@ -101,7 +121,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
 
             this.recalcPS = function (){
                 var grid = this.grid;
-                if (grid != null && grid.isVisible === true) {
+                if (grid !== null && grid.isVisible === true) {
                     // calculate size excluding padding where
                     // the target grid columns have to be stretched
                     var p        = this.parent,
@@ -118,24 +138,25 @@ zebkit.package("ui.grid", function(pkg, Class) {
                         taWidth -= this.grid.leftCaption.getPreferredSize().width;
                     }
 
-                    if (this.$strPs == null || this.$prevWidth  != taWidth)
-                    {
+                    if (this.$strPs == null || this.$prevWidth !== taWidth) {
+                        var cols = grid.getGridCols();
                         if (this.$propW < 0 || this.$props == null || this.$props.length != cols) {
                             // calculate col proportions
-                            var cols = grid.getGridCols();
                             if (this.$props == null || this.$props.length !== cols) {
                                 this.$props = Array(cols);
                             }
                             this.$propW = 0;
 
-                            for(var i = 0; i < cols; i++){
-                                var w = grid.getColWidth(i);
+                            var i = 0, w = 0;
+
+                            for(i = 0; i < cols; i++){
+                                w = grid.getColWidth(i);
                                 if (w === 0) w = grid.getColPSWidth(i);
                                 this.$propW += w;
                             }
 
-                            for(var i = 0; i < cols; i++){
-                                var w = grid.getColWidth(i);
+                            for(i = 0; i < cols; i++){
+                                w = grid.getColWidth(i);
                                 if (w === 0) w = grid.getColPSWidth(i);
                                 this.$props[i] = w / this.$propW;
                             }
@@ -166,24 +187,6 @@ zebkit.package("ui.grid", function(pkg, Class) {
                     }
                 }
             };
-        },
-
-        function (grid){
-            this.$super(this);
-
-            /**
-             * Target grid component
-             * @type {zebkit.ui.Grid}
-             * @readOnly
-             * @attribute grid
-             */
-            this.grid = grid;
-
-            this.$widths = [];
-            this.$props = this.$strPs = null;
-            this.$prevWidth = 0;
-            this.$propW = -1;
-            this.add(grid);
         },
 
         function kidAdded(index,constr,l){

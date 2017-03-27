@@ -164,6 +164,8 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.incBt = this.decBt = this.bundle = this.position = null;
+
             /**
              * Maximal possible value
              * @attribute max
@@ -204,7 +206,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.isInBundle = function(x,y){
                 var bn = this.bundle;
-                return (bn != null &&
+                return (bn !== null &&
                         bn.isVisible === true &&
                         bn.x <= x && bn.y <= y &&
                         bn.x + bn.width > x &&
@@ -220,7 +222,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.pixel2value = function(p) {
                 var db = this.decBt;
                 return (this.orient === "vertical") ? Math.floor((this.max * (p - db.y - db.height)) / (this.amount() - this.bundle.height))
-                                                  : Math.floor((this.max * (p - db.x - db.width )) / (this.amount() - this.bundle.width));
+                                                    : Math.floor((this.max * (p - db.x - db.width )) / (this.amount() - this.bundle.width));
             };
 
             this.value2pixel = function(){
@@ -242,11 +244,10 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.posChanged = function(target,po,pl,pc){
-                if (this.bundle != null) {
+                if (this.bundle !== null) {
                     if (this.orient === "horizontal") {
                         this.bundle.setLocation(this.value2pixel(), this.getTop());
-                    }
-                    else {
+                    } else {
                         this.bundle.setLocation(this.getLeft(), this.value2pixel());
                     }
                 }
@@ -304,10 +305,9 @@ zebkit.package("ui", function(pkg, Class) {
                 if (this.isInBundle(e.x, e.y) === false && e.isAction()){
                     var d = this.pageIncrement;
                     if (this.orient === "vertical"){
-                        if (e.y < (this.bundle != null ? this.bundle.y : Math.floor(this.height / 2))) d =  -d;
-                    }
-                    else {
-                        if (e.x < (this.bundle != null ? this.bundle.x : Math.floor(this.width / 2))) d =  -d;
+                        if (e.y < (this.bundle !== null ? this.bundle.y : Math.floor(this.height / 2))) d =  -d;
+                    } else {
+                        if (e.x < (this.bundle !== null ? this.bundle.x : Math.floor(this.width / 2))) d =  -d;
                     }
                     this.position.setOffset(this.position.offset + d);
                 }
@@ -321,8 +321,7 @@ zebkit.package("ui", function(pkg, Class) {
                 if (this.orient === "horizontal"){
                     ps1.width += (ps2.width + ps3.width);
                     ps1.height = Math.max((ps1.height > ps2.height ? ps1.height : ps2.height), ps3.height);
-                }
-                else {
+                } else {
                     ps1.height += (ps2.height + ps3.height);
                     ps1.width = Math.max((ps1.width > ps2.width ? ps1.width : ps2.width), ps3.width);
                 }
@@ -352,7 +351,7 @@ zebkit.package("ui", function(pkg, Class) {
                                      b ? ps2.width : ew,
                                      b ? eh : ps2.height);
 
-                if (this.bundle != null && this.bundle.isVisible === true){
+                if (this.bundle !== null && this.bundle.isVisible === true){
                     var am = this.amount();
                     if (am > minbs) {
                         var bsize = Math.max(Math.min(Math.floor((this.extra * am) / this.max), am - minbs), minbs);
@@ -360,8 +359,7 @@ zebkit.package("ui", function(pkg, Class) {
                                               b ? top : this.value2pixel(),
                                               b ? bsize : ew,
                                               b ? eh : bsize);
-                    }
-                    else {
+                    } else {
                         this.bundle.setSize(0, 0);
                     }
                 }
@@ -397,9 +395,10 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.setPosition = function(p){
                 if (p != this.position){
-                    if (this.position != null) this.position.unbind(this);
+                    if (this.position !== null) this.position.unbind(this);
                     this.position = p;
-                    if (this.position != null){
+
+                    if (this.position !== null){
                         this.position.bind(this);
                         this.position.setMetric(this);
                         this.position.setOffset(0);
@@ -443,7 +442,6 @@ zebkit.package("ui", function(pkg, Class) {
              * @readOnly
              */
 
-            this.incBt = this.decBt = this.bundle = this.position = null;
             this.bundleLoc = 0;
             this.startDragLoc = Number.MAX_VALUE;
             this.$super(this);
@@ -526,8 +524,8 @@ zebkit.package("ui", function(pkg, Class) {
                         var kid = t.kids[0];
                         if (kid.constraints === "stretch") {
                             var ps = kid.getPreferredSize(),
-                                w  = t.parent.hBar != null ? ps.width : t.width,
-                                h  = t.parent.vBar != null ? ps.height : t.height;
+                                w  = t.parent.hBar !== null ? ps.width : t.width,
+                                h  = t.parent.vBar !== null ? ps.height : t.height;
                             kid.setSize(w, h);
                         } else {
                             kid.toPreferredSize();
@@ -563,6 +561,8 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.hBar = this.vBar = this.scrollObj = null;
+
             /**
              * Indicate if the scroll bars should be hidden
              * when they are not active
@@ -582,14 +582,14 @@ zebkit.package("ui", function(pkg, Class) {
             this.setAutoHide = function(b) {
                 if (this.autoHide != b) {
                     this.autoHide = b;
-                    if (this.hBar != null) {
-                        if (this.hBar.incBt != null) this.hBar.incBt.setVisible(!b);
-                        if (this.hBar.decBt != null) this.hBar.decBt.setVisible(!b);
+                    if (this.hBar !== null) {
+                        if (this.hBar.incBt !== null) this.hBar.incBt.setVisible(!b);
+                        if (this.hBar.decBt !== null) this.hBar.decBt.setVisible(!b);
                     }
 
-                    if (this.vBar != null) {
-                        if (this.vBar.incBt != null) this.vBar.incBt.setVisible(!b);
-                        if (this.vBar.decBt != null) this.vBar.decBt.setVisible(!b);
+                    if (this.vBar !== null) {
+                        if (this.vBar.incBt !== null) this.vBar.incBt.setVisible(!b);
+                        if (this.vBar.decBt !== null) this.vBar.decBt.setVisible(!b);
                     }
 
                     if (this.$interval !== 0) {
@@ -633,14 +633,14 @@ zebkit.package("ui", function(pkg, Class) {
             this.doScroll = function(dx, dy, source) {
                 var b = false;
 
-                if (dy !== 0 && this.vBar != null && this.vBar.isVisible === true) {
+                if (dy !== 0 && this.vBar !== null && this.vBar.isVisible === true) {
                     var v =  this.vBar.position.offset + dy;
                     if (v >= 0) this.vBar.position.setOffset(v);
                     else        this.vBar.position.setOffset(0);
                     b = true;
                 }
 
-                if (dx !== 0 && this.hBar != null && this.hBar.isVisible === true) {
+                if (dx !== 0 && this.hBar !== null && this.hBar.isVisible === true) {
                     var v =  this.hBar.position.offset + dx;
                     if (v >= 0) this.hBar.position.setOffset(v);
                     else        this.hBar.position.setOffset(0);
@@ -661,19 +661,18 @@ zebkit.package("ui", function(pkg, Class) {
                     this.validate();
                     this.$isPosChangedLocked = true;
 
-                    if (this.hBar != null) {
+                    if (this.hBar !== null) {
                         this.hBar.position.setOffset( -this.scrollObj.scrollManager.getSX());
                     }
 
-                    if (this.vBar != null) {
+                    if (this.vBar !== null) {
                         this.vBar.position.setOffset( -this.scrollObj.scrollManager.getSY());
                     }
 
                     if (this.scrollObj.scrollManager == null) this.invalidate();
 
                     this.$isPosChangedLocked = false;
-                }
-                catch(e) { this.$isPosChangedLocked = false; throw e; }
+                } catch(e) { this.$isPosChangedLocked = false; throw e; }
             };
 
             this.calcPreferredSize = function (target){
@@ -681,7 +680,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.doLayout = function (target){
-                var sman   = (this.scrollObj == null) ? null : this.scrollObj.scrollManager,
+                var sman   = (this.scrollObj === null) ? null : this.scrollObj.scrollManager,
                     right  = this.getRight(),
                     top    = this.getTop(),
                     bottom = this.getBottom(),
@@ -689,12 +688,12 @@ zebkit.package("ui", function(pkg, Class) {
                     ww     = this.width  - left - right,  maxH = ww,
                     hh     = this.height - top  - bottom, maxV = hh,
                     so     = this.scrollObj.getPreferredSize(),
-                    vps    = this.vBar == null ? { width:0, height:0 } : this.vBar.getPreferredSize(),
-                    hps    = this.hBar == null ? { width:0, height:0 } : this.hBar.getPreferredSize();
+                    vps    = this.vBar === null ? { width:0, height:0 } : this.vBar.getPreferredSize(),
+                    hps    = this.hBar === null ? { width:0, height:0 } : this.hBar.getPreferredSize();
 
                 // compensate scrolled vertical size by reduction of horizontal bar height if necessary
                 // autoHidded scrollbars don't have an influence to layout
-                if (this.hBar != null && this.autoHide === false &&
+                if (this.hBar !== null && this.autoHide === false &&
                       (so.width  > ww ||
                       (so.height > hh && so.width > (ww - vps.width))))
                 {
@@ -704,7 +703,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                 // compensate scrolled horizontal size by reduction of vertical bar width if necessary
                 // autoHidded scrollbars don't have an influence to layout
-                if (this.vBar != null && this.autoHide === false &&
+                if (this.vBar !== null && this.autoHide === false &&
                       (so.height > hh ||
                       (so.width > ww && so.height > (hh - hps.height))))
                 {
@@ -713,7 +712,7 @@ zebkit.package("ui", function(pkg, Class) {
                 maxH = so.width > maxH ? (so.width - maxH) :  -1;
 
                 var sy = sman.getSY(), sx = sman.getSX();
-                if (this.vBar != null) {
+                if (this.vBar !== null) {
                     if (maxV < 0) {
                         if (this.vBar.isVisible === true){
                             this.vBar.setVisible(false);
@@ -721,44 +720,44 @@ zebkit.package("ui", function(pkg, Class) {
                             this.vBar.position.setOffset(0);
                         }
                         sy = 0;
-                    }
-                    else {
+                    } else {
                         this.vBar.setVisible(true);
                     }
                 }
 
-                if (this.hBar != null){
+                if (this.hBar !== null){
                     if (maxH < 0){
                         if (this.hBar.isVisible === true){
                             this.hBar.setVisible(false);
                             sman.scrollTo(0, sy);
                             this.hBar.position.setOffset(0);
                         }
+                    } else {
+                        this.hBar.setVisible(true);
                     }
-                    else this.hBar.setVisible(true);
                 }
 
                 if (this.scrollObj.isVisible === true){
                     this.scrollObj.setBounds(left, top,
-                                             ww - (this.autoHide === false && this.vBar != null && this.vBar.isVisible === true ? vps.width  : 0),
-                                             hh - (this.autoHide === false && this.hBar != null && this.hBar.isVisible === true ? hps.height : 0));
+                                             ww - (this.autoHide === false && this.vBar !== null && this.vBar.isVisible === true ? vps.width  : 0),
+                                             hh - (this.autoHide === false && this.hBar !== null && this.hBar.isVisible === true ? hps.height : 0));
                 }
 
                 if (this.$interval === 0 && this.autoHide) {
                     hps.height = vps.width = 0;
                 }
 
-                if (this.hBar != null && this.hBar.isVisible === true){
+                if (this.hBar !== null && this.hBar.isVisible === true){
                     this.hBar.setBounds(left, this.height - bottom - hps.height,
-                                        ww - (this.vBar != null && this.vBar.isVisible === true ? vps.width : 0),
+                                        ww - (this.vBar !== null && this.vBar.isVisible === true ? vps.width : 0),
                                         hps.height);
                     this.hBar.setMaximum(maxH);
                 }
 
-                if (this.vBar != null && this.vBar.isVisible === true){
+                if (this.vBar !== null && this.vBar.isVisible === true){
                     this.vBar.setBounds(this.width - right - vps.width, top,
                                         vps.width,
-                                        hh -  (this.hBar != null && this.hBar.isVisible === true ? hps.height : 0));
+                                        hh -  (this.hBar !== null && this.hBar.isVisible === true ? hps.height : 0));
                     this.vBar.setMaximum(maxV);
                 }
             };
@@ -770,14 +769,14 @@ zebkit.package("ui", function(pkg, Class) {
                     if (this.autoHide === true) {
                         // make sure autohide thread has not been initiated and make sure it makes sense
                         // to initiate the thread (one of the scroll bar has to be visible)
-                        if (this.$interval === 0 && ((this.vBar != null && this.vBar.isVisible === true) ||
-                                                     (this.hBar != null && this.hBar.isVisible === true)    ))
+                        if (this.$interval === 0 && ((this.vBar !== null && this.vBar.isVisible === true) ||
+                                                     (this.hBar !== null && this.hBar.isVisible === true)    ))
                         {
                             var $this = this;
 
                             // show scroll bar(s)
-                            if (this.vBar != null) this.vBar.toFront();
-                            if (this.hBar != null) this.hBar.toFront();
+                            if (this.vBar !== null) this.vBar.toFront();
+                            if (this.hBar !== null) this.hBar.toFront();
                             this.vrp();
 
                             // pointer move should keep scroll bars visible and pointer entered exited
@@ -797,8 +796,7 @@ zebkit.package("ui", function(pkg, Class) {
                                 pointerEntered: function(e) {
                                     if (e.source === $this.vBar) {
                                         $this.$targetBar = $this.vBar;
-                                    }
-                                    else {
+                                    } else {
                                         if (e.source === $this.hBar) {
                                             $this.$targetBar = $this.hBar;
                                             return;
@@ -811,7 +809,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                             // start thread to autohide shown scroll bar(s)
                             this.$interval = zebkit.environment.setInterval(function() {
-                                if ($this.$hiddingCounter-- === 0 && $this.$targetBar == null) {
+                                if ($this.$hiddingCounter-- === 0 && $this.$targetBar === null) {
                                     zebkit.environment.clearInterval($this.$interval);
                                     $this.$interval = 0;
                                     pkg.events.unbind(listener);
@@ -821,33 +819,30 @@ zebkit.package("ui", function(pkg, Class) {
                         }
                     }
 
-                    if (this.vBar != null && this.vBar.position === target) {
+                    if (this.vBar !== null && this.vBar.position === target) {
                         this.scrollObj.scrollManager.scrollYTo(-this.vBar.position.offset);
-                    }
-                    else {
-                        if (this.hBar != null && this.hBar.position === target) {
-                            this.scrollObj.scrollManager.scrollXTo(-this.hBar.position.offset);
-                        }
+                    } else if (this.hBar !== null && this.hBar.position === target) {
+                        this.scrollObj.scrollManager.scrollXTo(-this.hBar.position.offset);
                     }
                 }
             };
 
             this.setIncrements = function (hUnit,hPage,vUnit,vPage) {
-                if (this.hBar != null){
-                    if (hUnit !=  -1) this.hBar.unitIncrement = hUnit;
-                    if (hPage !=  -1) this.hBar.pageIncrement = hPage;
+                if (this.hBar !== null){
+                    if (hUnit !==  -1) this.hBar.unitIncrement = hUnit;
+                    if (hPage !==  -1) this.hBar.pageIncrement = hPage;
                 }
 
-                if (this.vBar != null){
-                    if (vUnit !=  -1) this.vBar.unitIncrement = vUnit;
-                    if (vPage !=  -1) this.vBar.pageIncrement = vPage;
+                if (this.vBar !== null){
+                    if (vUnit !==  -1) this.vBar.unitIncrement = vUnit;
+                    if (vPage !==  -1) this.vBar.pageIncrement = vPage;
                 }
                 return this;
             };
         },
 
         function (c, scrolls, autoHide) {
-            if (scrolls == null)  {
+            if (arguments.length < 2)  {
                 scrolls = "both";
             }
 
@@ -872,7 +867,6 @@ zebkit.package("ui", function(pkg, Class) {
              * @readOnly
              */
 
-            this.hBar = this.vBar = this.scrollObj = null;
             this.$isPosChangedLocked = false;
             this.$super();
 
@@ -884,7 +878,7 @@ zebkit.package("ui", function(pkg, Class) {
                 this.add("right", new pkg.Scroll("vertical"));
             }
 
-            if (c != null) {
+            if (arguments.length > 0 && c !== null) {
                 this.add("center", c);
             }
 
@@ -901,19 +895,18 @@ zebkit.package("ui", function(pkg, Class) {
 
                 this.scrollObj = c;
                 c.scrollManager.bind(this);
-            }
-            else {
+            } else {
                 if ("bottom" === ctr || "top" === ctr){
                     this.hBar = c;
                 } else if ("left" === ctr || "right" === ctr) {
                     this.vBar = c;
-                }  else  {
+                } else {
                     throw new Error("Invalid constraints");
                 }
 
                 // valid for scroll bar only
-                if (c.incBt != null) c.incBt.setVisible(!this.autoHide);
-                if (c.decBt != null) c.decBt.setVisible(!this.autoHide);
+                if (c.incBt !== null) c.incBt.setVisible(!this.autoHide);
+                if (c.decBt !== null) c.decBt.setVisible(!this.autoHide);
                 c.position.bind(this);
             }
 
@@ -925,18 +918,12 @@ zebkit.package("ui", function(pkg, Class) {
             if (comp === this.scrollObj){
                 this.scrollObj.scrollManager.unbind(this);
                 this.scrollObj = null;
-            }
-            else {
-                if (comp === this.hBar){
-                    this.hBar.position.unbind(this);
-                    this.hBar = null;
-                }
-                else {
-                    if (comp === this.vBar){
-                        this.vBar.position.unbind(this);
-                        this.vBar = null;
-                    }
-                }
+            } else if (comp === this.hBar) {
+                this.hBar.position.unbind(this);
+                this.hBar = null;
+            } else if (comp === this.vBar) {
+                this.vBar.position.unbind(this);
+                this.vBar = null;
             }
         }
     ]);
@@ -962,11 +949,11 @@ zebkit.package("ui", function(pkg, Class) {
                     this.$target     = e.source;
 
                     // detect scrollable component
-                    while (this.$target != null && this.$target.doScroll == null) {
+                    while (this.$target !== null && this.$target.doScroll == null) {
                         this.$target = this.$target.parent;
                     }
 
-                    if (this.$target != null && this.$target.pointerDragged != null) {
+                    if (this.$target !== null && this.$target.pointerDragged != null) {
                          this.$target = null;
                     }
                 }
@@ -1015,7 +1002,7 @@ zebkit.package("ui", function(pkg, Class) {
                     this.$timer  === null  &&
                     this.$identifier === e.identifier &&
                     (e.direction === "bottom" || e.direction === "top") &&
-                    this.$target.vBar != null &&
+                    this.$target.vBar !== null &&
                     this.$target.vBar.isVisible &&
                     e.dy !== 0)
                 {

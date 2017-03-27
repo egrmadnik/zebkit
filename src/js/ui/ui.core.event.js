@@ -317,7 +317,7 @@ zebkit.package("ui", function(pkg, Class) {
                     this.absY = ay;
 
                     // convert absolute location to relative location
-                    while (source.parent != null) {
+                    while (source.parent !== null) {
                         ax -= source.x;
                         ay -= source.y;
                         source = source.parent;
@@ -471,7 +471,8 @@ zebkit.package("ui", function(pkg, Class) {
              * @protected
              */
             this.fireEvent = function(id, e){
-                var childEvent = $CEM[id], evHandler = e.source[id];
+                var childEvent = $CEM[id],
+                    evHandler  = e.source[id];
 
                 // assign id that matches method to be called
                 e.id = id;
@@ -490,7 +491,7 @@ zebkit.package("ui", function(pkg, Class) {
                     }
 
                     // call parent listeners
-                    for(var t = e.source.parent; t != null; t = t.parent){
+                    for(var t = e.source.parent; t !== null; t = t.parent){
                         if (t[childEvent] != null) {
                             t[childEvent].call(t, e);
                         }
@@ -529,24 +530,24 @@ zebkit.package("ui", function(pkg, Class) {
      ]);
 
      pkg.CursorManager = Class(pkg.Manager, [
-         function $prototype() {
-             this.cursorType = "default";
-         }
+        function $prototype() {
+            this.cursorType = "default";
+        }
      ]);
 
      pkg.FocusManager = Class(pkg.Manager, [
-         function $prototype() {
-             this.focusOwner = null;
+        function $prototype() {
+            this.focusOwner = null;
 
-             this.requestFocus = function(c) {};
+            this.requestFocus = function(c) {};
 
-             this.hasFocus = function(c) {
-                 return false;
-             };
+            this.hasFocus = function(c) {
+                return false;
+            };
 
-             this.findFocusable = function(c) {
-                 return null;
-             };
-         }
+            this.findFocusable = function(c) {
+                return null;
+            };
+        }
      ]);
 });

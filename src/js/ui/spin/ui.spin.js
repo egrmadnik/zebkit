@@ -182,7 +182,7 @@ zebkit.package("ui", function(pkg, Class) {
         function getValue(){
             var value = this.editor.getValue();
             if (value === "") return this.min;
-            return parseInt((value.indexOf('+') == 0) ? value.substring(1) : value);
+            return parseInt((value.indexOf('+') === 0) ? value.substring(1) : value);
         },
 
         function setValue(v){

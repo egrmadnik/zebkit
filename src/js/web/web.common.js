@@ -90,7 +90,7 @@ zebkit.package("web", function(pkg, Class) {
      */
     pkg.$isInsideElement = function(element, pageX, pageY) {
         var r = element.getBoundingClientRect();
-        return r != null             &&
+        return r !== null            &&
                pageX >= r.left       &&
                pageY >= r.top        &&
                pageX <= r.right - 1  &&
@@ -183,7 +183,6 @@ zebkit.package("web", function(pkg, Class) {
         },
 
         setColor : function (c) {
-            if (c == null) throw new Error("Null color");
             c = (c.s != null ? c.s : c.toString());
             if (c !== this.fillStyle) this.fillStyle = c;
             if (c !== this.strokeStyle) this.strokeStyle = c;

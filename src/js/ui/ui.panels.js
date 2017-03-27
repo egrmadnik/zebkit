@@ -34,6 +34,15 @@ zebkit.package("ui", function(pkg, Class) {
 
         function $prototype() {
             /**
+             * Border panel label content component
+             * @attribute content
+             * @type {zebkit.ui.Panel}
+             * @readOnly
+             */
+            this.label = this.content = null;
+
+
+            /**
              * Vertical gap. Define top and bottom paddings between
              * border panel border and the border panel content
              * @attribute vGap
@@ -96,18 +105,18 @@ zebkit.package("ui", function(pkg, Class) {
               * @protected
               */
             this.getTitleInfo = function() {
-                return (this.label != null) ? { x      : this.label.x,
-                                                y      : this.label.y,
-                                                width  : this.label.width,
-                                                height : this.label.height,
-                                                orient: this.orient }
-                                            : null;
+                return (this.label !== null) ? { x      : this.label.x,
+                                                 y      : this.label.y,
+                                                 width  : this.label.width,
+                                                 height : this.label.height,
+                                                 orient: this.orient }
+                                             : null;
             };
 
             this.calcPreferredSize = function(target){
-                var ps = this.content != null && this.content.isVisible === true ? this.content.getPreferredSize()
-                                                                                 : { width:0, height:0 };
-                if (this.label != null && this.label.isVisible === true){
+                var ps = this.content !== null && this.content.isVisible === true ? this.content.getPreferredSize()
+                                                                                  : { width:0, height:0 };
+                if (this.label !== null && this.label.isVisible === true){
                     var lps = this.label.getPreferredSize();
                     ps.height += lps.height;
                     ps.width = Math.max(ps.width, lps.width + this.indent);
@@ -124,7 +133,7 @@ zebkit.package("ui", function(pkg, Class) {
                     top    = this.orient === "top"   ? this.top    : this.getTop(),
                     bottom = this.orient === "bottom"? this.bottom : this.getBottom();
 
-                if (this.label != null && this.label.isVisible === true){
+                if (this.label !== null && this.label.isVisible === true){
                     var ps = this.label.getPreferredSize();
                     h = ps.height;
                     this.label.setBounds((this.alignment === "left") ? left + this.indent
@@ -134,7 +143,7 @@ zebkit.package("ui", function(pkg, Class) {
                                          ps.width, h);
                 }
 
-                if (this.content != null && this.content.isVisible === true){
+                if (this.content !== null && this.content.isVisible === true){
                     this.content.setBounds(left + this.hGap,
                                            (this.orient === "bottom" ? top : top + h) + this.vGap,
                                             this.width  - right - left - 2 * this.hGap,
@@ -199,11 +208,11 @@ zebkit.package("ui", function(pkg, Class) {
             return this.$super(br);
         },
 
-        function kidAdded(index,ctr,lw) {
+        function kidAdded(index, ctr, lw) {
             this.$super(index, ctr, lw);
-            if ((ctr == null && this.content == null) || "center" === ctr) {
+            if ((ctr === null && this.content === null) || "center" === ctr) {
                 this.content = lw;
-            } else if (this.label == null) {
+            } else if (this.label === null) {
                 this.label = lw;
             }
         },
@@ -222,11 +231,11 @@ zebkit.package("ui", function(pkg, Class) {
                 title = pkg.$component(title, this);
             }
 
-            if (arguments.lengh > 2) {
+            if (arguments.length > 2) {
                 this.orient = o;
             }
 
-            if (arguments.lengh > 3) {
+            if (arguments.length > 3) {
                 this.alignment = a;
             }
 
@@ -237,17 +246,9 @@ zebkit.package("ui", function(pkg, Class) {
              * @readOnly
              */
 
-            /**
-             * Border panel label content component
-             * @attribute content
-             * @type {zebkit.ui.Panel}
-             * @readOnly
-             */
-            this.label = this.content = null;
-
             this.$super();
-            if (title  != null) this.add("caption", title);
-            if (center != null) this.add("center", center);
+            if (arguments.length > 0) this.add("caption", title);
+            if (arguments.length > 1) this.add("center", center);
         }
     ]);
 
@@ -465,7 +466,7 @@ zebkit.package("ui", function(pkg, Class) {
                         }
                     }
 
-                    if (this.gripper != null){
+                    if (this.gripper !== null){
                         if (this.isMoveable){
                             this.gripper.setBounds(left, this.barLocation, w, bSize.height);
                         } else {
@@ -474,11 +475,11 @@ zebkit.package("ui", function(pkg, Class) {
                         }
                     }
 
-                    if (this.leftComp != null){
+                    if (this.leftComp !== null){
                         this.leftComp.setBounds(left, top, w, this.barLocation - this.gap - top);
                     }
 
-                    if (this.rightComp != null){
+                    if (this.rightComp !== null){
                         this.rightComp.setLocation(left, this.barLocation + bSize.height + this.gap);
                         this.rightComp.setSize(w, this.height - this.rightComp.y - bottom);
                     }
@@ -491,7 +492,7 @@ zebkit.package("ui", function(pkg, Class) {
                         }
                     }
 
-                    if (this.gripper != null){
+                    if (this.gripper !== null){
                         if (this.isMoveable === true){
                             this.gripper.setBounds(this.barLocation, top, bSize.width, h);
                         } else{
@@ -500,11 +501,11 @@ zebkit.package("ui", function(pkg, Class) {
                         }
                     }
 
-                    if (this.leftComp != null){
+                    if (this.leftComp !== null){
                         this.leftComp.setBounds(left, top, this.barLocation - left - this.gap, h);
                     }
 
-                    if (this.rightComp != null){
+                    if (this.rightComp !== null){
                         this.rightComp.setLocation(this.barLocation + bSize.width + this.gap, top);
                         this.rightComp.setSize(this.width - this.rightComp.x - right, h);
                     }
@@ -567,18 +568,16 @@ zebkit.package("ui", function(pkg, Class) {
             };
         },
 
-        function kidAdded(index,ctr,c){
+        function kidAdded(index, ctr, c){
             this.$super(index, ctr, c);
 
-            if ((ctr == null && this.leftComp == null) || "left" === ctr) {
+            if ((ctr === null && this.leftComp === null) || "left" === ctr) {
                 this.leftComp = c;
+            } else if ((ctr === null && this.rightComp === null) || "right" === ctr) {
+                this.rightComp = c;
             } else {
-                if ((ctr == null && this.rightComp == null) || "right" === ctr) {
-                    this.rightComp = c;
-                } else {
-                    if ("center" === ctr) this.gripper = c;
-                    else throw new Error("" + ctr);
-                }
+                if ("center" === ctr) this.gripper = c;
+                else throw new Error("" + ctr);
             }
         },
 
@@ -615,8 +614,8 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.$super();
 
-            if (f != null) this.add("left", f);
-            if (s != null) this.add("right", s);
+            if (arguments.length > 0) this.add("left", f);
+            if (arguments.length > 1) this.add("right", s);
             this.add("center", new this.clazz.Bar(this));
         }
     ]);
@@ -696,7 +695,7 @@ zebkit.package("ui", function(pkg, Class) {
                             var selected = this.selected;
                             this.$super(o, v);
 
-                            if (v === false && selected != null && this.selected === null) {
+                            if (v === false && selected !== null && this.selected === null) {
                                 var i = this.target.indexOf(selected);
                                 i = (i + 1) % this.target.kids.length;
                                 if (this.target.kids[i] !== selected) {
@@ -714,11 +713,12 @@ zebkit.package("ui", function(pkg, Class) {
                             x     = t.getLeft(),
                             w     = t.width - x - t.getRight(),
                             eh    = t.height - y - t.getBottom(),
-                            kid   = null;
+                            kid   = null,
+                            i     = 0;
 
                         // setup sizes for not selected item and calculate the vertical
                         // space that can be used for an expanded item
-                        for(var i = 0; i < t.kids.length; i++) {
+                        for(i = 0; i < t.kids.length; i++) {
                             kid = t.kids[i];
                             if (kid.isVisible) {
                                 if (kid.getValue() === false) {
@@ -729,7 +729,7 @@ zebkit.package("ui", function(pkg, Class) {
                             }
                         }
 
-                        for(var i = 0; i < t.kids.length; i++) {
+                        for(i = 0; i < t.kids.length; i++) {
                             kid = t.kids[i];
                             if (kid.isVisible) {
                                 kid.setLocation(x, y);
@@ -781,19 +781,22 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.contentPan = null;
+            this.titlePan   = null;
+
             this.switched = function() {
                 var value = this.getValue();
-                if (this.contentPan != null) {
+                if (this.contentPan !== null) {
                     this.contentPan.setVisible(value);
                 }
 
-                if (this.titlePan != null) {
+                if (this.titlePan !== null) {
                     this.titlePan.setState(value ? "on" : "off" );
                 }
             };
 
             this.compEnabled = function (e) {
-                if (this.titlePan != null) {
+                if (this.titlePan !== null) {
                     var v = this.getValue();
                     this.titlePan.setState(this.isEnable ? (v ? "on" : "off")
                                                          : (v ? "dison" : "disoff") );
@@ -822,8 +825,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.add("top", this.titlePan);
 
             this.titlePan.add(new this.clazz.TogglePan(this));
-            this.titlePan.add(pkg.$component(lab == null ? "" : lab, this));
-
+            this.titlePan.add(pkg.$component(arguments.length === 0 || lab === null ? "" : lab, this));
 
             /**
              * Content panel
@@ -831,8 +833,8 @@ zebkit.package("ui", function(pkg, Class) {
              * @readOnly
              * @attribute contentPan
              */
-            this.contentPan = content;
-            if (content != null) {
+            if (arguments.length > 1 && content !== null) {
+                this.contentPan = content;
                 this.add("center", this.contentPan);
             }
             this.setSwitchManager(arguments.length > 2 ? sm : new pkg.SwitchManager());

@@ -29,7 +29,7 @@ zebkit.package("io", function(pkg, Class) {
      * @for  zebkit.io
      */
     pkg.ID = function UUID(size) {
-        if (size == null) size = 16;
+        if (arguments.length === 0) size = 16;
         var id = "";
         for (var i=0; i < size; i++) id = id + HEX[~~(Math.random() * 16)];
         return id;
@@ -99,8 +99,8 @@ zebkit.package("io", function(pkg, Class) {
             chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
             chr3 = ((enc3 & 3) << 6) | enc4;
             output.push(String.fromCharCode(chr1));
-            if (enc3 != 64) output.push(String.fromCharCode(chr2));
-            if (enc4 != 64) output.push(String.fromCharCode(chr3));
+            if (enc3 !== 64) output.push(String.fromCharCode(chr2));
+            if (enc4 !== 64) output.push(String.fromCharCode(chr3));
         }
         return output.join('');
     };
@@ -527,6 +527,9 @@ zebkit.package("io", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.contentType = null;
+
+
              /**
               * Send the given data to the given url and return a response. Callback
               * function can be passed for asynchronous result handling.
@@ -538,7 +541,7 @@ zebkit.package("io", function(pkg, Class) {
               */
             this.send = function(url, data) {
                 var http = new pkg.HTTP(url);
-                if (this.contentType != null) {
+                if (this.contentType !== null) {
                     http.header['Content-Type'] = this.contentType;
                 }
                 return http.POST(data, callback);

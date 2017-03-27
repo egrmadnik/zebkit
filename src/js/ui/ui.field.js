@@ -29,24 +29,27 @@ zebkit.package("ui", function(pkg, Class) {
             this.redoCounter = this.undoCounter = this.curY = this.curW = this.curH = 0;
             this.scrollManager = new pkg.ScrollManager(this);
 
-            if (arguments.length === 1) {
-                if (zebkit.isNumber(render)) {
-                    maxCol = render;
-                    this.$super(new pkg.TextRender(new zebkit.data.SingleLineTxt("", maxCol)));
-                } else {
-                    maxCol = -1;
-                    this.$super(zebkit.isString(render) ? new pkg.TextRender(new zebkit.data.SingleLineTxt(render))
-                                                       : (zebkit.instanceOf(render, zebkit.data.TextModel) ?  new pkg.TextRender(render)
-                                                                                                         : render));
+            if (arguments.length === 0) {
+                maxCol = -1;
+                render = new pkg.TextRender(new zebkit.data.SingleLineTxt());
+            } else if (arguments.length > 1) {
+                if (arguments.length === 1) {
+                    if (zebkit.isNumber(render)) {
+                        maxCol = render;
+                        render = null;
+                    } else {
+                        maxCol = -1;
+                    }
                 }
-            } else {
-                // 2 arguments or zero arguments
-                if (arguments.length === 0) {
-                    maxCol = -1;
+
+                if (zebkit.isString(render)) {
+                    render = new pkg.TextRender(new zebkit.data.SingleLineTxt(render));
+                } else if (zebkit.instanceOf(render, zebkit.data.TextModel)) {
+                    render = new pkg.TextRender(render);
                 }
-                this.$super(new pkg.TextRender(new zebkit.data.SingleLineTxt(render, maxCol)));
             }
 
+            this.$super(render);
             if (maxCol > 0) {
                 this.setPSByRowsCols(-1, maxCol);
             }
@@ -67,7 +70,6 @@ zebkit.package("ui", function(pkg, Class) {
          */
         function $prototype() {
             this.hint = null;
-
 
             this.vkMode    = "indirect";
             this.startLine = this.startCol = this.endLine = this.endCol = this.curX = 0;
@@ -160,7 +162,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.textUpdated = function(src, b, off, size, startLine, lines) {
-                if (this.position != null) {
+                if (this.position !== null) {
                     if (b === true) {
                         // Check if a selection presents
                         // and clear it.  We do it here because it is important
@@ -251,7 +253,9 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.findNextWord = function(t, line, col, d){
-                if (line < 0 || line >= t.getLines()) return null;
+                if (line < 0 || line >= t.getLines()) {
+                    return null;
+                }
 
                 var ln = t.getLine(line);
                 col += d;
@@ -319,7 +323,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method  startSelection
              */
             this.startSelection = function() {
-                if (this.startOff < 0 && this.position != null){
+                if (this.startOff < 0 && this.position !== null){
                     var pos = this.position;
                     this.endLine = this.startLine = pos.currentLine;
                     this.endCol = this.startCol = pos.currentCol;
@@ -379,7 +383,7 @@ zebkit.package("ui", function(pkg, Class) {
                         case "NEXTWORD" : {
                             var p = this.findNextWord(this.view.target, this.position.currentLine,
                                                                         this.position.currentCol, d);
-                            if (p != null) {
+                            if (p !== null) {
                                 this.position.setRowCol(p.row, p.col);
                             }
                         } break;
@@ -550,7 +554,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.drawCursor = function (g) {
                 if (this.position.offset >= 0 &&
-                    this.curView != null      &&
+                    this.curView !== null     &&
                     this.blinkMe              &&
                     this.hasFocus()              )
                 {
@@ -579,7 +583,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.pointerDragged = function (e){
                 if (e.isAction()){
                     var p = this.getTextRowColAt(e.x, e.y);
-                    if (p != null) this.position.setRowCol(p.row, p.col);
+                    if (p !== null) this.position.setRowCol(p.row, p.col);
                 }
             };
 
@@ -904,11 +908,11 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.setPosition = function (p){
                 if (this.position != p) {
-                    if (this.position != null) {
+                    if (this.position !== null) {
                         this.position.unbind(this);
                     }
                     this.position = p;
-                    if (this.position != null) {
+                    if (this.position !== null) {
                         this.position.bind(this);
                     }
                     this.invalidate();
@@ -959,7 +963,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setEditable = function (b){
-                if (b != this.isEditable){
+                if (b !== this.isEditable){
                     this.isEditable = b;
                     if (b && this.blinkingPeriod > 0 && this.hasFocus()) {
                         if (this.blinkTask != null) {
@@ -987,7 +991,7 @@ zebkit.package("ui", function(pkg, Class) {
                     }
 
                     var p = this.getTextRowColAt(e.x, e.y);
-                    if (p != null) this.position.setRowCol(p.row, p.col);
+                    if (p !== null) this.position.setRowCol(p.row, p.col);
                 }
             };
 
@@ -1073,7 +1077,7 @@ zebkit.package("ui", function(pkg, Class) {
         function setValue(s) {
             var txt = this.getValue();
             if (txt != s){
-                if (this.position != null) {
+                if (this.position !== null) {
                     this.position.setOffset(0);
                 }
                 this.scrollManager.scrollTo(0, 0);

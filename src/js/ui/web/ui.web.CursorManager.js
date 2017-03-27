@@ -26,9 +26,7 @@ zebkit.package("ui.web", function(pkg, Class) {
      *  @extends {zebkit.ui.Manager}
      */
     pkg.CursorManager = Class(zebkit.ui.CursorManager, [
-        function() {
-            this.$super();
-
+        function $prototype() {
             /**
              * Current cursor type
              * @attribute cursorType
@@ -37,11 +35,9 @@ zebkit.package("ui.web", function(pkg, Class) {
              * @default "default"
              */
             this.cursorType = "default";
-            this.source = this.target = null;
             this.$isFunc = false;
-        },
+            this.source = this.target = null;
 
-        function $prototype() {
             /**
              * Define pointer moved events handler.
              * @param  {zebkit.ui.PointerEvent} e a pointer event
@@ -61,7 +57,7 @@ zebkit.package("ui.web", function(pkg, Class) {
              * @method pointerEntered
              */
             this.pointerEntered = function(e) {
-                if (e.source.cursorType != null || e.source.getCursorType != null) {
+                if (e.source.cursorType !== null || e.source.getCursorType != null) {
                     this.$isFunc = (e.source.getCursorType != null);
                     this.target = e.target;
                     this.source = e.source;
@@ -69,8 +65,8 @@ zebkit.package("ui.web", function(pkg, Class) {
                     this.cursorType = this.$isFunc === true ? this.source.getCursorType(this.source, e.x, e.y)
                                                             : this.source.cursorType;
 
-                    this.target.style.cursor = (this.cursorType == null) ? "default"
-                                                                         : this.cursorType;
+                    this.target.style.cursor = (this.cursorType === null) ? "default"
+                                                                          : this.cursorType;
                 }
             };
 
@@ -80,7 +76,7 @@ zebkit.package("ui.web", function(pkg, Class) {
              * @method pointerExited
              */
             this.pointerExited  = function(e){
-                if (this.source != null) {
+                if (this.source !== null) {
                     this.cursorType = "default";
                     if (this.target.style.cursor != this.cursorType) {
                         this.target.style.cursor = this.cursorType;

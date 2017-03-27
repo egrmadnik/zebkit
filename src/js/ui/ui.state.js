@@ -79,7 +79,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.stateUpdated = function(o, n) {
                 var b = false, id = (this.toViewId != null ? this.toViewId(n) : n);
 
-                if (id != null) {
+                if (id !== null) {
                     for(var i = 0; i < this.kids.length; i++) {
                         var kid = this.kids[i];
                         if (kid.setState != null) {
@@ -87,7 +87,7 @@ zebkit.package("ui", function(pkg, Class) {
                         }
                     }
 
-                    if (this.border != null && this.border.activate != null) {
+                    if (this.border !== null && this.border.activate != null) {
                         b = this.border.activate(id) || b;
                     }
 
@@ -357,8 +357,7 @@ zebkit.package("ui", function(pkg, Class) {
                     var pressed = (this.state === PRESSED_OUT || this.state === PRESSED_OVER);
                     if (e.x > 0 && e.y > 0 && e.x < this.width && e.y < this.height) {
                         this.setState(pressed ? PRESSED_OVER : OVER);
-                    }
-                    else {
+                    } else {
                         this.setState(pressed ? PRESSED_OUT : OUT);
                     }
                 }
@@ -418,7 +417,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.paintOnTop = function(g){
                 var fc = this.focusComponent;
-                if (this.focusMarkerView != null && fc != null && this.hasFocus()) {
+                if (this.focusMarkerView != null && fc !== null && this.hasFocus()) {
                     this.focusMarkerView.paint(g, fc.x, fc.y, fc.width, fc.height, this);
                 }
             };
@@ -463,8 +462,8 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setFocusAnchorComponent = function(c) {
-                if (this.focusComponent != c) {
-                    if (c != null && this.kids.indexOf(c) < 0) {
+                if (this.focusComponent !== c) {
+                    if (c !== null && this.kids.indexOf(c) < 0) {
                         throw new Error("Focus component doesn't exist");
                     }
                     this.focusComponent = c;

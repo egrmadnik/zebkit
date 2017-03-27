@@ -40,7 +40,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.focusOwner = null;
 
             this.$freeFocus = function(comp) {
-                if ( this.focusOwner != null &&
+                if ( this.focusOwner !== null &&
                     (this.focusOwner === comp || zebkit.layout.isAncestorOf(comp, this.focusOwner)))
                 {
                     this.requestFocus(null);
@@ -54,7 +54,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.compEnabled = function(e) {
                 var c = e.source;
-                if (c.isVisible === true && c.isEnabled === false && this.focusOwner != null) {
+                if (c.isVisible === true && c.isEnabled === false && this.focusOwner !== null) {
                     this.$freeFocus(c);
                 }
             };
@@ -66,7 +66,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.compShown = function(e) {
                 var c = e.source;
-                if (c.isEnabled === true && c.isVisible === false && this.focusOwner != null) {
+                if (c.isEnabled === true && c.isVisible === false && this.focusOwner !== null) {
                     this.$freeFocus(c);
                 }
             };
@@ -80,7 +80,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.compRemoved = function(e) {
                 var c = e.kid;
-                if (c.isEnabled === true && c.isVisible === true && this.focusOwner != null) {
+                if (c.isEnabled === true && c.isVisible === true && this.focusOwner !== null) {
                     this.$freeFocus(c);
                 }
             };
@@ -103,7 +103,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.keyPressed = function(e){
                 if ("Tab" === e.code) {
                     var cc = this.ff(e.source, e.shiftKey ?  -1 : 1);
-                    if (cc != null) {
+                    if (cc !== null) {
                         this.requestFocus(cc);
                     }
                     return true;
@@ -122,11 +122,11 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.isFocusable = function(c) {
                 var d = c.getCanvas();
-                if (d != null &&
+                if (d !== null &&
                        (c.canHaveFocus === true ||
                          (typeof c.canHaveFocus == "function" && c.canHaveFocus() === true)))
                 {
-                    for(;c !== d && c != null; c = c.parent) {
+                    for(;c !== d && c !== null; c = c.parent) {
                         if (c.isVisible === false || c.isEnabled === false) {
                             return false;
                         }
@@ -171,18 +171,18 @@ zebkit.package("ui", function(pkg, Class) {
             // find next focusable component
             // c - component starting from that a next focusable component has to be found
             // d - a direction of next focusable component lookup: 1 (forward) or -1 (backward)
-            this.ff = function(c, d){
+            this.ff = function(c, d) {
                 var top = c;
-                while (top != null && top.getFocusRoot == null) {
+                while (top !== null && top.getFocusRoot == null) {
                     top = top.parent;
                 }
 
-                if (top == null) {
+                if (top === null) {
                     return null;
                 }
 
                 top = top.getFocusRoot();
-                if (top == null) {
+                if (top === null) {
                     return null;
                 }
 
@@ -195,7 +195,7 @@ zebkit.package("ui", function(pkg, Class) {
                     if (cc != null) return cc;
                     cc = c;
                     c = c.parent;
-                    if (c != null) index = d + c.indexOf(cc);
+                    if (c !== null) index = d + c.indexOf(cc);
                 }
 
                 return this.fd(top, d > 0 ? 0 : top.kids.length - 1, d);
@@ -207,17 +207,17 @@ zebkit.package("ui", function(pkg, Class) {
              * @method requestFocus
              */
             this.requestFocus = function(c) {
-                if (c != this.focusOwner && (c == null || this.isFocusable(c))) {
+                if (c !== this.focusOwner && (c === null || this.isFocusable(c))) {
                     var oldFocusOwner = this.focusOwner;
-                    if (c != null) {
+                    if (c !== null) {
                         var nf = c.getEventDestination();
-                        if (nf == null || oldFocusOwner == nf) return;
+                        if (nf === null || oldFocusOwner === nf) return;
                         this.focusOwner = nf;
                     } else {
                         this.focusOwner = c;
                     }
 
-                    if (oldFocusOwner != null) {
+                    if (oldFocusOwner !== null) {
                         var ofc = oldFocusOwner.getCanvas();
                         FOCUS_EVENT.source  = oldFocusOwner;
                         FOCUS_EVENT.related = this.focusOwner;
@@ -225,7 +225,7 @@ zebkit.package("ui", function(pkg, Class) {
                         pkg.events.fireEvent("focusLost", FOCUS_EVENT);
                     }
 
-                    if (this.focusOwner != null) {
+                    if (this.focusOwner !== null) {
                         FOCUS_EVENT.source  = this.focusOwner;
                         FOCUS_EVENT.related = oldFocusOwner;
                         this.focusOwner.focused();

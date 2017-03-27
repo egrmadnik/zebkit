@@ -58,6 +58,51 @@ zebkit.package("ui", function(pkg, Class) {
      * shown (true) or hidden (false)
     */
     pkg.Combo = Class(pkg.Panel, [
+        function(list, editable) {
+            if (arguments.length === 1 && zebkit.isBoolean(list)) {
+                editable = list;
+                list = null;
+            }
+
+            if (arguments.length === 0) {
+                editable = false;
+            }
+
+            if (arguments.length === 0 || list === null) {
+                list = new this.clazz.List(true);
+            }
+
+            /**
+             * Reference to combo box list component
+             * @attribute list
+             * @readOnly
+             * @type {zebkit.ui.BaseList}
+             */
+            if (zebkit.instanceOf(list, pkg.BaseList) === false) {
+                list = list.length > 0 && zebkit.instanceOf(list[0], pkg.Panel) ? new this.clazz.CompList(list, true)
+                                                                                : new this.clazz.List(list, true);
+            }
+
+            /**
+             * Maximal size the combo box height can have
+             * @attribute maxPadHeight
+             * @readOnly
+             * @type {Integer}
+             */
+            this.maxPadHeight = 0;
+
+            this.$lockListSelEvent = false;
+            this._ = new this.clazz.Listeners();
+            this.setList(list);
+
+            this.$super();
+
+            this.add("center", editable ? new this.clazz.EditableContentPan()
+                                        : new this.clazz.ReadonlyContentPan());
+            this.add("right", new this.clazz.Button());
+        },
+
+
         function $clazz() {
             this.Listeners = zebkit.util.ListenersClass("selected");
 
@@ -95,8 +140,7 @@ zebkit.package("ui", function(pkg, Class) {
                      * @return {zebkit.ui.Combo} a combo the content panel belongs
                      */
                     this.getCombo = function() {
-                        var p = this;
-                        while ((p = p.parent) && zebkit.instanceOf(p, pkg.Combo) === false);
+                        for (var p = this.parent; p !== null && zebkit.instanceOf(p, pkg.Combo) === false; p = p.parent);
                         return p;
                     };
                 }
@@ -115,6 +159,8 @@ zebkit.package("ui", function(pkg, Class) {
 
                     this.adjustToComboSize = true;
 
+                    this.owner = null;
+
                     /**
                      * A reference to combo that uses the list pad component
                      * @attribute owner
@@ -122,20 +168,20 @@ zebkit.package("ui", function(pkg, Class) {
                      * @readOnly
                      */
                     this.childKeyPressed = function(e){
-                        if (e.code === "Escape" && this.parent != null){
+                        if (e.code === "Escape" && this.parent !== null) {
                             this.removeMe();
-                            if (this.owner != null) this.owner.requestFocus();
+                            if (this.owner !== null) this.owner.requestFocus();
                         }
                     };
                 },
 
-                function setParent(l){
+                function setParent(l) {
                     this.$super(l);
-                    if (l == null && this.owner != null) {
+                    if (l === null && this.owner !== null) {
                         this.owner.requestFocus();
                     }
 
-                    this.$closeTime = l == null ? new Date().getTime() : 0;
+                    this.$closeTime = l === null ? new Date().getTime() : 0;
                 }
             ]);
 
@@ -153,13 +199,13 @@ zebkit.package("ui", function(pkg, Class) {
                         var list = this.getCombo().list,
                             selected = list.getSelected();
 
-                        return selected != null ? list.provider.getView(list, selected, list.selectedIndex)
-                                                : null;
+                        return selected !== null ? list.provider.getView(list, selected, list.selectedIndex)
+                                                 : null;
                     };
 
                     this.paintOnTop = function(g){
                         var v = this.getCurrentView();
-                        if (v != null) {
+                        if (v !== null) {
                             var ps = v.getPreferredSize();
                             v.paint(g, this.getLeft(),
                                        this.getTop() + Math.floor((this.height - this.getTop() - this.getBottom() - ps.height) / 2),
@@ -177,11 +223,11 @@ zebkit.package("ui", function(pkg, Class) {
 
                     this.calcPreferredSize = function(l) {
                         var p = this.getCombo();
-                        if (p != null && this.calcPsByContent !== true) {
+                        if (p !== null && this.calcPsByContent !== true) {
                             return p.list.calcMaxItemSize();
                         }
                         var cv = this.getCurrentView();
-                        return cv == null ? { width: 0, height: 0} : cv.getPreferredSize();
+                        return cv === null ? { width: 0, height: 0} : cv.getPreferredSize();
                     };
 
                     this.comboValueUpdated = function(combo, value) {
@@ -237,8 +283,7 @@ zebkit.package("ui", function(pkg, Class) {
                             var txt = (v == null ? "" : v.toString());
                             this.textField.setValue(txt);
                             this.textField.select(0, txt.length);
-                        }
-                        finally {
+                        } finally {
                             this.dontGenerateUpdateEvent = false;
                         }
                     };
@@ -286,9 +331,42 @@ zebkit.package("ui", function(pkg, Class) {
          * @for zebkit.ui.Combo
          */
         function $prototype() {
+            this.list = null;
+
+            /**
+             * Reference to combo box button component
+             * @attribute button
+             * @readOnly
+             * @type {zebkit.ui.Panel}
+             */
+
+            /**
+             * Reference to combo box content component
+             * @attribute content
+             * @readOnly
+             * @type {zebkit.ui.Panel}
+             */
+
+            /**
+             * Reference to combo box pad component
+             * @attribute winpad
+             * @readOnly
+             * @type {zebkit.ui.Panel}
+             */
+
+            /**
+             * Reference to selection view
+             * @attribute selectionView
+             * @readOnly
+             * @type {zebkit.ui.View}
+             */
+
+            this.selectionView = this.button = this.content = this.winpad = null;
+
+
             this.paint = function(g){
-                if (this.content != null &&
-                    this.selectionView != null &&
+                if (this.content       !== null &&
+                    this.selectionView !== null &&
                     this.hasFocus())
                 {
                     this.selectionView.paint(g, this.content.x,
@@ -300,11 +378,11 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.catchInput = function (child) {
-                return child != this.button && (this.content == null || this.content.isEditable !== true);
+                return child != this.button && (this.content === null || this.content.isEditable !== true);
             };
 
             this.canHaveFocus = function() {
-                return this.winpad.parent == null && (this.content != null && this.content.isEditable !== true);
+                return this.winpad.parent === null && (this.content !== null && this.content.isEditable !== true);
             };
 
             this.contentUpdated = function(src, text){
@@ -371,7 +449,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method pointerPressed
              */
             this.pointerPressed = function (e) {
-                if (e.isAction() && this.content != null                  &&
+                if (e.isAction() && this.content !== null                 &&
                     (new Date().getTime() - this.winpad.$closeTime) > 100 &&
                     e.x > this.content.x && e.y > this.content.y          &&
                     e.x < this.content.x + this.content.width             &&
@@ -387,7 +465,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method isPadShown
              */
             this.isPadShown = function() {
-                return this.winpad != null && this.winpad.parent != null && this.winpad.isVisible === true;
+                return this.winpad !== null && this.winpad.parent !== null && this.winpad.isVisible === true;
             };
 
             /**
@@ -397,7 +475,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.hidePad = function (){
                 var d = this.getCanvas();
-                if (d != null && this.winpad.parent != null){
+                if (d !== null && this.winpad.parent !== null){
                     this.winpad.removeMe();
                     this.requestFocus();
                 }
@@ -411,7 +489,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.showPad = function(){
                 var canvas = this.getCanvas();
-                if (canvas != null) {
+                if (canvas !== null) {
                     var ps  = this.winpad.getPreferredSize(),
                         p   = zebkit.layout.toParentOrigin(0, 0, this.winpad.adjustTo == null ? this : this.winpad.adjustTo),
                         py  = p.y;
@@ -467,7 +545,7 @@ zebkit.package("ui", function(pkg, Class) {
                 if (this.list != l) {
                     this.hidePad();
 
-                    if (this.list != null) this.list.unbind(this);
+                    if (this.list !== null) this.list.unbind(this);
                     this.list = l;
                     if (this.list._) this.list.bind(this);
 
@@ -476,13 +554,13 @@ zebkit.package("ui", function(pkg, Class) {
                         function setParent(p) {
                             this.$super(p);
                             if ($this.padShown != null) {
-                                $this.padShown($this, p != null);
+                                $this.padShown($this, p !== null);
                             }
                         }
                     ]);
 
                     this.winpad.owner = this;
-                    if (this.content != null) {
+                    if (this.content !== null) {
                         this.content.comboValueUpdated(this, this.list.getSelected());
                     }
                     this.vrp();
@@ -496,7 +574,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method keyPressed
              */
             this.keyPressed = function (e) {
-                if (this.list.model != null) {
+                if (this.list !== null && this.list.model !== null) {
                     var index = this.list.selectedIndex;
                     switch(e.code) {
                         case "Enter"     : this.showPad(); break;
@@ -546,9 +624,9 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.setEditable = function(b) {
-                if (this.content == null || this.content.isEditable != b) {
+                if (this.content === null || this.content.isEditable != b) {
                     var ctr = "center";
-                    if (this.content != null) {
+                    if (this.content !== null) {
                         ctr = this.content.constraints;
                         this.content.removeMe();
                     }
@@ -573,7 +651,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.selected = function(src, data) {
                 if (this.$lockListSelEvent === false){
                     this.hidePad();
-                    if (this.content != null) {
+                    if (this.content !== null) {
                         this.content.comboValueUpdated(this, this.list.getSelected());
                         if (this.content.isEditable === true) {
                             this.content.requestFocus();
@@ -585,80 +663,6 @@ zebkit.package("ui", function(pkg, Class) {
             };
         },
 
-        function(list, editable) {
-            if (list != null && zebkit.isBoolean(list)) {
-                editable = list;
-                list = null;
-            }
-
-            if (editable == null) {
-                editable = false;
-            }
-
-            if (list == null) {
-                list = new this.clazz.List(true);
-            }
-
-            /**
-             * Reference to combo box list component
-             * @attribute list
-             * @readOnly
-             * @type {zebkit.ui.BaseList}
-             */
-            if (zebkit.instanceOf(list, pkg.BaseList) === false) {
-                list = list.length > 0 && zebkit.instanceOf(list[0], pkg.Panel) ? new this.clazz.CompList(list, true)
-                                                                                : new this.clazz.List(list, true);
-            }
-
-            /**
-             * Reference to combo box button component
-             * @attribute button
-             * @readOnly
-             * @type {zebkit.ui.Panel}
-             */
-
-            /**
-             * Reference to combo box content component
-             * @attribute content
-             * @readOnly
-             * @type {zebkit.ui.Panel}
-             */
-
-            /**
-             * Reference to combo box pad component
-             * @attribute winpad
-             * @readOnly
-             * @type {zebkit.ui.Panel}
-             */
-
-            /**
-             * Reference to selection view
-             * @attribute selectionView
-             * @readOnly
-             * @type {zebkit.ui.View}
-             */
-
-            this.button = this.content = this.winpad = null;
-
-            /**
-             * Maximal size the combo box height can have
-             * @attribute maxPadHeight
-             * @readOnly
-             * @type {Integer}
-             */
-            this.maxPadHeight = 0;
-
-            this.$lockListSelEvent = false;
-            this._ = new this.clazz.Listeners();
-            this.setList(list);
-
-            this.$super();
-
-            this.add("center", editable ? new this.clazz.EditableContentPan()
-                                        : new this.clazz.ReadonlyContentPan());
-            this.add("right", new this.clazz.Button());
-        },
-
         function focused(){
             this.$super();
             this.repaint();
@@ -666,20 +670,20 @@ zebkit.package("ui", function(pkg, Class) {
 
         function kidAdded(index,s,c){
             if (zebkit.instanceOf(c, pkg.Combo.ContentPan)) {
-                if (this.content != null) {
+                if (this.content !== null) {
                     throw new Error("Content panel is set");
                 }
 
                 if (c._ != null) c.bind(this);
                 this.content = c;
 
-                if (this.list != null) {
+                if (this.list !== null) {
                     c.comboValueUpdated(this, this.list.getSelected());
                 }
             }
 
             this.$super(index, s, c);
-            if (this.button == null && c._ != null && c._.fired != null){
+            if (this.button === null && c._ != null && c._.fired != null){
                 this.button = c;
                 this.button.bind(this);
             }
@@ -705,7 +709,7 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function setParent(p) {
-            if (p == null) this.hidePad();
+            if (p === null) this.hidePad();
             this.$super(p);
         }
     ]);

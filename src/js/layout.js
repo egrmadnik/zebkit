@@ -89,7 +89,7 @@ zebkit.package("layout", function(pkg, Class) {
      * @for  zebkit.layout
      */
     pkg.getTopParent = function(c){
-        for(; c != null && c.parent !== null; c = c.parent);
+        for(; c !== null && c.parent !== null; c = c.parent);
         return c;
     };
 
@@ -115,11 +115,16 @@ zebkit.package("layout", function(pkg, Class) {
             if (arguments.length < 4) p = null;
         }
 
-        while (c !== p) {
+        while (c !== null && c !== p) {
             x += c.x;
             y += c.y;
             c = c.parent;
         }
+
+        if (c === null) {
+            //throw new Error("Invalid params");
+        }
+
         return { x:x, y:y };
     };
 
@@ -183,7 +188,7 @@ zebkit.package("layout", function(pkg, Class) {
      */
     pkg.isAncestorOf = function(p, c){
         for(; c !== null && c !== p; c = c.parent);
-        return c != null;
+        return c !== null;
     };
 
     function eq_tree_class(node, name) {
@@ -430,7 +435,7 @@ zebkit.package("layout", function(pkg, Class) {
              */
             this.validateMetric = function(){
                 if (this.isValid === false) {
-                    if (this.recalc != null) this.recalc();
+                    if (typeof this.recalc === 'function') this.recalc();
                     this.isValid = true;
                 }
             };
@@ -631,9 +636,9 @@ zebkit.package("layout", function(pkg, Class) {
              * @return {zebkit.layout.Layoutable} an inserted children layoutable component
              * @method insert
              */
-            this.insert = function(i,constr,d){
-                if (d.constraints != null) constr = d.constraints;
-                else                       d.constraints = constr;
+            this.insert = function(i, constr, d){
+                if (d.constraints !== null) constr = d.constraints;
+                else                        d.constraints = constr;
 
                 if (i === this.kids.length) this.kids.push(d);
                 else this.kids.splice(i, 0, d);
@@ -664,7 +669,7 @@ zebkit.package("layout", function(pkg, Class) {
              * @chainable
              */
             this.setLocation = function (xx,yy){
-                if (xx != this.x || this.y != yy){
+                if (xx !== this.x || this.y !== yy){
                     var px = this.x, py = this.y;
                     this.x = xx;
                     this.y = yy;
@@ -705,7 +710,7 @@ zebkit.package("layout", function(pkg, Class) {
              * @chainable
              */
             this.setSize = function (w,h){
-                if (w != this.width || h != this.height){
+                if (w !== this.width || h !== this.height){
                     var pw = this.width, ph = this.height;
                     this.width = w;
                     this.height = h;
@@ -771,7 +776,7 @@ zebkit.package("layout", function(pkg, Class) {
             this.removeAt = function (i){
                 var obj = this.kids[i];
                 obj.setParent(null);
-                if (obj.constraints != null) obj.constraints = null;
+                if (obj.constraints !== null) obj.constraints = null;
                 this.kids.splice(i, 1);
                 if (this.kidRemoved != null) this.kidRemoved(i, obj);
                 this.invalidate();
@@ -815,7 +820,7 @@ zebkit.package("layout", function(pkg, Class) {
                 //     h = w;
                 // }
 
-                if (w != this.psWidth || h != this.psHeight){
+                if (w !== this.psWidth || h !== this.psHeight){
                     this.psWidth  = w;
                     this.psHeight = h;
                     this.invalidate();
@@ -909,7 +914,7 @@ zebkit.package("layout", function(pkg, Class) {
                 for(var i = 0;i < t.kids.length; i++){
                     var l = t.kids[i];
                     if (l.isVisible === true) {
-                        var ctr = l.constraints == null ? null : l.constraints;
+                        var ctr = l.constraints === null ? null : l.constraints;
 
                         if (ctr === "usePsSize") {
                             var ps = l.getPreferredSize();
@@ -1007,19 +1012,19 @@ zebkit.package("layout", function(pkg, Class) {
                     dim.height = d.height > dim.height ? d.height : dim.height;
                 }
 
-                if (center != null) {
+                if (center !== null) {
                     d = center.getPreferredSize();
                     dim.width += d.width;
                     dim.height = d.height > dim.height ? d.height : dim.height;
                 }
 
-                if (top != null) {
+                if (top !== null) {
                     d = top.getPreferredSize();
                     dim.width = d.width > dim.width ? d.width : dim.width;
                     dim.height += d.height + this.vgap;
                 }
 
-                if (bottom != null) {
+                if (bottom !== null) {
                     d = bottom.getPreferredSize();
                     dim.width = d.width > dim.width ? d.width : dim.width;
                     dim.height += d.height + this.vgap;
@@ -1045,13 +1050,13 @@ zebkit.package("layout", function(pkg, Class) {
                             case null:
                             case undefined:
                             case "center":
-                                if (center != null) {
+                                if (center !== null) {
                                     throw new Error("Component with center constraints is already defined");
                                 }
                                 center = kid;
                                 break;
                             case "top" :
-                                if (top != null) {
+                                if (top !== null) {
                                     throw new Error("Component with top constraints is already defined");
                                 }
                                 kid.setBounds(l, t, r - l, kid.getPreferredSize().height);
@@ -1059,7 +1064,7 @@ zebkit.package("layout", function(pkg, Class) {
                                 top = kid;
                                 break;
                             case "bottom":
-                                if (bottom != null) {
+                                if (bottom !== null) {
                                     throw new Error("Component with bottom constraints is already defined");
                                 }
                                 var bh = kid.getPreferredSize().height;
@@ -1068,13 +1073,13 @@ zebkit.package("layout", function(pkg, Class) {
                                 bottom = kid;
                                 break;
                             case "left":
-                                if (left != null) {
+                                if (left !== null) {
                                     throw new Error("Component with left constraints is already defined");
                                 }
                                 left = kid;
                                 break;
                             case "right":
-                                if (right != null) {
+                                if (right !== null) {
                                     throw new Error("Component with right constraints is already defined");
                                 }
                                 right = kid;
@@ -1084,18 +1089,18 @@ zebkit.package("layout", function(pkg, Class) {
                     }
                 }
 
-                if (right != null) {
+                if (right !== null) {
                     var rw = right.getPreferredSize().width;
                     right.setBounds(r - rw, t, rw, b - t);
                     r -= rw + this.hgap;
                 }
 
-                if (left != null) {
+                if (left !== null) {
                     left.setBounds(l, t, left.getPreferredSize().width, b - t);
                     l += left.width + this.hgap;
                 }
 
-                if (center != null) {
+                if (center !== null) {
                     center.setBounds(l, t, r - l, b - t);
                 }
             };
@@ -1187,8 +1192,8 @@ zebkit.package("layout", function(pkg, Class) {
                             hh = kid.height;
                         }
 
-                        var ctr = kid.constraints == null ? null : kid.constraints;
-                        if (ctr != null) {
+                        var ctr = kid.constraints === null ? null : kid.constraints;
+                        if (ctr !== null) {
                             var x = kid.x, y = kid.y, size = null;
 
                             if (ctr === "top" || ctr === "topRight" || ctr === "topLeft") {
@@ -1364,7 +1369,7 @@ zebkit.package("layout", function(pkg, Class) {
                     if (a.isVisible === true) {
 
                         var d = a.getPreferredSize(),
-                            ctr = a.constraints == null ? null : a.constraints;
+                            ctr = a.constraints === null ? null : a.constraints;
 
                         if (this.direction === "horizontal") {
                             ctr = ctr || this.ay;
@@ -1486,7 +1491,7 @@ zebkit.package("layout", function(pkg, Class) {
 
                     if (cc.isVisible === true){
                         var d      = cc.getPreferredSize(),
-                            constr = cc.constraints == null ? this.ax
+                            constr = cc.constraints === null ? this.ax
                                                             : cc.constraints;
 
                         cc.setSize    ((constr === "stretch") ? psw
@@ -1928,24 +1933,25 @@ zebkit.package("layout", function(pkg, Class) {
                     colSizes = this.calcCols(c),
                     rowSizes = this.calcRows(c),
                     top      = c.getTop(),
-                    left     = c.getLeft();
+                    left     = c.getLeft(),
+                    cc       = 0,
+                    i        = 0;
 
                 if (this.stretchCols) {
                     var dw = c.width - left - c.getRight() - colSizes[cols];
-                    for(var i = 0; i < cols; i ++ ) {
+                    for(i = 0; i < cols; i ++ ) {
                         colSizes[i] = colSizes[i] + (colSizes[i] !== 0 ? Math.floor((dw * colSizes[i]) / colSizes[cols]) : 0);
                     }
                 }
 
                 if (this.stretchRows) {
                     var dh = c.height - top - c.getBottom() - rowSizes[rows];
-                    for(var i = 0; i < rows; i++) {
+                    for(i = 0; i < rows; i++) {
                         rowSizes[i] = rowSizes[i] + (rowSizes[i] !== 0 ? Math.floor((dh * rowSizes[i]) / rowSizes[rows]) : 0);
                     }
                 }
 
-                var cc = 0;
-                for (var i = 0; i < rows && cc < c.kids.length; i++) {
+                for (i = 0; i < rows && cc < c.kids.length; i++) {
                     var xx = left;
                     for(var j = 0;j < cols && cc < c.kids.length; j++, cc++){
                         var l = c.kids[cc];

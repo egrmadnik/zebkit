@@ -36,6 +36,8 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.startIn = 400;
 
+            this.$repeatTask = null;
+
             /**
              * Set the mode the button has to fire events. Button can fire
              * event after it has been unpressed or immediately when it has
@@ -52,7 +54,10 @@ zebkit.package("ui", function(pkg, Class) {
              * @method setFireParams
              */
             this.setFireParams = function (b, firePeriod, startIn){
-                if (this.repeatTask != null) this.repeatTask.shutdown();
+                if (this.$repeatTask !== null) {
+                    this.$repeatTask.shutdown();
+                }
+
                 this.isFireByPress = b;
                 this.firePeriod = firePeriod;
                 if (arguments.length > 2) this.startIn = startIn;
@@ -73,7 +78,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                     if (this.firePeriod > 0) {
                         var $this = this;
-                        this.repeatTask = zebkit.util.tasksSet.run(function() {
+                        this.$repeatTask = zebkit.util.tasksSet.run(function() {
                                 if ($this.state === "pressed.over") {
                                     $this.fire();
                                 }
@@ -84,8 +89,8 @@ zebkit.package("ui", function(pkg, Class) {
                     }
                 }
             } else {
-                if (this.firePeriod > 0 && this.repeatTask != null) {
-                    this.repeatTask.shutdown();
+                if (this.firePeriod > 0 && this.$repeatTask !== null) {
+                    this.$repeatTask.shutdown();
                 }
 
                 if (n === "over" && (o === "pressed.over" && this.isFireByPress === false)) {
@@ -131,10 +136,10 @@ zebkit.package("ui", function(pkg, Class) {
 
             var clz = this.clazz;
             this.setView({
-                "out"          : new clz.ArrowView(this.direction, clz.colors["out"]),
-                "over"         : new clz.ArrowView(this.direction, clz.colors["over"]),
+                "out"          : new clz.ArrowView(this.direction, clz.colors.out),
+                "over"         : new clz.ArrowView(this.direction, clz.colors.over),
                 "pressed.over" : new clz.ArrowView(this.direction, clz.colors["pressed.over"]),
-                "disabled"     : new clz.ArrowView(this.direction, clz.colors["disabled"])
+                "disabled"     : new clz.ArrowView(this.direction, clz.colors.disabled)
             });
             this.$super();
             this.syncState(this.state, this.state);

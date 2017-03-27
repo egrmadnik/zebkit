@@ -15,7 +15,7 @@ zebkit.package("ui", function(pkg, Class) {
             var size = Number(s);
             if (isNaN(size)) {
                 var m = s.match(/^([0-9]+)(%)$/);
-                if (m != null && m[1] != null && m[2] != null) {
+                if (m !== null && m[1] != null && m[2] != null) {
                     size = Math.floor((defaultHeight * parseInt(m[1], 10)) / 100);
                     return size + "px";
                 }
@@ -97,7 +97,7 @@ zebkit.package("ui", function(pkg, Class) {
                 this.size = this.clazz.size + "px";
             }
 
-            if (this.s == null) {
+            if (this.s === null) {
                 this.s = ((this.style != null) ? this.style + " ": "") +
                          this.size + " " +
                          this.family;
@@ -131,6 +131,8 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function $prototype(clazz) {
+            this.s = null;
+
             this.family = clazz.family,
             this.style  = clazz.style;
             this.size   = clazz.size;
@@ -198,7 +200,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.resize = function(size) {
                 var nsize = decodeSize(size, this.height);
-                if (nsize == null) {
+                if (nsize === null) {
                     throw new Error("Invalid font size : " + size);
                 }
                 return new this.clazz(this.family, this.style, nsize);

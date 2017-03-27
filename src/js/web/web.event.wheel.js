@@ -9,41 +9,6 @@ zebkit.package("web", function(pkg, Class) {
      *  @constructor
      */
     pkg.MouseWheelSupport = Class([
-        function $clazz() {
-            this.dxZoom = this.dyZoom = 20;
-            this.dxNorma = this.dyNorma = 80;
-
-            this.$META = {
-                wheel: {
-                    dy  : "deltaY",
-                    dx  : "deltaX",
-                    dir : 1,
-                    test: function() {
-                        return "WheelEvent" in window;
-                    }
-                },
-                mousewheel: {
-                    dy  : "wheelDelta",
-                    dx  : "wheelDeltaX",
-                    dir : -1,
-                    test: function() {
-                        return document.onmousewheel !== undefined;
-                    }
-                },
-                DOMMouseScroll: {
-                    dy  : "detail",
-                    dir : 1,
-                    test: function() {
-                        return true;
-                    }
-                }
-            };
-        },
-
-        function $prototype() {
-            this.naturalDirection = true;
-        },
-
         function(element, destination) {
             var META = this.clazz.$META;
             for(var k in META) {
@@ -79,6 +44,41 @@ zebkit.package("web", function(pkg, Class) {
                     break;
                 }
             }
+        },
+
+        function $clazz() {
+            this.dxZoom = this.dyZoom = 20;
+            this.dxNorma = this.dyNorma = 80;
+
+            this.$META = {
+                wheel: {
+                    dy  : "deltaY",
+                    dx  : "deltaX",
+                    dir : 1,
+                    test: function() {
+                        return "WheelEvent" in window;
+                    }
+                },
+                mousewheel: {
+                    dy  : "wheelDelta",
+                    dx  : "wheelDeltaX",
+                    dir : -1,
+                    test: function() {
+                        return document.onmousewheel !== undefined;
+                    }
+                },
+                DOMMouseScroll: {
+                    dy  : "detail",
+                    dir : 1,
+                    test: function() {
+                        return true;
+                    }
+                }
+            };
+        },
+
+        function $prototype() {
+            this.naturalDirection = true;
         }
     ]);
 });

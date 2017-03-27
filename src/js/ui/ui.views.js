@@ -73,11 +73,11 @@ zebkit.package("ui", function(pkg, Class) {
         }
 
         if (zebkit.isString(v)) {
-            if (zebkit.util.rgb[v] != null) {
+            if (typeof zebkit.util.rgb[v] !== 'undefined') {
                 return zebkit.util.rgb[v];
             }
 
-            if (pkg.borders != null && pkg.borders[v] != null) {
+            if (typeof pkg.borders !== 'undefined' && typeof pkg.borders[v] !== 'undefined') {
                 return pkg.borders[v];
             }
 
@@ -674,7 +674,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.fillColor = null;
 
             this.paint = function(g,x,y,w,h,d) {
-                if (this.color != null && this.width > 0) {
+                if (this.color !== null && this.width > 0) {
                     this.outline(g,x,y,w,h,d);
                     g.setColor(this.color);
                     g.stroke();
@@ -728,17 +728,17 @@ zebkit.package("ui", function(pkg, Class) {
              *      {width:<Integer>, height: <Integer>}
              */
             this.getPreferredSize = function(){
-                return this.target == null || this.target.isVisible === false ? { width:0, height:0 }
-                                                                              : this.target.getPreferredSize();
+                return this.target === null || this.target.isVisible === false ? { width:0, height:0 }
+                                                                               : this.target.getPreferredSize();
             };
 
             this.paint = function(g,x,y,w,h,d){
                 var c = this.target;
-                if (c != null && c.isVisible) {
+                if (c !== null && c.isVisible) {
                     var prevW = -1, prevH = 0, parent = null;
                     if (w !== c.width || h !== c.height) {
 
-                        if (c.getCanvas() != null) {
+                        if (c.getCanvas() !== null) {
                             parent = c.parent;
                             c.parent = null;
                         }
@@ -813,6 +813,7 @@ zebkit.package("ui", function(pkg, Class) {
 
         function $prototype() {
             this.orient = "vertical";
+            this.gradient = null;
 
             this.paint = function(g,x,y,w,h,dd){
                 var d = (this.orient === "horizontal" ? [0,1]: [1,0]),
@@ -821,8 +822,8 @@ zebkit.package("ui", function(pkg, Class) {
                     x2 = (x + w - 1) * d[1],
                     y2 = (y + h - 1) * d[0];
 
-                if (this.gradient == null || this.gx1 != x1 ||
-                    this.gx2 != x2        || this.gy1 != y1 ||
+                if (this.gradient === null || this.gx1 != x1 ||
+                    this.gx2 != x2         || this.gy1 != y1 ||
                     this.gy2 != y2                             )
                 {
                     this.gx1 = x1;
@@ -928,7 +929,7 @@ zebkit.package("ui", function(pkg, Class) {
 
         function $prototype() {
             this.paint = function(g,x,y,w,h,d) {
-                if (this.target != null && this.target.complete === true && this.target.naturalWidth > 0 && w > 0 && h > 0){
+                if (this.target !== null && this.target.complete === true && this.target.naturalWidth > 0 && w > 0 && h > 0){
                     if (this.width > 0) {
                         g.drawImage(this.target, this.x, this.y,
                                     this.width, this.height, x, y, w, h);
@@ -940,7 +941,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.getPreferredSize = function() {
                 var img = this.target;
-                return (img == null ||
+                return (img === null ||
                         img.naturalWidth <= 0 ||
                         img.complete !== true) ? { width:0, height:0 }
                                                : (this.width > 0) ? { width:this.width, height:this.height }
@@ -968,7 +969,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.pattern = null;
 
             this.paint = function(g,x,y,w,h,d) {
-                if (this.pattern == null) {
+                if (this.pattern === null) {
                     this.pattern = g.createPattern(this.target, 'repeat');
                 }
                 g.beginPath();
@@ -1149,7 +1150,7 @@ zebkit.package("ui", function(pkg, Class) {
     */
     pkg.ViewSet = Class(pkg.CompositeView, [
         function(args) {
-            if (args == null) {
+            if (arguments.length === 0 || args === null) {
                 throw new Error("" + args);
             }
 
@@ -1180,7 +1181,7 @@ zebkit.package("ui", function(pkg, Class) {
 
         function $prototype() {
             this.paint = function(g,x,y,w,h,d) {
-                if (this.activeView != null) {
+                if (this.activeView !== null) {
                     this.activeView.paint(g, x, y, w, h, d);
                 }
             };
@@ -1195,7 +1196,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.activate = function (id) {
                 var old = this.activeView;
 
-                if (id == null) {
+                if (id === null) {
                     return (this.activeView = null) != old;
                 }
 
@@ -1242,9 +1243,9 @@ zebkit.package("ui", function(pkg, Class) {
      */
     pkg.LineView = Class(pkg.View, [
         function(side, color, lineWidth) {
-            if (side != null)      this.side      = side;
-            if (color != null)     this.color     = color;
-            if (lineWidth != null) this.lineWidth = lineWidth;
+            if (arguments.length > 0) this.side      = side;
+            if (arguments.length > 1) this.color     = color;
+            if (arguments.length > 2) this.lineWidth = lineWidth;
         },
 
         function $prototype() {
@@ -1302,9 +1303,9 @@ zebkit.package("ui", function(pkg, Class) {
 
     pkg.ArrowView = Class(pkg.View, [
         function (d, col, w) {
-            if (d   != null) this.direction = d;
-            if (col != null) this.color = col;
-            if (w   != null) this.width = this.height = w;
+            if (arguments.length > 0) this.direction = d;
+            if (arguments.length > 1) this.color = col;
+            if (arguments.length > 2) this.width = this.height = w;
         },
 
         function $prototype() {
@@ -1424,14 +1425,14 @@ zebkit.package("ui", function(pkg, Class) {
              * @method setFont
              */
             this.setFont = function(f) {
-                if (zebkit.instanceOf(f, pkg.Font) === false && f != null) {
+                if (zebkit.instanceOf(f, pkg.Font) === false && f !== null) {
                     f = zebkit.newInstance(pkg.Font, arguments);
                 }
 
                 if (f != this.font) {
                     this.font = f;
 
-                    if (this.owner != null && this.owner.isValid === true) {
+                    if (this.owner !== null && this.owner.isValid === true) {
                         this.owner.invalidate();
                     }
 
@@ -1483,7 +1484,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.targetWasChanged = function(o, n) {
-                if (this.owner != null && this.owner.isValid) {
+                if (this.owner !== null && this.owner.isValid) {
                     this.owner.invalidate();
                 }
 
@@ -1538,11 +1539,11 @@ zebkit.package("ui", function(pkg, Class) {
                     g.setFont(this.font);
                 }
 
-                if (d != null && d.getStartSelection != null) {
+                if (d !== null && d.getStartSelection != null) {
                     var startSel = d.getStartSelection(),
                         endSel   = d.getEndSelection();
 
-                    if (startSel != null && endSel != null && startSel.col !== endSel.col && d.selectionView != null) {
+                    if (startSel !== null && endSel !== null && startSel.col !== endSel.col && d.selectionView != null) {
                         d.selectionView.paint(g, x + this.font.charsWidth(this.target, 0, startSel.col),
                                                  y,
                                                  this.font.charsWidth(this.target,
@@ -1557,9 +1558,9 @@ zebkit.package("ui", function(pkg, Class) {
                     g.fillStyle = this.color;
                 }
 
-                if (d != null && d.isEnabled === false) {
-                    g.fillStyle = d != null && d.disabledColor != null ? d.disabledColor
-                                                                       : this.clazz.disabledColor;
+                if (d !== null && d.isEnabled === false) {
+                    g.fillStyle = d !== null && d.disabledColor != null ? d.disabledColor
+                                                                        : this.clazz.disabledColor;
                 }
 
                 g.fillText(this.target, x, y);
@@ -1612,7 +1613,7 @@ zebkit.package("ui", function(pkg, Class) {
                  * @readOnly
                  * @type {zebkit.ui.Font}
                  */
-                this.font = font != null ? font : this.clazz.font;
+                this.font = arguments.length > 1 ? font : this.clazz.font;
 
                 /**
                  * Color to be used to render the target string
@@ -1620,7 +1621,7 @@ zebkit.package("ui", function(pkg, Class) {
                  * @attribute color
                  * @type {String}
                  */
-                this.color = color != null ? color : this.clazz.color;
+                this.color = arguments.length > 2 ? color : this.clazz.color;
             };
         }
     ]);
@@ -1680,7 +1681,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method getValue
              */
             this.getValue = function(){
-                return this.target == null ? null : this.target.getValue();
+                return this.target === null ? null : this.target.getValue();
             };
 
             /**
@@ -1708,26 +1709,24 @@ zebkit.package("ui", function(pkg, Class) {
              * @method recalc
              */
             this.recalc = function() {
-                if (this.invLines > 0 && this.target != null){
+                if (this.invLines > 0 && this.target !== null){
                     var model = this.target;
-                    if (model != null) {
-                        if (this.invLines > 0) {
-                            for(var i = this.startInvLine + this.invLines - 1; i >= this.startInvLine; i--) {
-                                model.$lineTags(i).$lineWidth = this.font.stringWidth(this.getLine(i));
-                            }
-                            this.startInvLine = this.invLines = 0;
+                    if (this.invLines > 0) {
+                        for(var i = this.startInvLine + this.invLines - 1; i >= this.startInvLine; i--) {
+                            model.$lineTags(i).$lineWidth = this.font.stringWidth(this.getLine(i));
                         }
-
-                        this.textWidth = 0;
-                        var size = model.getLines();
-                        for(var i = 0; i < size; i++){
-                            var len = model.$lineTags(i).$lineWidth;
-                            if (len > this.textWidth) {
-                                this.textWidth = len;
-                            }
-                        }
-                        this.textHeight = this.getLineHeight() * size + (size - 1) * this.lineIndent;
+                        this.startInvLine = this.invLines = 0;
                     }
+
+                    this.textWidth = 0;
+                    var size = model.getLines();
+                    for(var i = 0; i < size; i++){
+                        var len = model.$lineTags(i).$lineWidth;
+                        if (len > this.textWidth) {
+                            this.textWidth = len;
+                        }
+                    }
+                    this.textHeight = this.getLineHeight() * size + (size - 1) * this.lineIndent;
                 }
             };
 
@@ -1756,14 +1755,14 @@ zebkit.package("ui", function(pkg, Class) {
                         this.invLines = 1;
                     }
 
-                    if (this.owner != null && this.owner.isValid !== true) {
+                    if (this.owner !== null && this.owner.isValid !== true) {
                         this.owner.invalidate();
                     }
                 } else {
                     if (this.invLines > 0){
                         if (ful <= this.startInvLine) this.startInvLine += (updatedLines - 1);
-                        else {
-                            if (ful < (this.startInvLine + size)) size += (updatedLines - 1);
+                        else if (ful < (this.startInvLine + size)) {
+                            size += (updatedLines - 1);
                         }
                     }
                     this.invalidate(ful, updatedLines);
@@ -1787,7 +1786,7 @@ zebkit.package("ui", function(pkg, Class) {
                     }
                 }
 
-                if (size > 0 && (this.startInvLine != start || size != this.invLines)) {
+                if (size > 0 && (this.startInvLine !== start || size !== this.invLines)) {
                     if (this.invLines === 0){
                         this.startInvLine = start;
                         this.invLines = size;
@@ -1797,14 +1796,14 @@ zebkit.package("ui", function(pkg, Class) {
                         this.invLines     = Math.max(start + size, e) - this.startInvLine;
                     }
 
-                    if (this.owner != null) {
+                    if (this.owner !== null) {
                         this.owner.invalidate();
                     }
                 }
             };
 
             this.getPreferredSize = function(){
-                if (this.invLines > 0 && this.target != null) {
+                if (this.invLines > 0 && this.target !== null) {
                     this.recalc();
                 }
                 return { width:this.textWidth, height:this.textHeight };
@@ -1841,17 +1840,17 @@ zebkit.package("ui", function(pkg, Class) {
                             g.setFont(this.font);
                         }
 
-                        if (d == null || d.isEnabled === true){
+                        if (d === null || d.isEnabled === true){
                             // save few milliseconds
                             if (this.color != g.fillStyle) {
                                 g.fillStyle = this.color;
                             }
 
                             var p1 = null, p2 = null, bsel = false;
-                            if (lines > 0 && d != null && d.getStartSelection != null) {
+                            if (lines > 0 && d !== null && d.getStartSelection != null) {
                                 p1   = d.getStartSelection();
                                 p2   = d.getEndSelection();
-                                bsel = p1 != null && (p1.row !== p2.row || p1.col !== p2.col);
+                                bsel = p1 !== null && (p1.row !== p2.row || p1.col !== p2.col);
                             }
 
                             for(var i = 0; i < lines; i++){
@@ -1884,8 +1883,8 @@ zebkit.package("ui", function(pkg, Class) {
                                 y += lilh;
                             }
                         } else {
-                            var dcol = d != null && d.disabledColor != null ? d.disabledColor
-                                                                            : pkg.TextRender.disabledColor;
+                            var dcol = d !== null && d.disabledColor != null ? d.disabledColor
+                                                                             : pkg.TextRender.disabledColor;
 
                             for(var i = 0;i < lines; i++) {
                                 g.setColor(dcol);
@@ -1951,8 +1950,8 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function targetWasChanged(o,n){
-            if (o != null) o.unbind(this);
-            if (n != null) {
+            if (o !== null) o.unbind(this);
+            if (n !== null) {
                 n.bind(this);
             }
             this.$super(o, n);
@@ -2133,9 +2132,9 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setEchoChar = function(ch){
-                if (this.echo != ch){
+                if (this.echo !== ch){
                     this.echo = ch;
-                    if (this.target != null) {
+                    if (this.target !== null) {
                         this.invalidate(0, this.target.getLines());
                     }
                 }
@@ -2385,7 +2384,7 @@ zebkit.package("ui", function(pkg, Class) {
                 var xx = x + w, yy = y + h;
                 if (d.getTitleInfo != null) {
                     var r = d.getTitleInfo();
-                    if (r != null) {
+                    if (r !== null) {
                         switch(r.orient) {
                             case "bottom":
                                 var bottom = this.target.getBottom();
@@ -2423,7 +2422,7 @@ zebkit.package("ui", function(pkg, Class) {
                     }
                 }
 
-                if (this.target != null && this.target.outline != null) {
+                if (this.target !== null && this.target.outline != null) {
                    b = this.target.outline(g, x, y, xx - x, yy - y, d);
                    if (b === true) return b;
                 }
@@ -2445,7 +2444,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.paint = function(g,x,y,w,h,d){
                 if (d.getTitleInfo != null){
                     var r = d.getTitleInfo();
-                    if (r != null) {
+                    if (r !== null) {
                         var xx = x + w, yy = y + h, t = g.$states[g.$curState];
                         switch (r.orient) {
                             case "top":

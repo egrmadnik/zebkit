@@ -316,7 +316,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
 
                 this.vVisibility = function(){
                     var va = ui.$cvp(this, {});
-                    if (va == null) {
+                    if (va === null) {
                         this.visibleArea = null;
                         this.visibility.fr = null; // say no visible cells are available
                         return;
@@ -1262,7 +1262,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                     }
 
                     for(i = 0; i < cols; i++ ){
-                        for(var j = 0;j < rows; j++ ){
+                        for(var j = 0; j < rows; j++ ){
                             var v = this.provider.getView(this, j, i, this.model.get(j, i));
                             if (v != null){
                                 var ps = v.getPreferredSize();

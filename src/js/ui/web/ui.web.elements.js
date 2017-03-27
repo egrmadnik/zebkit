@@ -10,6 +10,32 @@ zebkit.package("ui.web", function(pkg, Class) {
      * @extends {zebkit.ui.HtmlElement}
      */
     pkg.HtmlCanvas = Class(pkg.HtmlElement,  [
+        function(e) {
+            if (arguments.length > 0 && e !== null && e.tagName !== "CANVAS") {
+                throw new Error("Invalid element '" + e + "'");
+            }
+
+            /**
+             * Keeps rectangular "dirty" area of the canvas component
+             * @private
+             * @attribute $da
+             * @type {Object}
+             *       { x:Integer, y:Integer, width:Integer, height:Integer }
+             */
+            this.$da = { x: 0, y: 0, width: -1, height: 0 };
+
+            this.$super(arguments.length === 0  || e === null ? "canvas" : e);
+
+            // let HTML Canvas be WEB event transparent
+            this.$container.style["pointer-events"] = "none";
+
+            // add class to canvas if this element has been created
+            if (e == null) {
+                // prevent canvas selection
+                this.element.onselectstart = function() { return false; };
+            }
+        },
+
         function $clazz() {
             this.$ContextMethods = {
                 reset : function(w, h) {
@@ -166,7 +192,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                 this.$scaleX = 1;
                 this.$scaleY = 1;
                 this.$rotateValue = 0;
-                if (this.$context != null) {
+                if (this.$context !== null) {
                     this.$context = zebkit.web.$canvas(this.element, this.width, this.height, true);
                     this.$context.reset(this.width, this.height);
                 }
@@ -234,32 +260,6 @@ zebkit.package("ui.web", function(pkg, Class) {
                 }
                 return this;
             };
-        },
-
-        function(e) {
-            if (e != null && (e.tagName == null || e.tagName !== "CANVAS")) {
-                throw new Error("Invalid element '" + e + "'");
-            }
-
-            /**
-             * Keeps rectangular "dirty" area of the canvas component
-             * @private
-             * @attribute $da
-             * @type {Object}
-             *       { x:Integer, y:Integer, width:Integer, height:Integer }
-             */
-            this.$da = { x: 0, y: 0, width: -1, height: 0 };
-
-            this.$super(e == null ? "canvas" : e);
-
-            // let HTML Canvas be WEB event transparent
-            this.$container.style["pointer-events"] = "none";
-
-            // add class to canvas if this element has been created
-            if (e == null) {
-                // prevent canvas selection
-                this.element.onselectstart = function() { return false; };
-            }
         }
     ]);
 
@@ -290,7 +290,7 @@ zebkit.package("ui.web", function(pkg, Class) {
              * @type {zebkit.ui.Window}
              * @readOnly
              */
-            this.target = (target == null ? new ui.Window() : target);
+            this.target = (arguments.length === 0 ? new ui.Window() : target);
 
             var $this = this;
             target.getWinContainer = function() {
@@ -405,7 +405,7 @@ zebkit.package("ui.web", function(pkg, Class) {
         function(text, href) {
             this.$super("a");
             this.setContent(text);
-            this.setAttribute("href", href == null ? "#": href);
+            this.setAttribute("href", arguments.length < 2 ? "#": href);
             this._ = new zebkit.util.Listeners();
             var $this = this;
             this.element.onclick = function(e) {

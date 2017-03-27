@@ -90,7 +90,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             if (zebkit.isString(c)) {
                 var m = c.match(/(\s*\@\(.*\)\s*)?(\s*\[\s*\]|\s*\[\s*x\s*\]|\s*\(\s*x\s*\)|\s*\(\s*\))?\s*(.*)/);
-                if (m == null) {
+                if (m === null) {
                     throw new Error("Invalid menu item: " + c);
                 }
 
@@ -120,7 +120,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                 c = m[3];
                 m = c.match(/(.*)\s*\[\s*@([a-zA-Z_][a-zA-Z0-9_]+)\s*]\s*/);
-                if (m != null) {
+                if (m !== null) {
                     this.id = m[2].trim();
                     c       = m[1].trim();
                 } else {
@@ -229,7 +229,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @protected
              */
             this.getContent = function() {
-                return this.kids[1];
+                return this.kids.length > 0 ? this.kids[1] : null;
             };
 
             /**
@@ -239,7 +239,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @protected
              */
             this.getSub = function() {
-                return this.kids[2];
+                return this.kids.length > 1 ? this.kids[2] : null;
             };
 
             /**
@@ -253,7 +253,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.activateSub = function(b) {
                 var kid = this.getSub();
                 kid.setState(b ? "arrow" : "*");
-                if (this.parent != null && this.parent.noSubIfEmpty === true) {
+                if (this.parent !== null && this.parent.noSubIfEmpty === true) {
                     kid.setVisible(b);
                 }
             };
@@ -283,21 +283,21 @@ zebkit.package("ui", function(pkg, Class) {
                     eh      = target.height - t - target.getBottom(),
                     ew      = target.width  - l - target.getRight();
 
-                if (left != null && left.isVisible === true) {
+                if (left !== null && left.isVisible === true) {
                     left.toPreferredSize();
                     left.setLocation(l, t + Math.floor((eh - left.height)/2));
                     l += this.gap + left.width;
                     ew -= (this.gap + left.width);
                 }
 
-                if (right != null && right.isVisible === true) {
+                if (right !== null && right.isVisible === true) {
                     right.toPreferredSize();
                     right.setLocation(target.width - target.getRight() - right.width,
                                       t + Math.floor((eh - right.height)/2));
                     ew -= (this.gap + right.width);
                 }
 
-                if (content != null && content.isVisible === true) {
+                if (content !== null && content.isVisible === true) {
                     content.toPreferredSize();
                     if (content.width > ew) {
                         content.setSize(ew, content.height);
@@ -355,7 +355,7 @@ zebkit.package("ui", function(pkg, Class) {
          */
         function setParent(p) {
             this.$super(p);
-            if (p != null && p.noSubIfEmpty === true) {
+            if (p !== null && p.noSubIfEmpty === true) {
                 this.getSub().setVisible(false);
             }
         },
@@ -445,10 +445,10 @@ zebkit.package("ui", function(pkg, Class) {
             this.getMenuItem = function(i) {
                 if (zebkit.isString(i)) {
                     var item = this.find(i);
-                    if (item != null) return item;
+                    if (item !== null) return item;
                     for (var k in this.menus) {
                         item = this.menus[k].getMenuItem(i);
-                        if (item != null) return item;
+                        if (item !== null) return item;
                     }
                 }
                 return this.kids[i];
@@ -482,8 +482,13 @@ zebkit.package("ui", function(pkg, Class) {
              * is defined for the given menu item
              * @method getMenuAt
              */
-            this.getMenuAt = function(index){
-                return this.menus[this.kids[index]];
+            this.getMenuAt = function(index) {
+                if (index < this.kids.length) {
+                    var hash = this.kids[index].$hash$;
+                    return this.menus.hasOwnProperty(hash) ? this.menus[hash] : null;
+                } else {
+                    return null;
+                }
             };
 
             /**
@@ -506,7 +511,7 @@ zebkit.package("ui", function(pkg, Class) {
                 var p = this.kids[i];
                 if (p.activateSub != null) {
                     var sub = this.menus[p];
-                    if (m != null) {
+                    if (m !== null) {
                         if (sub == null) {
                             p.activateSub(true);
                         }
@@ -518,6 +523,10 @@ zebkit.package("ui", function(pkg, Class) {
                 // if the menu is shown and the menu item is selected
                 if (this.parent !== null && i === this.selectedIndex) {
                     this.select(-1);
+                }
+
+                if (typeof p.$hash$ === 'undefined') {
+                    throw new Error("Invalid key");
                 }
 
                 this.menus[p] = m;
@@ -533,7 +542,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.indexMenuOf = function(menu) {
                 for(var i = 0; i < this.kids.length; i++) {
-                    if (this.menus[this.kids[i]] == menu) {
+                    if (this.menus[this.kids[i]] === menu) {
                         return i;
                     }
                 }
@@ -559,7 +568,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @protected
              */
             this.$topMenu = function() {
-                if (this.parent != null) {
+                if (this.parent !== null) {
                     var t = this, p = null;
 
                     while ((p = t.$parentMenu) != null) t = p;
@@ -588,9 +597,9 @@ zebkit.package("ui", function(pkg, Class) {
              * @protected
              */
             this.$hideMenu = function() {
-                if (this.parent != null) {
+                if (this.parent !== null) {
                     var ch = this.$childMenu();
-                    if (ch != null) {
+                    if (ch !== null) {
                         ch.$hideMenu();
                     }
 
@@ -607,10 +616,10 @@ zebkit.package("ui", function(pkg, Class) {
              * @protected
              */
             this.$childMenu = function() {
-                if (this.parent != null) {
+                if (this.parent !== null) {
                     for(var k in this.menus) {
                         var m = this.menus[k];
-                        if (m.$parentMenu == this) {
+                        if (m.$parentMenu === this) {
                             return m;
                         }
                     }
@@ -633,7 +642,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.triggerSelectionByPos = function(i) {
-                return this.getMenuAt(i) != null && this.$triggeredByPointer;
+                return this.getMenuAt(i) !== null && this.$triggeredByPointer;
             };
         },
 
@@ -645,7 +654,7 @@ zebkit.package("ui", function(pkg, Class) {
          */
         function keyPressed(e){
             if (e.code === "Escape") {
-                if (this.parent != null) {
+                if (this.parent !== null) {
                     var p = this.$parentMenu;
                     this.$canceled(this);
                     this.$hideMenu();
@@ -665,7 +674,7 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function setParent(p) {
-            if (p != null) {
+            if (p !== null) {
                 this.select(-1);
                 this.position.setOffset(null);
             } else {
@@ -707,7 +716,7 @@ zebkit.package("ui", function(pkg, Class) {
                 // hide previously shown sub menu if position has been re-newed
                 if (this.selectedIndex >= 0  && off != this.selectedIndex) {
                     var sub = this.getMenuAt(this.selectedIndex);
-                    if (sub != null) {
+                    if (sub !== null) {
                         sub.$hideMenu();
                         rs = -1; // request to clear selection
                         this.requestFocus();
@@ -715,7 +724,7 @@ zebkit.package("ui", function(pkg, Class) {
                 }
 
                 // request fire selection if the menu is shown and position has moved to new place
-                if (this.parent != null && off != this.selectedIndex && this.isItemSelectable(off)) {
+                if (this.parent !== null && off != this.selectedIndex && this.isItemSelectable(off)) {
                     if (this.triggerSelectionByPos(off)) rs = off;
                 }
 
@@ -728,13 +737,13 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function fireSelected(prev) {
-            if (this.parent != null) {
+            if (this.parent !== null) {
                 var sub = null;
 
                 if (this.selectedIndex >= 0) {
                     sub = this.getMenuAt(this.selectedIndex);
-                    if (sub != null) { // handle sub menu here
-                        if (sub.parent != null) {
+                    if (sub !== null) { // handle sub menu here
+                        if (sub.parent !== null) {
                             // hide menu since it has been already shown
                             sub.$hideMenu();
                         } else {
@@ -753,7 +762,7 @@ zebkit.package("ui", function(pkg, Class) {
                         // an atomic menu, what means a menu item has been selected
                         // remove this menu an all parents menus
                         var top = this.$topMenu();
-                        if (top != null) {
+                        if (top !== null) {
                             top.$hideMenu();
                         }
                     }
@@ -765,7 +774,7 @@ zebkit.package("ui", function(pkg, Class) {
                 } else if (prev >= 0) {
                     // hide child menus if null item has been selected
                     sub = this.getMenuAt(prev);
-                    if (sub != null && sub.parent != null) {
+                    if (sub !== null && sub.parent !== null) {
                         // hide menu since it has been already shown
                         sub.$hideMenu();
                     }
@@ -854,7 +863,7 @@ zebkit.package("ui", function(pkg, Class) {
             // making menu bar not removable from its layer by overriding the method
             this.$hideMenu = function() {
                 var child = this.$childMenu();
-                if (child != null) {
+                if (child !== null) {
                     child.$hideMenu();
                 }
 

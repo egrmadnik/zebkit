@@ -11,12 +11,12 @@ zebkit.package("data", function(pkg, Class) {
 
     pkg.descent = function descent(a, b) {
         if (a == null) return 1;
-        return (zebkit.isString(a)) ? a.localeCompare(b) : a - b;
+        return zebkit.isString(a) ? a.localeCompare(b) : a - b;
     };
 
     pkg.ascent = function ascent(a, b) {
         if (b == null) return 1;
-        return (zebkit.isString(b)) ? b.localeCompare(a) : b - a;
+        return zebkit.isString(b) ? b.localeCompare(a) : b - a;
     };
 
     /**
@@ -350,7 +350,7 @@ zebkit.package("data", function(pkg, Class) {
              */
             this.lines = [ new this.clazz.Line("") ];
             this._ = new this.clazz.Listeners();
-            this.setValue(s == null ? "" : s);
+            this.setValue(arguments.length === 0 || s === null ? "" : s);
         }
     ]);
 
@@ -415,7 +415,7 @@ zebkit.package("data", function(pkg, Class) {
                                                                                          : s.length;
                 if (l !== 0) {
                     var nl = this.buf.substring(0, offset) + s.substring(0, l) + this.buf.substring(offset);
-                    if (this.validate == null || this.validate(nl)) {
+                    if (typeof this.validate !== 'function' || this.validate(nl)) {
                         this.buf = nl;
                         if (l > 0) {
                             this._.textUpdated(this, true, offset, l, 0, 1);
@@ -431,7 +431,7 @@ zebkit.package("data", function(pkg, Class) {
                     var nl = this.buf.substring(0, offset) +
                              this.buf.substring(offset + size);
 
-                    if (nl.length !== this.buf.length && (this.validate == null || this.validate(nl))) {
+                    if (nl.length !== this.buf.length && (typeof this.validate !== 'function' || this.validate(nl))) {
                         this.buf = nl;
                         this._.textUpdated(this, false, offset, size, 0, 1);
                         return true;
@@ -455,7 +455,7 @@ zebkit.package("data", function(pkg, Class) {
                     text = text.substring(0, i);
                 }
 
-                if ((this.buf == null || this.buf !== text) && (this.validate == null || this.validate(text))) {
+                if ((this.buf == null || this.buf !== text) && (typeof this.validate !== 'function'  || this.validate(text))) {
                     if (this.buf != null && this.buf.length > 0) {
                         this._.textUpdated(this, false, 0, this.buf.length, 0, 1);
                     }
@@ -501,7 +501,7 @@ zebkit.package("data", function(pkg, Class) {
 
             this.buf = "";
             this._ = new this.clazz.Listeners();
-            this.setValue(s == null ? "" : s);
+            this.setValue(arguments.length === 0 || s === null ? "" : s);
         }
     ]);
 
@@ -716,7 +716,9 @@ zebkit.package("data", function(pkg, Class) {
              * @readOnly
              */
             this.value = v;
+        },
 
+        function $prototype() {
             /**
              * Reference to a parent item
              * @attribute parent
@@ -724,6 +726,7 @@ zebkit.package("data", function(pkg, Class) {
              * @default undefined
              * @readOnly
              */
+             this.parent = null;
         }
     ]).hashable();
 
@@ -804,6 +807,22 @@ zebkit.package("data", function(pkg, Class) {
      * @param {zebkit.data.Item}  item an item that has been inserted into the tree model
      */
     pkg.TreeModel = Class([
+        function(r) {
+            if (arguments.length === 0) {
+                this.root = new pkg.Item();
+            } else {
+                /**
+                 * Reference to the tree model root item
+                 * @attribute root
+                 * @type {zebkit.data.Item}
+                 * @readOnly
+                 */
+                this.root = zebkit.instanceOf(r, pkg.Item) ? r : pkg.TreeModel.create(r);
+            }
+
+            this._ = new this.clazz.Listeners();
+        },
+
         function $clazz() {
             this.Listeners = zebkit.util.ListenersClass("itemModified", "itemRemoved", "itemInserted");
 
@@ -848,7 +867,7 @@ zebkit.package("data", function(pkg, Class) {
              */
             this.create = function(r, p) {
                 var item = new pkg.Item(r.hasOwnProperty("value")? r.value : r);
-                item.parent = p;
+                item.parent = arguments.length < 2 ? null : p;
                 if (r.hasOwnProperty("kids")) {
                     for(var i = 0; i < r.kids.length; i++) {
                         item.kids[i] = pkg.TreeModel.create(r.kids[i], item);
@@ -908,7 +927,7 @@ zebkit.package("data", function(pkg, Class) {
              * @method find
              */
             this.find = function(root, value, cb) {
-                if (cb == null) {
+                if (arguments.length < 3) {
                     var res = [];
                     pkg.TreeModel.find(root, value, function(item) {
                         res.push(item);
@@ -933,6 +952,8 @@ zebkit.package("data", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.root = null;
+
             /**
              * Iterate over tree hierarchy starting from its root element
              * @param  {zebkit.data.Item} r a root element to start traversing the tree model
@@ -983,7 +1004,7 @@ zebkit.package("data", function(pkg, Class) {
              * @param  {Integer} i a position the new item has to be inserted into
              * the parent item
              */
-            this.insert = function(to,item,i){
+            this.insert = function(to, item, i){
                 if (i < 0 || to.kids.length < i) throw new RangeError(i);
                 if (zebkit.isString(item)) {
                     item = new pkg.Item(item);
@@ -1034,23 +1055,6 @@ zebkit.package("data", function(pkg, Class) {
                     this.remove(item.kids[i]);
                 }
             };
-        },
-
-        function(r) {
-            if (arguments.length === 0) {
-                this.root = new pkg.Item();
-            } else {
-                /**
-                 * Reference to the tree model root item
-                 * @attribute root
-                 * @type {zebkit.data.Item}
-                 * @readOnly
-                 */
-                this.root = zebkit.instanceOf(r, pkg.Item) ? r : pkg.TreeModel.create(r);
-            }
-
-            this.root.parent = null;
-            this._ = new this.clazz.Listeners();
         }
     ]);
 
@@ -1399,7 +1403,7 @@ zebkit.package("data", function(pkg, Class) {
              * @method sortCol
              */
             this.sortCol = function(col, f) {
-                if (f == null) {
+                if (arguments.length < 2) {
                     f = pkg.descent;
                 }
 
