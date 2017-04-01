@@ -17,8 +17,8 @@ zebkit.package("ui.grid", function(pkg, Class) {
 
     pkg.CellsVisibility = function() {
         this.hasVisibleCells = function(){
-            return this.fr != null && this.fc != null &&
-                   this.lr != null && this.lc != null   ;
+            return this.fr !== null && this.fc !== null &&
+                   this.lr !== null && this.lc !== null   ;
         };
 
         // first visible row (row and y), first visible
@@ -139,7 +139,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
      * @constructor
      */
     pkg.DefViews = Class([
-        function(render){
+        function(render) {
             /**
              * Default render that is used to paint grid content.
              * @type {zebkit.ui.StringRender}
@@ -147,7 +147,8 @@ zebkit.package("ui.grid", function(pkg, Class) {
              * @readOnly
              * @protected
              */
-            this.render = (arguments.length === 0 ? new ui.StringRender("") : render);
+            this.render = (arguments.length === 0 || typeof render === 'undefined' ? new ui.StringRender("")
+                                                                                   : render);
             zebkit.properties(this, this.clazz);
         },
 
@@ -183,13 +184,14 @@ zebkit.package("ui.grid", function(pkg, Class) {
              * @method  getView
              */
             this.getView = function(target, row, col, obj){
-                if (obj != null) {
-                    if (obj.toView != null) return obj.toView();
-                    if (obj.paint != null) return obj;
+                if (obj !== null && typeof obj !== 'undefined') {
+                    if (typeof obj.toView !== 'undefined') return obj.toView();
+                    if (typeof obj.paint  !== 'undefined') return obj;
                     this.render.setValue(obj.toString());
                     return this.render;
+                } else {
+                    return null;
                 }
-                return null;
             };
 
             /**
@@ -273,7 +275,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
             this.boolEditor     = new this.clazz.Checkbox(null);
             this.selectorEditor = new this.clazz.Combo();
 
-            this.editors    = {};
+            this.editors = {};
         },
 
         function $clazz() {
@@ -327,7 +329,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
              * the edited cell content
              * @method  fetchEditedValue
              */
-            this.fetchEditedValue = function(grid,row,col,data,editor) {
+            this.fetchEditedValue = function(grid, row, col, data, editor) {
                 if (editor === this.selectorEditor) {
                     data.selectedIndex = editor.list.selectedIndex;
                     return data;
@@ -345,9 +347,12 @@ zebkit.package("ui.grid", function(pkg, Class) {
              * @method  getEditor
              */
             this.getEditor = function(grid, row, col, v) {
-                var editor = this.editors[col];
-                if (editor != null) {
-                    editor.setValue(v);
+                var editor = null;
+                if (this.editors.hasOwnProperty(col)) {
+                    editor = this.editors[col];
+                    if (editor !== null) {
+                        editor.setValue(v);
+                    }
                     return editor;
                 }
 
@@ -432,11 +437,27 @@ zebkit.package("ui.grid", function(pkg, Class) {
      */
 
     pkg.BaseCaption = Class(ui.Panel, [
+        function(titles) {
+            this._ = new this.clazz.Listeners();
+
+            this.$super();
+
+            if (arguments.length > 0) {
+                for(var i = 0; i < titles.length; i++) {
+                    this.putTitle(i, titles[i]);
+                }
+            }
+        },
+
         function $clazz() {
             this.Listeners = new zebkit.util.ListenersClass("captionResized");
         },
 
         function $prototype() {
+            this.selectedColRow = -1;
+
+            this.orient = this.metrics = this.pxy = null;
+
             /**
              * Minimal possible grid cell size
              * @type {Number}
@@ -479,7 +500,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
             this.isAutoFit = this.isResizable = true;
 
             this.getCursorType = function (target,x,y){
-                return this.metrics != null     &&
+                return this.metrics !== null    &&
                        this.selectedColRow >= 0 &&
                        this.isResizable         &&
                        this.metrics.isUsePsMetric === false ? ((this.orient === "horizontal") ? ui.Cursor.W_RESIZE
@@ -493,7 +514,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
              * @method pointerDragged
              */
             this.pointerDragged = function(e){
-                if (this.pxy != null) {
+                if (this.pxy !== null) {
                     var b  = (this.orient === "horizontal"),
                         rc = this.selectedColRow,
                         ns = (b ? this.metrics.getColWidth(rc) + e.x
@@ -513,7 +534,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
              * @method pointerDragStarted
              */
             this.pointerDragStarted = function(e){
-                if (this.metrics != null &&
+                if (this.metrics !== null &&
                     this.isResizable     &&
                     this.metrics.isUsePsMetric === false)
                 {
@@ -532,11 +553,11 @@ zebkit.package("ui.grid", function(pkg, Class) {
              * @method pointerDragEnded
              */
             this.pointerDragEnded = function (e){
-                if (this.pxy != null) {
+                if (this.pxy !== null) {
                     this.pxy = null;
                 }
 
-                if (this.metrics != null) {
+                if (this.metrics !== null) {
                     this.calcRowColAt(e.x, e.y);
                 }
             };
@@ -547,7 +568,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
              * @method pointerMoved
              */
             this.pointerMoved = function(e) {
-                if (this.metrics != null) {
+                if (this.metrics !== null) {
                     this.calcRowColAt(e.x, e.y);
                 }
             };
@@ -558,8 +579,8 @@ zebkit.package("ui.grid", function(pkg, Class) {
              * @method pointerClicked
              */
             this.pointerDoubleClicked = function (e){
-                if (this.pxy     == null     &&
-                    this.metrics != null     &&
+                if (this.pxy     === null     &&
+                    this.metrics !== null     &&
                     this.selectedColRow >= 0 &&
                     this.isAutoFit === true     )
                 {
@@ -622,25 +643,29 @@ zebkit.package("ui.grid", function(pkg, Class) {
              * @method calcRowColAt
              */
             this.getCaptionAt = function (x,y,f){
-                if (this.metrics != null &&
-                    x >= 0               &&
-                    y >= 0               &&
-                    x < this.width       &&
-                    y < this.height        )
+                if (this.metrics !== null &&
+                    x >= 0                &&
+                    y >= 0                &&
+                    x < this.width        &&
+                    y < this.height         )
                 {
                     var m     = this.metrics,
                         cv    = m.getCellsVisibility(),
                         isHor = (this.orient === "horizontal");
 
-                    if ((isHor && cv.fc != null) || (isHor === false && cv.fr != null)) {
+                    if ((isHor && cv.fc !== null) ||
+                        (isHor === false && cv.fr !== null))
+                    {
                         var gap  = m.lineSize,
                             xy   = isHor ? x : y,
                             xxyy = isHor ? cv.fc[1] - this.x - gap + m.getXOrigin()
                                          : cv.fr[1] - this.y - gap + m.getYOrigin();
 
-                        for(var i = (isHor ? cv.fc[0] : cv.fr[0]);i <= (isHor ? cv.lc[0] : cv.lr[0]); i ++ ){
+                        for (var i = (isHor ? cv.fc[0] : cv.fr[0]);i <= (isHor ? cv.lc[0] : cv.lr[0]); i ++ ) {
                             var wh = isHor ? m.getColWidth(i) : m.getRowHeight(i);
-                            if ((f != null && f(m, xy, xxyy, wh, i)) || (f == null && xy > xxyy && xy < xxyy + wh)) {
+                            if ((arguments.length > 2 && f(m, xy, xxyy, wh, i)) ||
+                                (arguments.length < 3 && xy > xxyy && xy < xxyy + wh))
+                            {
                                 return i;
                             }
                             xxyy += wh + gap;
@@ -651,9 +676,9 @@ zebkit.package("ui.grid", function(pkg, Class) {
             };
 
             this.paintOnTop = function(g) {
-                if (this.lineColor != null && this.metrics != null) {
+                if (this.lineColor !== null && this.metrics !== null) {
                     var v = this.metrics.getCellsVisibility();
-                    if (v != null) {
+                    if (v !== null) {
                         var m       = this.metrics,
                             b       = this.orient === "horizontal",
                             startRC = b ? v.fc[0] : v.fr[0],
@@ -691,25 +716,13 @@ zebkit.package("ui.grid", function(pkg, Class) {
              */
         },
 
-        function(titles) {
-            this._ = new this.clazz.Listeners();
-            this.orient = this.metrics = this.pxy = null;
-            this.selectedColRow = -1;
-            this.$super();
-            if (titles != null) {
-                for(var i=0; i < titles.length; i++) {
-                    this.putTitle(i, titles[i]);
-                }
-            }
-        },
-
         function setParent(p) {
             this.$super(p);
 
             this.metrics = this.orient = null;
             if (p === null || zebkit.instanceOf(p, pkg.Metrics)) {
                 this.metrics = p;
-                if (this.constraints != null) {
+                if (this.constraints !== null) {
                     this.orient = (this.constraints === "top"   ||
                                    this.constraints === "bottom"  ) ? "horizontal"
                                                                     : "vertical";

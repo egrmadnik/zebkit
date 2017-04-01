@@ -18,8 +18,8 @@ zebkit.package("web", function(pkg, Class) {
 
                     element.addEventListener(k,
                         function(e) {
-                            var dy = e[$wheelMeta.dy] != null ? e[$wheelMeta.dy] * $wheelMeta.dir : 0,
-                                dx = e[$wheelMeta.dx] != null ? e[$wheelMeta.dx] * $wheelMeta.dir : 0;
+                            var dy = typeof e[$wheelMeta.dy] !== 'undefined' ? e[$wheelMeta.dy] * $wheelMeta.dir : 0,
+                                dx = typeof e[$wheelMeta.dx] !== 'undefined' ? e[$wheelMeta.dx] * $wheelMeta.dir : 0;
 
                             // some version of FF can generates dx/dy  < 1
                             if (Math.abs(dy) < 1) {
@@ -60,7 +60,7 @@ zebkit.package("web", function(pkg, Class) {
                     }
                 },
                 mousewheel: {
-                    dy  : "wheelDelta",
+                    dy  : "wheelDelta", // TODO: check if it was not a typo
                     dx  : "wheelDeltaX",
                     dir : -1,
                     test: function() {

@@ -20,8 +20,6 @@ Zebkit is good choice for development mobile, single page applications with no l
 
 <script>
 
-zebkit.config["zebkit.theme"] = "dark";
-
 zebkit.require(function() {
     eval(zebkit.import("ui", "layout"));
 

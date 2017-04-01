@@ -34,13 +34,14 @@ zebkit.package("ui.grid", function(pkg, Class) {
             this.grid = grid;
 
             this.$widths = [];
-            this.$props = this.$strPs = null;
             this.$prevWidth = 0;
             this.$propW = -1;
             this.add(grid);
         },
 
         function $prototype() {
+            this.$props = this.$strPs = null;
+
             this.grid = null;
 
             this.calcPreferredSize = function(target) {
@@ -105,7 +106,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                     ew   = targetAreaW - (this.$props.length + 1) * grid.lineSize,
                     sw   = 0;
 
-                if (this.$widths == null || this.$widths.length != cols) {
+                if (this.$widths.length !== cols) {
                     this.$widths = Array(cols);
                 }
 
@@ -132,17 +133,17 @@ zebkit.package("ui.grid", function(pkg, Class) {
                                           : this.height - this.getBottom() - this.getTop());
 
                     // exclude left caption
-                    if (this.grid.leftCaption != null &&
+                    if (this.grid.leftCaption !== null &&
                         this.grid.leftCaption.isVisible === true)
                     {
                         taWidth -= this.grid.leftCaption.getPreferredSize().width;
                     }
 
-                    if (this.$strPs == null || this.$prevWidth !== taWidth) {
+                    if (this.$strPs === null || this.$prevWidth !== taWidth) {
                         var cols = grid.getGridCols();
-                        if (this.$propW < 0 || this.$props == null || this.$props.length != cols) {
+                        if (this.$propW < 0 || this.$props === null || this.$props.length != cols) {
                             // calculate col proportions
-                            if (this.$props == null || this.$props.length !== cols) {
+                            if (this.$props === null || this.$props.length !== cols) {
                                 this.$props = Array(cols);
                             }
                             this.$propW = 0;
@@ -176,7 +177,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                         // the scroll bar visibility
                         if (isScr === true &&
                             p.height > 0 &&
-                            p.vBar != null &&
+                            (typeof p.vBar !== 'undefined' || p.vBar === null) &&
                             p.autoHide === false &&
                             taHeight < this.$strPs.height)
                         {
@@ -191,7 +192,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
 
         function kidAdded(index,constr,l){
             this.$propsW = -1;
-            if (l.topCaption != null) {
+            if (l.topCaption !== null) {
                 l.topCaption.bind(this);
             }
             this.scrollManager = l.scrollManager;
@@ -200,7 +201,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
 
         function kidRemoved(i,l){
             this.$propsW = -1;
-            if (l.topCaption != null) {
+            if (l.topCaption !== null) {
                 l.topCaption.unbind(this);
             }
             this.scrollManager = null;

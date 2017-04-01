@@ -133,9 +133,11 @@ zebkit.package("web", function(pkg, Class) {
 
     // codes to that are not the same for different browsers
     function $initializeCodesMap() {
+        var k = null, code = null;
+
         // validate codes mapping
-        for(var k in CODES) {
-            var code = CODES[k];
+        for(k in CODES) {
+            code = CODES[k];
             if (typeof code.map !== "undefined")  {
                 if (typeof CODES[code.map] === "undefined") {
                     throw new Error("Invalid mapping for code = '" + k + "'");
@@ -147,8 +149,8 @@ zebkit.package("web", function(pkg, Class) {
 
         // build codes map table for the cases when "code" property
         CODES_MAP = {};
-        for(var k in CODES) {
-            var code = CODES[k];
+        for(k in CODES) {
+            code = CODES[k];
             if (typeof code.map !== "undefined") {
                 if (typeof code.keyCode !== "undefined") {
                     CODES_MAP[code.keyCode] = code.map;
@@ -162,7 +164,7 @@ zebkit.package("web", function(pkg, Class) {
     pkg.$fetchKeyCode = function(e) {
         var code = e.code;
         if (typeof code !== "undefined") {
-            if (CODES[code] != null && CODES[code].map != null) {
+            if (CODES.hasOwnProperty(code) && CODES[code].hasOwnProperty("map")) {
                 code = CODES[code].map;
             }
         } else {
@@ -299,9 +301,6 @@ zebkit.package("web", function(pkg, Class) {
             //          |  18 + 88    |  18 + 88     |          |                  |                |                   |
             //
             element.onkeydown = function(e) {
-
-                console.log(e);
-
                 var code = KEY_DOWN_EVENT.code,
                     pts  = KEY_DOWN_EVENT.timeStamp,
                     ts   = new Date().getTime();

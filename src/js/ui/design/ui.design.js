@@ -144,6 +144,8 @@ zebkit.package("ui.design", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.colors = null;
+
            /**
             * Indicates if controlled component can be moved
             * @attribute isMoveEnabled
@@ -231,10 +233,8 @@ zebkit.package("ui.design", function(pkg, Class) {
                                        right  : (t === "right"  || t === "topRight"    || t === "bottomRight") ? 1 : 0,
                                        bottom : (t === "bottom" || t === "bottomRight" || t === "bottomLeft" ) ? 1 : 0 };
 
-                        if (this.state != null) {
-                            this.px = e.absX;
-                            this.py = e.absY;
-                        }
+                        this.px = e.absX;
+                        this.py = e.absY;
                     }
                 }
             };
@@ -267,19 +267,19 @@ zebkit.package("ui.design", function(pkg, Class) {
 
             this.setColor = function (b, color) {
                 var rp = false;
-                if (this.colors == null) {
+                if (this.colors === null) {
                     this.colors = [ "lightGray", "blue"];
                     rp = true;
                 }
 
                 var oldCol = this.colors[b?1:0];
-                if (oldCol != color) {
+                if (oldCol !== color) {
                     this.colors[b?1:0] = color;
                     rp = true;
                 }
 
                 var hasFocus = this.hasFocus();
-                if (this.shaperBr.color != this.colors[hasFocus?1:0]) {
+                if (this.shaperBr.color !== this.colors[hasFocus?1:0]) {
                     this.shaperBr.color = this.colors[hasFocus?1:0];
                     rp = true;
                 }
@@ -346,12 +346,12 @@ zebkit.package("ui.design", function(pkg, Class) {
     pkg.FormTreeModel = Class(zebkit.data.TreeModel, [
         function $prototype() {
             this.buildModel = function(comp, root){
-                var b    = this.exclude != null && this.exclude(comp),
+                var b    = typeof this.exclude !== 'undefined' && this.exclude(comp),
                     item = b ? root : this.createItem(comp);
 
                 for(var i = 0; i < comp.kids.length; i++) {
                     var r = this.buildModel(comp.kids[i], item);
-                    if (r != null) {
+                    if (r !== null) {
                         r.parent = item;
                         item.kids.push(r);
                     }
@@ -359,19 +359,19 @@ zebkit.package("ui.design", function(pkg, Class) {
                 return b ? null : item;
             };
 
-            this.itemByComponent = function (c, r){
-                if (r == null) r = this.root;
+            this.itemByComponent = function (c, r) {
+                if (arguments.length < 2) r = this.root;
                 if (r.comp === c) return c;
                 for(var i = 0;i < r.kids.length; i++) {
                     var item = this.itemByComponent(c, r.kids[i]);
-                    if (item != null) return item;
+                    if (item !== null) return item;
                 }
                 return null;
             };
 
             this.createItem = function(comp){
                 var name = comp.clazz.$name;
-                if (name == null) name = comp.toString();
+                if (typeof name === 'undefined') name = comp.toString();
                 var index = name.lastIndexOf('.'),
                     item = new zebkit.data.Item(index > 0 ? name.substring(index + 1) : name);
                 item.comp = comp;

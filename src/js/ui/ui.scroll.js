@@ -88,8 +88,8 @@ zebkit.package("ui", function(pkg, Class) {
                 if (psx != x || psy != y){
                     this.sx = x;
                     this.sy = y;
-                    if (this.scrollStateUpdated != null) this.scrollStateUpdated(x, y, psx, psy);
-                    if (this.target.catchScrolled != null) this.target.catchScrolled(psx, psy);
+                    if (typeof this.scrollStateUpdated !== 'undefined') this.scrollStateUpdated(x, y, psx, psy);
+                    if (typeof this.target.catchScrolled !== 'undefined') this.target.catchScrolled(psx, psy);
                     this._.scrolled(psx, psy);
                 }
                 return this;
@@ -513,6 +513,52 @@ zebkit.package("ui", function(pkg, Class) {
      * @extends {zebkit.ui.Panel}
      */
     pkg.ScrollPan = Class(pkg.Panel, [
+        function (c, scrolls, autoHide) {
+            if (arguments.length < 2)  {
+                scrolls = "both";
+            }
+
+            /**
+             * Vertical scroll bar component
+             * @attribute vBar
+             * @type {zebkit.ui.Scroll}
+             * @readOnly
+             */
+
+            /**
+             * Horizontal scroll bar component
+             * @attribute hBar
+             * @type {zebkit.ui.Scroll}
+             * @readOnly
+             */
+
+            /**
+             * Scrollable target component
+             * @attribute scrollObj
+             * @type {zebkit.ui.Panel}
+             * @readOnly
+             */
+
+            this.$isPosChangedLocked = false;
+            this.$super();
+
+            if (arguments.length < 2 || scrolls === "both" || scrolls === "horizontal") {
+                this.add("bottom", new pkg.Scroll("horizontal"));
+            }
+
+            if (arguments.length < 2 || scrolls === "both" || scrolls === "vertical") {
+                this.add("right", new pkg.Scroll("vertical"));
+            }
+
+            if (arguments.length > 0 && c !== null) {
+                this.add("center", c);
+            }
+
+            if (arguments.length > 2) {
+                this.setAutoHide(autoHide);
+            }
+        },
+
         function $clazz() {
             this.ContentPanLayout = Class(zebkit.layout.Layout, [
                 function $prototype() {
@@ -631,21 +677,22 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.doScroll = function(dx, dy, source) {
-                var b = false;
+                var b = false, v = 0;
 
                 if (dy !== 0 && this.vBar !== null && this.vBar.isVisible === true) {
-                    var v =  this.vBar.position.offset + dy;
+                    v =  this.vBar.position.offset + dy;
                     if (v >= 0) this.vBar.position.setOffset(v);
                     else        this.vBar.position.setOffset(0);
                     b = true;
                 }
 
                 if (dx !== 0 && this.hBar !== null && this.hBar.isVisible === true) {
-                    var v =  this.hBar.position.offset + dx;
+                    v =  this.hBar.position.offset + dx;
                     if (v >= 0) this.hBar.position.setOffset(v);
                     else        this.hBar.position.setOffset(0);
                     b = true;
                 }
+
                 return b;
             };
 
@@ -657,8 +704,8 @@ zebkit.package("ui", function(pkg, Class) {
              * @method  scrolled
              */
             this.scrolled = function (psx,psy){
+                this.validate();
                 try {
-                    this.validate();
                     this.$isPosChangedLocked = true;
 
                     if (this.hBar !== null) {
@@ -839,52 +886,6 @@ zebkit.package("ui", function(pkg, Class) {
                 }
                 return this;
             };
-        },
-
-        function (c, scrolls, autoHide) {
-            if (arguments.length < 2)  {
-                scrolls = "both";
-            }
-
-            /**
-             * Vertical scroll bar component
-             * @attribute vBar
-             * @type {zebkit.ui.Scroll}
-             * @readOnly
-             */
-
-            /**
-             * Horizontal scroll bar component
-             * @attribute hBar
-             * @type {zebkit.ui.Scroll}
-             * @readOnly
-             */
-
-            /**
-             * Scrollable target component
-             * @attribute scrollObj
-             * @type {zebkit.ui.Panel}
-             * @readOnly
-             */
-
-            this.$isPosChangedLocked = false;
-            this.$super();
-
-            if (arguments.length < 2 || scrolls === "both" || scrolls === "horizontal") {
-                this.add("bottom", new pkg.Scroll("horizontal"));
-            }
-
-            if (arguments.length < 2 || scrolls === "both" || scrolls === "vertical") {
-                this.add("right", new pkg.Scroll("vertical"));
-            }
-
-            if (arguments.length > 0 && c !== null) {
-                this.add("center", c);
-            }
-
-            if (arguments.length > 2) {
-                this.setAutoHide(autoHide);
-            }
         },
 
         function insert(i,ctr,c) {

@@ -10,7 +10,7 @@ zebkit.package("web", function(pkg, Class) {
     //    [-] list of active touches or pointers have to be available
     //    [-] meX/meY -> (x, y) ?
 
-    if (pkg.doubleClickDelta == null) {
+    if (typeof pkg.doubleClickDelta === 'undefined') {
         pkg.doubleClickDelta = 280;
     }
 
@@ -77,9 +77,9 @@ zebkit.package("web", function(pkg, Class) {
     // global mouse move events handler (registered by drag out a canvas surface)
     // has to be removed every time a mouse button released with the given function
     function $cleanDragFix() {
-        if ($tmpWinMouseMoveListener != null      &&
-            $pointerPressedEvents[LMOUSE] == null &&
-            $pointerPressedEvents[RMOUSE] == null   )
+        if ($tmpWinMouseMoveListener !== null      &&
+            $pointerPressedEvents.hasOwnProperty(LMOUSE) === false &&
+            $pointerPressedEvents.hasOwnProperty(RMOUSE) === false   )
         {
             window.removeEventListener("mousemove", $tmpWinMouseMoveListener, true);
             $tmpWinMouseMoveListener = null;
@@ -101,8 +101,7 @@ zebkit.package("web", function(pkg, Class) {
                 // ignore any mouse buttons except left
                 // and right buttons
                 if (e.button === 0 || e.button === 2) {
-                    var id = e.button === 0 ? LMOUSE : RMOUSE,
-                        mp = $pointerPressedEvents[id];
+                    var id = e.button === 0 ? LMOUSE : RMOUSE;
 
                     // !!!!
                     // Check if the event target is not the canvas itself
@@ -112,18 +111,17 @@ zebkit.package("web", function(pkg, Class) {
                     // browsers) "mouseup" event is fired every time you touch
                     // canvas or any other element. So check if target is not a canvas
                     // before doing releasing, otherwise it brings to error on mobile
-                    if (mp != null                       &&
-                        mp.$adapter.element != e.target  &&
-                        mp.$adapter.element.contains(e.target) === false)
-                    {
-                        try {
-                            if ($enteredElement != null) {
-                                $enteredElement = null;
-                                mp.$adapter.destination.$pointerExited(ME_STUB);
+                    if ($pointerPressedEvents.hasOwnProperty(id)) {
+                        var mp = $pointerPressedEvents[id];
+                        if (mp.$adapter.element != e.target && mp.$adapter.element.contains(e.target) === false) {
+                            try {
+                                if ($enteredElement !== null) {
+                                    $enteredElement = null;
+                                    mp.$adapter.destination.$pointerExited(ME_STUB);
+                                }
+                            } finally {
+                                mp.$adapter.$UP(id, e, ME_STUB);
                             }
-                        }
-                        finally {
-                            mp.$adapter.$UP(id, e, ME_STUB);
                         }
                     }
                 }
@@ -154,13 +152,13 @@ zebkit.package("web", function(pkg, Class) {
             };
 
             this.$DRAG = function(id, e, stub) {
-                // get appropriate pointerPressed event that has occurred before
-                var mp = $pointerPressedEvents[id];
-
                 // a pointer touched has been pressed and pressed target zebkit component exists
                 // emulate mouse dragging events if mouse has moved on the canvas where mouse
                 // pressed event occurred
-                if (mp != null) {
+                if ($pointerPressedEvents.hasOwnProperty(id)) {
+                    // get appropriate pointerPressed event that has occurred before
+                    var mp = $pointerPressedEvents[id];
+
                     // ignore moved if there still start events that are waiting for to be fired
                     if (mp.$adapter.element === this.element) {
                         // target component exists and mouse cursor moved on the same
@@ -239,14 +237,19 @@ zebkit.package("web", function(pkg, Class) {
                     if (mp.isDragged === true) {
                         destination.$pointerDragEnded(stub);
                     } else {
-                        if ($lastPointerReleased != null &&
-                            $lastPointerReleased.identifier === id &&
-                            (new Date().getTime() - $lastPointerReleased.time) <= pkg.doubleClickDelta)
-                        {
-                            destination.$pointerDoubleClicked(stub);
-                        } else {
-                            if (mp.group === stub.touchCounter) {  // TODO: temporary solution
-                                destination.$pointerClicked(stub);
+                        // TODO: sometimes browser scrolls page during the click
+                        // to detect it we have to check pageX / pageY coordinates with
+                        // initial one to suppress not valid pointer clicked events
+                        if (mp.pressPageY === stub.pageY && mp.pressPageX === stub.pageX) {
+                            if ($lastPointerReleased !== null &&
+                                $lastPointerReleased.identifier === id &&
+                                (new Date().getTime() - $lastPointerReleased.time) <= pkg.doubleClickDelta)
+                            {
+                                destination.$pointerDoubleClicked(stub);
+                            } else {
+                                if (mp.group === stub.touchCounter) {  // TODO: temporary solution
+                                    destination.$pointerClicked(stub);
+                                }
                             }
                         }
                     }
@@ -257,7 +260,7 @@ zebkit.package("web", function(pkg, Class) {
                 } finally {
                     // clear handled pressed and dragged state
                     if (stub.touchCounter > 0) stub.touchCounter--;
-                    $lastPointerReleased = $pointerPressedEvents[id];
+                    $lastPointerReleased = $pointerPressedEvents.hasOwnProperty(id) ? $pointerPressedEvents[id] : null;
                     delete $pointerPressedEvents[id];
 
                     // remove global move listener if necessary
@@ -289,7 +292,7 @@ zebkit.package("web", function(pkg, Class) {
                 // remove timer if it has not been started yet since we already have
                 // got UP event and have to fire pressed events from queue with the
                 // UP handler
-                if (this.$timer != null) {
+                if (this.$timer !== null) {
                     clearTimeout(this.$timer);
                     this.$timer = null;
                 }
@@ -306,11 +309,11 @@ zebkit.package("web", function(pkg, Class) {
                 // fire collected in queue pressed events
                 this.$firePressedFromQ();
 
-                // get pointer pressed state for the given id
-                var mp = $pointerPressedEvents[id];
-
                 // check if a pointer state is in pressed state
-                if (mp != null) {
+                if ($pointerPressedEvents.hasOwnProperty(id)) {
+                    // get pointer pressed state for the given id
+                    var mp = $pointerPressedEvents[id];
+
                     // mouse up can happen in another element than
                     // mouse down occurred. let the original element
                     // (where mouse down is happened) to handle it
@@ -322,8 +325,7 @@ zebkit.package("web", function(pkg, Class) {
                             mp.$adapter.destination.$pointerExited(stub);
                             $enteredElement = this.element;
                             this.destination.$pointerEntered(stub);
-                        }
-                        catch(ee) {
+                        } catch(ee) {
                             // keep it for exceptional cases
                             $enteredElement = this.element;
                             throw ee;
@@ -332,7 +334,7 @@ zebkit.package("web", function(pkg, Class) {
                         }
                     } else {
                         if (isPressedInQ) {  // the mouse pressed and mouse released has happened in different
-                                             // point in a time to let UI show visiual state, for instance mouse
+                                             // point in a time to let UI show visual state, for instance mouse
                                              // down and up
                             var $this = this;
                             setTimeout(function() {
@@ -395,8 +397,8 @@ zebkit.package("web", function(pkg, Class) {
                 }
 
                 // release mouse pressed if it has not happened before
-                var mp = $pointerPressedEvents[id];
-                if (mp != null) {
+                if ($pointerPressedEvents.hasOwnProperty(id)) {
+                    var mp = $pointerPressedEvents[id];
                     mp.$adapter.$UP(id, e, mp.stub);
                 }
 
@@ -447,17 +449,17 @@ zebkit.package("web", function(pkg, Class) {
                     pageY = Math.floor(e.pageY) ;
 
                 // ignore extra mouse moved event that can appear in IE
-                if (this.$mousePageY != pageY || this.$mousePageX != pageX) {
+                if (this.$mousePageY !== pageY || this.$mousePageX !== pageX) {
 
                     this.$mousePageX = pageX;
                     this.$mousePageY = pageY;
 
-                    if ($pointerPressedEvents[LMOUSE] != null || $pointerPressedEvents[RMOUSE] != null) {
-                        if ($pointerPressedEvents[LMOUSE] != null) {
+                    if ($pointerPressedEvents.hasOwnProperty(LMOUSE) || $pointerPressedEvents.hasOwnProperty(RMOUSE)) {
+                        if ($pointerPressedEvents.hasOwnProperty(LMOUSE)) {
                             this.$DRAG(LMOUSE, e, ME_STUB);
                         }
 
-                        if ($pointerPressedEvents[RMOUSE] != null) {
+                        if ($pointerPressedEvents.hasOwnProperty(RMOUSE)) {
                             this.$DRAG(RMOUSE, e, ME_STUB);
                         }
                     } else {
@@ -470,6 +472,14 @@ zebkit.package("web", function(pkg, Class) {
         },
 
         function (element, destination) {
+            if (element === null || typeof element === 'undefined') {
+                throw new Error("Invalid DOM element");
+            }
+
+            if (destination === null || typeof destination === 'undefined') {
+                throw new Error("Invalid destination");
+            }
+
             this.destination = destination;
             this.element     = element;
 
@@ -533,13 +543,12 @@ zebkit.package("web", function(pkg, Class) {
                 if ($this.$touchedAt(e.pageX, e.pageY, 0)) {
                     e.preventDefault();
                 } else {
-                    var id = e.button === 0 ? LMOUSE : RMOUSE,
-                        mp = $pointerPressedEvents[id];
+                    var id = e.button === 0 ? LMOUSE : RMOUSE;
 
                     // if a button has not been pressed handle mouse entered to detect
                     // zebkit component the mouse pointer entered and send appropriate
                     // mouse entered event to it
-                    if (mp == null) {
+                    if ($pointerPressedEvents.hasOwnProperty(id) === false) {
                         // just for the sake of error prevention
                         // clean global move listeners
                         $cleanDragFix();
@@ -547,7 +556,7 @@ zebkit.package("web", function(pkg, Class) {
                         // if entered element is null or the target element
                         // is not a children/element of the entered element than
                         // fires pointer entered event
-                        if ($enteredElement == null || ($enteredElement.contains(e.target) === false && $enteredElement !== e.target)) {
+                        if ($enteredElement === null || ($enteredElement.contains(e.target) === false && $enteredElement !== e.target)) {
                             ME_STUB.$fillWith("mouse", e);
                             $enteredElement = element;
                             destination.$pointerEntered(ME_STUB);
@@ -593,15 +602,14 @@ zebkit.package("web", function(pkg, Class) {
             //   5) mouse out set to null $enteredElement
 
             element.onmouseout = function(e) {
-                var id = e.button === 0 ? LMOUSE : RMOUSE,
-                    mp = $pointerPressedEvents[id];
+                var id = e.button === 0 ? LMOUSE : RMOUSE;
 
                 // no pressed button exists
-                if (mp == null) {
+                if ($pointerPressedEvents.hasOwnProperty(id) === false) {
                     // the target element is the not a kid of the element
-                    if ($enteredElement != null && (e.relatedTarget != null     &&
-                                                    e.relatedTarget !== element &&
-                                                    element.contains(e.relatedTarget) === false))
+                    if ($enteredElement !== null && (e.relatedTarget != null     &&
+                                                     e.relatedTarget !== element &&
+                                                     element.contains(e.relatedTarget) === false))
                     {
                         $enteredElement = null;
                         ME_STUB.$fillWith("mouse", e);
@@ -611,10 +619,12 @@ zebkit.package("web", function(pkg, Class) {
                         }
                     }
                 } else {
+                    var mp = $pointerPressedEvents[id];
+
                     // if a button has been pressed but the mouse cursor is outside of
                     // the canvas, for a time being start listening mouse moved events
                     // of Window to emulate mouse moved events in canvas
-                    if ($tmpWinMouseMoveListener == null &&
+                    if ($tmpWinMouseMoveListener === null &&
                         e.relatedTarget != null &&
                         element.contains(e.relatedTarget) === false)
                     {
@@ -623,7 +633,7 @@ zebkit.package("web", function(pkg, Class) {
                             $tmpWinMouseMoveListener = function(ee) {
                                 ee.stopPropagation();
 
-                                if ($pointerPressedEvents[LMOUSE] != null) {
+                                if ($pointerPressedEvents.hasOwnProperty(LMOUSE)) {
                                     $this.$DRAG(LMOUSE, {
                                         pageX  : ee.pageX,
                                         pageY  : ee.pageY,
@@ -631,7 +641,7 @@ zebkit.package("web", function(pkg, Class) {
                                     }, ME_STUB);
                                 }
 
-                                if ($pointerPressedEvents[RMOUSE] != null) {
+                                if ($pointerPressedEvents.hasOwnProperty(RMOUSE)) {
                                     $this.$DRAG(RMOUSE, {
                                         pageX  : ee.pageX,
                                         pageY  : ee.pageY,
@@ -700,8 +710,7 @@ zebkit.package("web", function(pkg, Class) {
                 element.addEventListener("touchstart", function(e) {
                     var allTouches = e.touches,
                         newTouches = e.changedTouches; // list of touch events that become
-                                               // active with the current touchstart
-
+                                                       // active with the current touch start
 
                     // fix android bug: parasite event for multi touch
                     // or stop capturing new touches since it is already fixed
@@ -740,7 +749,6 @@ zebkit.package("web", function(pkg, Class) {
                     //but it is not clear if it will stop firing touch end/move events
                     //for some mobile browsers. Check it !
                     e.preventDefault();
-
                 }, false);
 
                 element.addEventListener("touchend", function(e) {
@@ -762,19 +770,20 @@ zebkit.package("web", function(pkg, Class) {
                         $pointerPressedEvents[k].dx = $pointerPressedEvents[k].dy = 0;
                     }
 
-                    for(var i=0; i < mt.length; i++) {
-                        var nmt = mt[i],
-                            t   = $pointerPressedEvents[nmt.identifier];
-
-                        if (t != null && (t.pageX != Math.floor(nmt.pageX) ||
-                                          t.pageY != Math.floor(nmt.pageY))  )
-                        {
-                            // TODO: analyzing time is not enough to generate click event since
-                            // a user can put finger and wait for a long time. the best way is
-                            // normalize time with movement (number of movement of dx/dy accumulation)
-                            //if (t.isDragged) {// || (new Date().getTime() - t.time) > 200) {
-                            if (t.isDragged || Math.abs(nmt.pageX - t.pageX) + Math.abs(nmt.pageY - t.pageY) > 4) {
-                                $this.$DRAG(nmt.identifier, nmt, TOUCH_STUB);
+                    for(var i = 0; i < mt.length; i++) {
+                        var nmt = mt[i];
+                        if ($pointerPressedEvents.hasOwnProperty(nmt.identifier)) {
+                            var t = $pointerPressedEvents[nmt.identifier];
+                            if (t.pageX !== Math.floor(nmt.pageX) ||
+                                t.pageY !== Math.floor(nmt.pageY)   )
+                            {
+                                // TODO: analyzing time is not enough to generate click event since
+                                // a user can put finger and wait for a long time. the best way is
+                                // normalize time with movement (number of movement of dx/dy accumulation)
+                                //if (t.isDragged) {// || (new Date().getTime() - t.time) > 200) {
+                                if (t.isDragged || Math.abs(nmt.pageX - t.pageX) + Math.abs(nmt.pageY - t.pageY) > 4) {
+                                    $this.$DRAG(nmt.identifier, nmt, TOUCH_STUB);
+                                }
                             }
                         }
                     }

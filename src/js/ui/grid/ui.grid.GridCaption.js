@@ -1,6 +1,109 @@
 zebkit.package("ui.grid", function(pkg, Class) {
     var ui = pkg.cd("..");
 
+    pkg.CaptionViewProvider = Class([
+        function(render) {
+            if (arguments.length === 0 || typeof render === 'undefined') {
+                render = new ui.StringRender("");
+            }
+
+            this.render = render;
+            this.render.setFont(pkg.GridCaption.font);
+            this.render.setColor(pkg.GridCaption.fontColor);
+        },
+
+        function $prototype() {
+            this.render = null;
+            this.meta = null;
+
+            /**
+             * Set the default view provider text render font
+             * @param {zebkit.ui.Font} f a font
+             * @method setFont
+             */
+            this.setFont = function(f) {
+                this.render.setFont(f);
+                return this;
+            };
+
+            /**
+             * Set the default view provider text render color
+             * @param {String} c a color
+             * @method setColor
+             */
+            this.setColor = function(c) {
+                this.render.setColor(c);
+                return this;
+            };
+
+            this.getView = function(target, rowcol, value){
+                if (value !== null) {
+                    if (typeof value.toView !== 'undefined') return value.toView();
+                    if (typeof value.paint  !== 'undefined') return value;
+                    this.render.setValue(value.toString());
+                    return this.render;
+                } else {
+                    return null;
+                }
+            };
+
+            this.$getCellMeta = function(rowcol) {
+                if (this.meta === null) {
+                    this.meta = {};
+                }
+
+                if (this.meta.hasOwnProperty(rowcol)) {
+                    return this.meta[rowcol];
+                } else {
+                    this.meta[rowcol] = {
+                        ax : null,
+                        ay : null,
+                        bg : null
+                    };
+                    return this.meta[rowcol];
+                }
+            };
+
+            this.getXAlignment = function(target, rowcol) {
+                return this.meta === null || this.meta.hasOwnProperty(rowcol) === false ? null
+                                                                                        : this.meta[rowcol].ax;
+            };
+
+            this.getYAlignment = function(target, rowcol) {
+                return this.meta === null || this.meta.hasOwnProperty(rowcol) === false ? null
+                                                                                        : this.meta[rowcol].ay;
+            };
+
+            this.getCellBackground = function(target, rowcol) {
+                return this.meta === null || this.meta.hasOwnProperty(rowcol) === false ? null
+                                                                                        : this.meta[rowcol].bg;
+            };
+
+            this.setTitleAlignments = function(rowcol, ax, ay) {
+                var m = this.$getCellMeta(rowcol);
+                if (m.ax !== ax || m.ay !== ay) {
+                    m.ax = ax;
+                    m.ay = ay;
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+
+            this.setCellBackground = function(rowcol, bg) {
+                var m = this.$getCellMeta(rowcol);
+                if (m.bg !== bg) {
+                    m.bg = ui.$view(bg);
+
+                    console.log("BG = " + bg);
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+        }
+    ]);
+
     /**
      * Grid caption class that implements rendered caption.
      * Rendered means all caption titles, border are painted
@@ -14,22 +117,37 @@ zebkit.package("ui.grid", function(pkg, Class) {
      * @extends zebkit.ui.grid.BaseCaption
      */
     pkg.GridCaption = Class(pkg.BaseCaption, [
+        function(titles, render) {
+            this.titles = {};
+
+            this.psW = this.psH = 0;
+            this.setViewProvider(new pkg.CaptionViewProvider(render));
+
+            if (arguments.length === 0) {
+                this.$super();
+            } else {
+                this.$super(titles);
+            }
+        },
+
         function $prototype() {
+            this.provider = null;
+
             this.defYAlignment = this.defXAlignment = "center";
 
-            /**
-             * Get a grid caption column or row title view
-             * @param  {Integer} i a row (if the caption is vertical) or
-             * column (if the caption is horizontal) index
-             * @return {zebkit.ui.View} a view to be used as the given
-             * row or column title view
-             * @method getTitleView
-             */
-            this.getTitleView = function(i){
-                var value = this.getTitle(i);
-                if (value == null || value.paint != null) return value;
-                this.render.setValue(value.toString());
-                return this.render;
+            this.defCellBg = null;
+
+            this.setViewProvider = function(p) {
+                if (p !== this.provider) {
+                    this.provider = p;
+                    this.vrp();
+                }
+                return this;
+            };
+
+            this.getTitle = function(rowcol) {
+                return this.titles.hasOwnProperty(rowcol) ? this.titles[rowcol]
+                                                          : null;
             };
 
             this.calcPreferredSize = function (l) {
@@ -37,25 +155,27 @@ zebkit.package("ui.grid", function(pkg, Class) {
             };
 
             this.setFont = function(f) {
-                this.render.setFont(f);
+                this.provider.setFont(f);
+                this.vrp();
                 return this;
             };
 
             this.setColor = function(c) {
-                this.render.setColor(c);
+                this.provider.setColor(c);
+                this.repaint();
                 return this;
             };
 
             this.recalc = function(){
                 this.psW = this.psH = 0;
-                if (this.metrics != null){
+                if (this.metrics !== null){
                     var m     = this.metrics,
                         isHor = (this.orient === "horizontal"),
                         size  = isHor ? m.getGridCols() : m.getGridRows();
 
                     for(var i = 0;i < size; i++) {
-                        var v = this.getTitleView(i);
-                        if (v != null) {
+                        var v = this.provider.getView(this, i, this.getTitle(i));
+                        if (v !== null) {
                             var ps = v.getPreferredSize();
                             if (isHor === true) {
                                 if (ps.height > this.psH) this.psH = ps.height;
@@ -72,11 +192,6 @@ zebkit.package("ui.grid", function(pkg, Class) {
                 }
             };
 
-            this.getTitle = function(rowcol) {
-                return this.titles[rowcol] == null ? null
-                                                   : this.titles[rowcol].title;
-            };
-
             /**
              * Put the given title for the given caption cell.
              * @param  {Integer} rowcol a grid caption cell index
@@ -85,71 +200,60 @@ zebkit.package("ui.grid", function(pkg, Class) {
              * @method putTitle
              * @chainable
              */
-            this.putTitle = function(rowcol, title){
-                var prev = this.titles[rowcol] != null ? this.titles[rowcol] : {};
-                if (prev.title != title) {
-                    if (title != null && zebkit.instanceOf(title, ui.Panel)) {
-                        title = new ui.CompRender(title);
+            this.putTitle = function(rowcol, value) {
+                if (value === null) {
+                    if (title !== null) {
+                        delete this.titles[rowcol];
                     }
-
-                    prev.title = title;
-                    this.titles[rowcol] = prev;
-                    this.vrp();
+                } else {
+                    this.titles[rowcol] = value;
                 }
+
+                this.vrp();
                 return this;
             };
 
             this.setTitleAlignments = function(rowcol, xa, ya){
-                var t = this.titles[rowcol];
-                if (t == null || t.xa != xa || t.ya != ya) {
-                    if (t == null) t = {};
-                    t.xa = xa;
-                    t.ya = ya;
-                    this.titles[rowcol] = t;
+                if (this.provider.setTitleAlignments(rowcol, xa, ya)) {
                     this.repaint();
                 }
                 return this;
             };
 
-            this.setTitleBackground = function(i, v) {
-                v = ui.$view(v);
-                var t = this.titles[i];
-                if (t == null) t = {};
-                t.bg = v;
-                this.titles[i] = t;
-                this.repaint();
+            this.setCellBackground = function(rowcol, bg) {
+                if (this.provider.setCellBackground(rowcol, bg)) {
+                    this.repaint();
+                }
                 return this;
             };
 
             this.getCaptionPS = function(rowcol) {
-                var  v = this.getTitleView(rowcol);
-                return (v != null) ? (this.orient === "horizontal" ? v.getPreferredSize().width
-                                                                   : v.getPreferredSize().height)
-                                   : 0;
+                var v = this.provider.getView(this, rowcol, this.getTitle(rowcol));
+                return (v !== null) ? (this.orient === "horizontal" ? v.getPreferredSize().width
+                                                                    : v.getPreferredSize().height)
+                                    : 0;
             };
         },
 
         function paintOnTop(g) {
-            if (this.metrics != null){
+            if (this.metrics !== null){
                 var cv = this.metrics.getCellsVisibility();
 
-                if ((cv.fc != null && cv.lc != null && this.orient === "horizontal")||
-                    (cv.fr != null && cv.lr != null && this.orient === "vertical"  )   )
+                if ((cv.fc !== null && cv.lc !== null && this.orient === "horizontal")||
+                    (cv.fr !== null && cv.lr !== null && this.orient === "vertical"  )   )
                 {
-                    var m      = this.metrics,
-                        isHor  = (this.orient === "horizontal"),
-                        gap    = m.lineSize,
+                    var isHor  = (this.orient === "horizontal"),
+                        gap    = this.metrics.lineSize,
                         top    = this.getTop(),
                         left   = this.getLeft(),
                         bottom = this.getBottom(),
-                        right  = this.getRight();
-
-                    var x = isHor ? cv.fc[1] - this.x + m.getXOrigin() - gap
-                                  : left,
-                        y = isHor ? top
-                                  : cv.fr[1] - this.y + m.getYOrigin() - gap,
-                        size = isHor ? m.getGridCols()
-                                     : m.getGridRows();
+                        right  = this.getRight(),
+                        x      = isHor ? cv.fc[1] - this.x + this.metrics.getXOrigin() - gap
+                                       : left,
+                        y      = isHor ? top
+                                       : cv.fr[1] - this.y + this.metrics.getYOrigin() - gap,
+                        size   = isHor ? this.metrics.getGridCols()
+                                       : this.metrics.getGridRows();
 
                     //           top
                     //           >|<
@@ -166,20 +270,31 @@ zebkit.package("ui.grid", function(pkg, Class) {
                     //  x   first
                     //      visible
 
-                    for(var i = (isHor ? cv.fc[0] : cv.fr[0]); i <= (isHor ? cv.lc[0] : cv.lr[0]); i++)
-                    {
-                        var ww = isHor ? m.getColWidth(i)
+                    for(var i = (isHor ? cv.fc[0] : cv.fr[0]); i <= (isHor ? cv.lc[0] : cv.lr[0]); i++) {
+                        var ww = isHor ? this.metrics.getColWidth(i)
                                        : this.width - left - right,
                             hh = isHor ? this.height - top - bottom
-                                       : m.getRowHeight(i),
-                            v = this.getTitleView(i);
+                                       : this.metrics.getRowHeight(i),
+                            v = this.provider.getView(this, i, this.getTitle(i));
 
-                        if (v != null) {
-                            var t  = this.titles[i],
-                                xa = t != null && t.xa != null ? t.xa : this.defXAlignment,
-                                ya = t != null && t.ya != null ? t.ya : this.defYAlignment,
-                                bg = t == null ? null : t.bg,
-                                ps = v.getPreferredSize(),
+                        if (v !== null) {
+                            var xa = this.provider.getXAlignment(this, i, v),
+                                ya = this.provider.getYAlignment(this, i, v),
+                                bg = this.provider.getCellBackground(this, i, v);
+
+                            if (xa === null) {
+                                xa = this.defXAlignment;
+                            }
+
+                            if (ya === null) {
+                                ya = this.defYAlignment;
+                            }
+
+                            if (bg === null) {
+                                bg = this.defCellBg;
+                            }
+
+                            var ps = v.getPreferredSize(),
                                 vx = xa === "center" ? Math.floor((ww - ps.width)/2)
                                                      : (xa === "right" ? ww - ps.width - ((i === size - 1) ? right : 0)
                                                                        : (i === 0 ? left: 0)),
@@ -188,7 +303,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                                                                         : (i === 0 ? top: 0));
 
 
-                            if (bg != null) {
+                            if (bg !== null) {
                                 if (isHor) bg.paint(g, x, 0, ww + gap , this.height, this);
                                 else       bg.paint(g, 0, y, this.width, hh + gap, this);
                             }
@@ -206,19 +321,6 @@ zebkit.package("ui.grid", function(pkg, Class) {
 
                 this.$super(g);
             }
-        },
-
-        function(titles, render) {
-            if (arguments.length < 2) {
-                render = new ui.StringRender("");
-            }
-
-            this.psW = this.psH = 0;
-            this.titles = [];
-            this.render = render;
-            this.render.setFont(pkg.GridCaption.font);
-            this.render.setColor(pkg.GridCaption.fontColor);
-            this.$super(titles);
         }
     ]);
 });

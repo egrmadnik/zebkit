@@ -563,7 +563,7 @@ zebkit.package("util", function(pkg, Class) {
 
             clazz.prototype[name] = function() {
                 if (this.v !== null) {
-                    for(var i = 0;i < this.v.length; i+=2) {
+                    for(var i = 0; i < this.v.length; i+=2) {
                         if (this.v[i + 1].apply(this.v[i], arguments) === true) {
                             return true;
                         }
@@ -594,14 +594,18 @@ zebkit.package("util", function(pkg, Class) {
                         throw new Error("Unknown event type " + n);
                     }
 
-                    if (this.methods[n] == null) this.methods[n] = [];
+                    if (this.methods.hasOwnProperty(n) === false) {
+                        this.methods[n] = [];
+                    }
                     this.methods[n].push(this, l);
                 } else {
                     var b = false;
-                    for(var k in names) {
+                    for (var k in names) {
                         if (typeof l[k] === "function") {
                             b = true;
-                            if (this.methods[k] == null) this.methods[k] = [];
+                            if (this.methods.hasOwnProperty(k) === false) {
+                                this.methods[k] = [];
+                            }
                             this.methods[k].push(l, l[k]);
                         }
                     }
@@ -624,8 +628,10 @@ zebkit.package("util", function(pkg, Class) {
                     this[name] = (function(name) {
                         return function() {
                             if (this.methods !== null) {
-                                var c = this.methods[name];
-                                if (c != null) {
+                                var c;
+
+                                if (this.methods.hasOwnProperty(name)) {
+                                    c = this.methods[name];
                                     for(var i = 0; i < c.length; i += 2) {
                                         if (c[i + 1].apply(c[i], arguments) === true) {
                                             return true;
@@ -633,8 +639,8 @@ zebkit.package("util", function(pkg, Class) {
                                     }
                                 }
 
-                                c = this.methods[''];
-                                if (c != null) {
+                                if (this.methods.hasOwnProperty('')) {
+                                    c = this.methods[''];
                                     for(var i = 0; i < c.length; i += 2) {
                                         if (c[i + 1].apply(c[i], arguments) === true) {
                                             return true;

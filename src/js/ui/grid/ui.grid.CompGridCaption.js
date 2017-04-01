@@ -12,6 +12,16 @@ zebkit.package("ui.grid", function(pkg, Class) {
      * @extends zebkit.ui.grid.BaseCaption
      */
     pkg.CompGridCaption = Class(pkg.BaseCaption, [
+        function(titles) {
+            if (arguments.length === 0) {
+                this.$super();
+            } else {
+                this.$super(titles);
+            }
+
+            this.setLayout(new this.clazz.Layout());
+        },
+
         function $clazz() {
             this.Layout = Class(zebkit.layout.Layout, [
                 function $prototype() {
@@ -134,7 +144,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
 
                 function kidRemoved(index, kid) {
                     // TODO: not very prefect check
-                    if (kid._ != null && kid._.fired != null) {
+                    if (typeof kid._ !== 'undefined' && typeof kid._.fired !== 'undefined') {
                         kid.unbind(this);
                     }
                     this.$super(index, kid);
@@ -142,7 +152,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
 
                 function kidAdded(index, constr, kid) {
                     // TODO: not very prefect check
-                    if (kid._ != null && kid._.fired != null) {
+                     if (typeof kid._ !== 'undefined' && typeof kid._.fired !== 'undefined')  {
                         kid.bind(this);
                     }
                     this.$super(index, constr, kid);
@@ -182,7 +192,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
         function $prototype() {
             this.catchInput = function(t) {
                 // TODO: not very perfect check to detect active component
-                return t._ == null || t._.fired == null;
+                return typeof t._ === 'undefined' || typeof t._.fired === 'undefined';
             };
 
             this.scrolled = function() {
@@ -255,10 +265,9 @@ zebkit.package("ui.grid", function(pkg, Class) {
             };
 
             this.getCaptionPS = function(rowcol) {
-                var  c = this.kids[rowcol];
-                return (c != null) ? (this.orient === "horizontal" ? c.getPreferredSize().width
-                                                                   : c.getPreferredSize().height)
-                                   : 0;
+                return rowcol < this.kids.length ? (this.orient === "horizontal" ? this.kids[rowcol].getPreferredSize().width
+                                                                                 : this.kids[rowcol].getPreferredSize().height)
+                                                 : 0;
             };
         },
 
@@ -268,11 +277,11 @@ zebkit.package("ui.grid", function(pkg, Class) {
         },
 
         function setParent(p) {
-            if (this.parent != null && this.parent.scrollManager != null) {
+            if (this.parent !== null && this.parent.scrollManager != null) {
                 this.parent.scrollManager.unbind(this);
             }
 
-            if (p != null && p.scrollManager != null) {
+            if (p !== null && p.scrollManager != null) {
                 p.scrollManager.bind(this);
             }
 
@@ -284,13 +293,6 @@ zebkit.package("ui.grid", function(pkg, Class) {
                 c = new this.clazz.TitlePan(c);
             }
             this.$super(i,constr, c);
-        },
-
-        function(titles) {
-            if (arguments === 0) titles = null;
-
-            this.$super(titles);
-            this.setLayout(new this.clazz.Layout());
         }
     ]);
 

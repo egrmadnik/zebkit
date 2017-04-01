@@ -124,7 +124,7 @@ zebkit.package("ui", function(pkg, Class) {
                 var d = c.getCanvas();
                 if (d !== null &&
                        (c.canHaveFocus === true ||
-                         (typeof c.canHaveFocus == "function" && c.canHaveFocus() === true)))
+                         (typeof c.canHaveFocus === "function" && c.canHaveFocus() === true)))
                 {
                     for(;c !== d && c !== null; c = c.parent) {
                         if (c.isVisible === false || c.isEnabled === false) {
@@ -142,7 +142,7 @@ zebkit.package("ui", function(pkg, Class) {
             // given direction (forward or backward lookup)
             this.fd = function(t, index, d) {
                 if (t.kids.length > 0){
-                    var isNComposite = t.catchInput == null || t.catchInput === false;
+                    var isNComposite = typeof t.catchInput === 'undefined' || t.catchInput === false;
                     for(var i = index; i >= 0 && i < t.kids.length; i += d) {
                         var cc = t.kids[i];
 
@@ -155,10 +155,10 @@ zebkit.package("ui", function(pkg, Class) {
                             cc.height     >  0                                              &&
                             (isNComposite || (t.catchInput !== true      &&
                                               t.catchInput(cc) === false)  )                &&
-                            ( (cc.canHaveFocus === true || (cc.canHaveFocus !=  null  &&
+                            ( (cc.canHaveFocus === true || (typeof cc.canHaveFocus !== 'undefined'  &&
                                                             cc.canHaveFocus !== false &&
                                                             cc.canHaveFocus())            ) ||
-                              (cc = this.fd(cc, d > 0 ? 0 : cc.kids.length - 1, d)) != null)  )
+                              (cc = this.fd(cc, d > 0 ? 0 : cc.kids.length - 1, d)) !== null)  )
                         {
                             return cc;
                         }
@@ -173,7 +173,7 @@ zebkit.package("ui", function(pkg, Class) {
             // d - a direction of next focusable component lookup: 1 (forward) or -1 (backward)
             this.ff = function(c, d) {
                 var top = c;
-                while (top !== null && top.getFocusRoot == null) {
+                while (top !== null && typeof top.getFocusRoot === 'undefined') {
                     top = top.parent;
                 }
 
@@ -186,13 +186,13 @@ zebkit.package("ui", function(pkg, Class) {
                     return null;
                 }
 
-                if (top.traverseFocus != null) {
+                if (typeof top.traverseFocus !== 'undefined') {
                     return top.traverseFocus(c, d);
                 }
 
                 for(var index = (d > 0) ? 0 : c.kids.length - 1; c != top.parent; ){
                     var cc = this.fd(c, index, d);
-                    if (cc != null) return cc;
+                    if (cc !== null) return cc;
                     cc = c;
                     c = c.parent;
                     if (c !== null) index = d + c.indexOf(cc);

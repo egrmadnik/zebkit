@@ -326,10 +326,10 @@ zebkit.package("ui", function(pkg, Class) {
                                                                 : this.$target.getTooltip(this.$target,
                                                                                           this.$tooltipX,
                                                                                           this.$tooltipY);
-                    if (this.$tooltip != ntooltip) {
+                    if (this.$tooltip !== ntooltip) {
 
                         // hide previously shown tooltip
-                        if (this.$tooltip != null) {
+                        if (this.$tooltip !== null) {
                             this.hideTooltip();
                         }
 
@@ -337,7 +337,7 @@ zebkit.package("ui", function(pkg, Class) {
                         this.$tooltip = ntooltip;
 
                         // if new tooltip exists than show it
-                        if (ntooltip != null) {
+                        if (ntooltip !== null) {
                             var p = zebkit.layout.toParentOrigin(this.$tooltipX, this.$tooltipY, this.$target);
 
                             this.$tooltip.toPreferredSize();
@@ -361,7 +361,7 @@ zebkit.package("ui", function(pkg, Class) {
                             }
                         }
                     } else {
-                        if (this.$tooltip != null && this.syncTooltipPosition === true) {
+                        if (this.$tooltip !== null && this.syncTooltipPosition === true) {
                             var p  = zebkit.layout.toParentOrigin(this.$tooltipX,
                                                                   this.$tooltipY,
                                                                   this.$target),
@@ -379,7 +379,7 @@ zebkit.package("ui", function(pkg, Class) {
                 // this method is called only for mdi window
                 // consider every deactivation of a mdi window as
                 // a signal to stop showing tooltip
-                if (e.isActive === false && this.$tooltip != null)  {
+                if (e.isActive === false && this.$tooltip !== null)  {
                     this.$tooltip.removeMe();
                 }
             };
@@ -412,7 +412,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method hideTooltip
              */
             this.hideTooltip = function(){
-                if (this.$tooltip != null) {
+                if (this.$tooltip !== null) {
                     this.$tooltip.removeMe();
                     this.$tooltip = null;
                 }

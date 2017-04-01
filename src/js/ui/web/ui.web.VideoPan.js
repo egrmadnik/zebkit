@@ -19,6 +19,84 @@ zebkit.package("ui.web", function(pkg, Class) {
      * @constructor
      */
     pkg.VideoPan = Class(ui.Panel,  [
+        function(src) {
+            var $this = this;
+
+            /**
+             * Original video DOM element that is created
+             * to play video
+             * @type {Video}
+             * @readOnly
+             * @attribute video
+             */
+            this.video  = document.createElement("video");
+            this.source = document.createElement("source");
+            this.source.setAttribute("src", src);
+            this.video.appendChild(this.source);
+
+            this.$super();
+
+            // canplaythrough is video event
+            this.video.addEventListener("canplaythrough", function() {
+                $this._.playbackStateUpdated($this, "ready");
+                $this.repaint();
+                $this.$continuePlayback();
+            }, false);
+
+            this.video.addEventListener("ended", function() {
+                $this._.playbackStateUpdated($this, "end");
+                $this.$interruptCancelTask();
+            }, false);
+
+            this.video.addEventListener("pause", function() {
+                $this._.playbackStateUpdated($this, "pause");
+                $this.$interruptCancelTask();
+            }, false);
+
+            this.video.addEventListener("play", function() {
+                $this.$continuePlayback();
+                $this._.playbackStateUpdated($this, "play");
+            }, false);
+
+            // progress event indicates a loading progress
+            // the event is useful to detect recovering from network
+            // error
+            this.video.addEventListener("progress", function() {
+                // if playback has been postponed due to an error
+                // let's say that problem seems fixed and delete
+                // the cancel task
+                if ($this.$cancelTask !== null) {
+                    $this.$interruptCancelTask();
+
+                    // detect if progress event has to try to start animation that has not been
+                    // started yet or has been canceled for a some reason
+                    if ($this.video.paused === false) {
+                        $this.$continuePlayback();
+                        $this._.playbackStateUpdated($this, "continue");
+                    }
+                }
+            }, false);
+
+            this.source.addEventListener("error", function(e) {
+                $this.$interruptCancelTask();
+                $this.$lastError = e.toString();
+                $this._.playbackStateUpdated($this, "error");
+                $this.repaint();
+                $this.pause();
+            }, false);
+
+            this.video.addEventListener("stalled", function() {
+                $this.$cancelPlayback();
+            }, false);
+
+            this.video.addEventListener("loadedmetadata", function (e) {
+                $this.videoWidth   = this.videoWidth,
+                $this.videoHeight  = this.videoHeight,
+                $this.$aspectRatio = $this.videoHeight > 0 ? $this.videoWidth / $this.videoHeight : 0;
+                $this.vrp();
+            }, false);
+        },
+
         function $clazz() {
             this.Listeners = zebkit.util.ListenersClass("playbackStateUpdated");
 
@@ -162,7 +240,7 @@ zebkit.package("ui.web", function(pkg, Class) {
              */
             this.play = function() {
                 if (this.video.paused === true) {
-                    if (this.$lastError != null) {
+                    if (this.$lastError !== null) {
                         this.$lastError = null;
                         this.video.load();
                     }
@@ -307,84 +385,6 @@ zebkit.package("ui.web", function(pkg, Class) {
                     this.$postponedTime = this.$cancelTask = null;
                 }
             };
-        },
-
-        function(src) {
-            var $this = this;
-
-            /**
-             * Original video DOM element that is created
-             * to play video
-             * @type {Video}
-             * @readOnly
-             * @attribute video
-             */
-            this.video  = document.createElement("video");
-            this.source = document.createElement("source");
-            this.source.setAttribute("src", src);
-            this.video.appendChild(this.source);
-
-            this.$super();
-
-            // canplaythrough is video event
-            this.video.addEventListener("canplaythrough", function() {
-                $this._.playbackStateUpdated($this, "ready");
-                $this.repaint();
-                $this.$continuePlayback();
-            }, false);
-
-            this.video.addEventListener("ended", function() {
-                $this._.playbackStateUpdated($this, "end");
-                $this.$interruptCancelTask();
-            }, false);
-
-            this.video.addEventListener("pause", function() {
-                $this._.playbackStateUpdated($this, "pause");
-                $this.$interruptCancelTask();
-            }, false);
-
-            this.video.addEventListener("play", function() {
-                $this.$continuePlayback();
-                $this._.playbackStateUpdated($this, "play");
-            }, false);
-
-            // progress event indicates a loading progress
-            // the event is useful to detect recovering from network
-            // error
-            this.video.addEventListener("progress", function() {
-                // if playback has been postponed due to an error
-                // let's say that problem seems fixed and delete
-                // the cancel task
-                if ($this.$cancelTask !== null) {
-                    $this.$interruptCancelTask();
-
-                    // detect if progress event has to try to start animation that has not been
-                    // started yet or has been canceled for a some reason
-                    if ($this.video.paused === false) {
-                        $this.$continuePlayback();
-                        $this._.playbackStateUpdated($this, "continue");
-                    }
-                }
-            }, false);
-
-            this.source.addEventListener("error", function(e) {
-                $this.$interruptCancelTask();
-                $this.$lastError = e.toString();
-                $this._.playbackStateUpdated($this, "error");
-                $this.repaint();
-                $this.pause();
-            }, false);
-
-            this.video.addEventListener("stalled", function() {
-                $this.$cancelPlayback();
-            }, false);
-
-            this.video.addEventListener("loadedmetadata", function (e) {
-                $this.videoWidth   = this.videoWidth,
-                $this.videoHeight  = this.videoHeight,
-                $this.$aspectRatio = $this.videoHeight > 0 ? $this.videoWidth / $this.videoHeight : 0;
-                $this.vrp();
-            }, false);
         }
     ]);
 });

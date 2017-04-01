@@ -1166,7 +1166,7 @@
                                                  : (function(f) { return f.name; });
 
 
-        pkg.isIE    = isInBrowser && (Object.hasOwnProperty.call(window, "ActiveXObject") || !!window.ActiveXObject);
+        pkg.isIE    = isInBrowser && (Object.hasOwnProperty.call(window, "ActiveXObject") || !!window.ActiveXObject || window.navigator.userAgent.indexOf("Edge") > -1);
         pkg.isFF    = isInBrowser && window.mozInnerScreenX !== null;
         pkg.isMacOS = isInBrowser && navigator.platform.toUpperCase().indexOf('MAC') !== -1;
 

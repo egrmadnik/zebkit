@@ -94,14 +94,14 @@ zebkit.package("ui", function(pkg, Class) {
                     throw new Error("Invalid menu item: " + c);
                 }
 
-                if (m[2] != null) {
+                if (typeof m[2] !== 'undefined') {
                     var s = m[2].trim();
                     this.setCheckManager(s[0] === '(' ? new pkg.Group() : new pkg.SwitchManager());
                     this.manager.setValue(this, m[2].indexOf('x') > 0);
                 }
 
                 var img = null;
-                if (m[1] != null) {
+                if (typeof m[1] !== 'undefined') {
                     img = m[1].substring(m[1].indexOf("@(") + 2, m[1].lastIndexOf(")")).trim();
                     if (img[0] === "'") {
                        img = img.substring(1, img.length-1);
@@ -391,6 +391,28 @@ zebkit.package("ui", function(pkg, Class) {
      * @extends {zebkit.ui.CompList}
      */
     pkg.Menu = Class(pkg.CompList, [
+        function (d) {
+            this.menus = {};
+
+            this.$super([], zebkit.isBoolean(d) ? d : true);
+
+            if (Array.isArray(d)) {
+                for(var i = 0; i < d.length; i++) {
+                    this.add(d[i]);
+                }
+            } else {
+                for(var k in d) {
+                    if (d.hasOwnProperty(k)) {
+                        var sub = d[k];
+                        this.add(k);
+                        if (sub != null) {
+                            this.setMenuAt(this.kids.length-1, zebkit.instanceOf(sub, pkg.Menu) ? sub : new pkg.Menu(sub));
+                        }
+                    }
+                }
+            }
+        },
+
         function $clazz() {
             this.MenuItem = Class(pkg.MenuItem, [
                 function $clazz() {
@@ -509,7 +531,7 @@ zebkit.package("ui", function(pkg, Class) {
                 }
 
                 var p = this.kids[i];
-                if (p.activateSub != null) {
+                if (typeof p.activateSub !== 'undefined') {
                     var sub = this.menus[p];
                     if (m !== null) {
                         if (sub == null) {
@@ -587,7 +609,7 @@ zebkit.package("ui", function(pkg, Class) {
                     if (nsy + ps.height < eh) {
                         nsy = eh - ps.height;
                     }
-                    if (sy != nsy) this.scrollManager.scrollYTo(nsy);
+                    if (sy !== nsy) this.scrollManager.scrollYTo(nsy);
                 }
             };
 
@@ -755,7 +777,7 @@ zebkit.package("ui", function(pkg, Class) {
                         // handle an item menu selection here.
                         // hide the whole menu hierarchy
                         var k = this.kids[this.selectedIndex];
-                        if (k.itemSelected != null) {
+                        if (typeof k.itemSelected !== 'undefined') {
                             k.itemSelected();
                         }
 
@@ -786,29 +808,7 @@ zebkit.package("ui", function(pkg, Class) {
                 }
             }
             this.$super(prev);
-        },
-
-        function (d) {
-            this.menus = {};
-
-            this.$super([], zebkit.isBoolean(d) ? d : true);
-
-            if (Array.isArray(d)) {
-                for(var i = 0; i < d.length; i++) {
-                    this.add(d[i]);
-                }
-            } else {
-                for(var k in d) {
-                    if (d.hasOwnProperty(k)) {
-                        var sub = d[k];
-                        this.add(k);
-                        if (sub != null) {
-                            this.setMenuAt(this.kids.length-1, zebkit.instanceOf(sub, pkg.Menu) ? sub : new pkg.Menu(sub));
-                        }
-                    }
-                }
-            }
-        },
+        }
     ]);
 
     /**

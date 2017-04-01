@@ -325,6 +325,13 @@ zebkit.package("ui.web", function(pkg, Class) {
      * @extends zebkit.ui.HtmlElement
      */
     pkg.HtmlTextInput = Class(pkg.HtmlFocusableElement, [
+        function(text, e) {
+            if (text === null) text = "";
+            this.$super(e);
+            this.setAttribute("tabindex", 0);
+            this.setValue(text);
+        },
+
         function $prototype() {
             this.cursorType = ui.Cursor.TEXT;
 
@@ -350,13 +357,6 @@ zebkit.package("ui.web", function(pkg, Class) {
                 }
                 return this;
             };
-        },
-
-        function(text, e) {
-            if (text == null) text = "";
-            this.$super(e);
-            this.setAttribute("tabindex", 0);
-            this.setValue(text);
         }
     ]);
 
@@ -384,13 +384,13 @@ zebkit.package("ui.web", function(pkg, Class) {
      * @extends zebkit.ui.html.HtmlTextInput
      */
     pkg.HtmlTextArea = Class(pkg.HtmlTextInput, [
-        function setResizeable(b) {
-            this.setStyle("resize", b === false ? "none" : "both");
-        },
-
         function(text) {
             this.$super(text, "textarea");
             this.element.setAttribute("rows", 10);
+        },
+
+        function setResizeable(b) {
+            this.setStyle("resize", b === false ? "none" : "both");
         }
     ]);
 

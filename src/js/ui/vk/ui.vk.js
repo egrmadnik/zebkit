@@ -42,7 +42,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
                 }
 
                 // calculate final fixed size key size
-                if (extra != 1000000 && extra != 0) {
+                if (extra !== 1000000 && extra !== 0) {
                     m.fixKeyWidth += extra;
 
                     // check if key proportion is good, otherwise again correct fixed key size
@@ -57,7 +57,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
                 for (var i = 0; i < t.kids.length; i++) {
                     var k = t.kids[i], ctr = k.constraints, r = m.rows[ctr.row];
 
-                    if (row != ctr.row) {
+                    if (row !== ctr.row) {
                         row ++;
                         y += (row === 0 ? top : this.gap + m.rowHeight);
 
@@ -66,9 +66,8 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
                         if (r.stretchedKeys === 0) {
                             x = left + Math.floor((ew - aw) / 2);
-                        }
-                        else {
-                            x  = left + Math.floor((ew - m.width) / 2)
+                        } else {
+                            x  = left + Math.floor((ew - m.width) / 2);
                             extra = Math.floor((m.width - aw) / r.stretchedKeys);
                         }
                     }
@@ -76,13 +75,11 @@ zebkit.package("ui.vk", function(pkg, Class) {
                     if (k.isVisible === true) {
                         if (ctr.size == null) {
                             k.setSize(m.fixKeyWidth, m.rowHeight);
-                        }
-                        else {
+                        } else {
                             var ps = k.getPreferredSize();
                             if (ctr.size === "stretched") {
                                 k.setSize(ps.width + extra, m.rowHeight);
-                            }
-                            else {
+                            } else {
                                 k.setSize(ps.width, m.rowHeight);
                             }
                         }
@@ -119,7 +116,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
                 for(var row = 0;  ;row++) {
                     var r = this.rowMetric(row, t);
-                    if (r == null) break;
+                    if (r === null) break;
 
                     rows.push(r);
                     if (r.fixKeyMaxWidth > fixKeyWidth) fixKeyWidth = r.fixKeyMaxWidth;
@@ -166,12 +163,10 @@ zebkit.package("ui.vk", function(pkg, Class) {
                         if (ctr.size == null) {
                             if (fixKeyMaxWidth < ps.width) fixKeyMaxWidth = ps.width;
                             fixKeys ++;
-                        }
-                        else {
+                        } else {
                             if (ctr.size === "ps") {
                                 prefKeys++;
-                            }
-                            else {
+                            } else {
                                 stretchedKeys++;
                                 stretchedHorSpace += ps.width;
                             }
@@ -202,7 +197,17 @@ zebkit.package("ui.vk", function(pkg, Class) {
     ]);
 
     pkg.ShiftKeyArrow = zebkit.Class(ui.View, [
+        function(bg, lnCol) {
+            if (arguments.length > 1) {
+                this.lineColor = lnCol;
+            }
+            this.bg = bg;
+        },
+
         function $prototype() {
+            this.prefSize = 10;
+            this.lineColor = "white";
+
             //       / \A
             //      /   \
             //     /     \
@@ -258,23 +263,17 @@ zebkit.package("ui.vk", function(pkg, Class) {
                     height: this.prefSize
                 };
             };
-        },
-
-        function(bg, lnCol) {
-            this.lineColor= lnCol != null ? lnCol: "white";
-            this.bg       = bg;
-            this.prefSize = 10;
         }
     ]);
 
     pkg.HintPan = Class(ui.Panel, [
-        function $clazz() {
-            this.Label = Class(ui.Label, []);
-        },
-
         function() {
             this.$super();
             this.add(new this.clazz.Label(""));
+        },
+
+        function $clazz() {
+            this.Label = Class(ui.Label, []);
         },
 
         function setValue(v) {
@@ -285,65 +284,6 @@ zebkit.package("ui.vk", function(pkg, Class) {
     var tooltip = null;
 
     pkg.VKeyBase = Class(ui.Button, [
-        function $clazz() {
-            this.padding = 1;
-            this.Label = Class(ui.Label, []);
-            this.Label.font = new ui.Font("Arial", "bold", 14);
-        },
-
-        function $prototype() {
-            this.$isVkElement = true;
-            this.canHaveFocus = false;
-
-            this.showHint = function(ch) {
-                this.hideHint();
-
-                if (tooltip == null) {
-                    tooltip = new pkg.HintPan();
-                }
-
-                tooltip.setValue(ch);
-                tooltip.toPreferredSize();
-                var rl = zebkit.layout.toParentOrigin(this);
-                if (rl.y - tooltip.height > 0) {
-                    tooltip.setLocation(rl.x, rl.y - tooltip.height);
-                }
-                else {
-                    tooltip.setLocation(rl.x, rl.y + this.height);
-                }
-                tooltip.setSize(this.width, tooltip.height);
-                ui.showWindow(this, "info", tooltip);
-            };
-
-            this.hideHint = function() {
-                if (tooltip != null) tooltip.removeMe();
-            };
-
-            this.findVK = function(id) {
-                var p = this.parent;
-                while(p != null && p[id] == null) p = p.parent;
-                return p;
-            };
-
-            this.setLabel = function(l) {
-                if (zebkit.instanceOf(this.kids[0], ui.Label)) {
-                    this.kids[0].setValue(l);
-                }
-            };
-
-            this.getLabel = function() {
-                return zebkit.instanceOf(this.kids[0], ui.Label) ? this.kids[0].getValue() : null;
-            };
-
-            this.nextStatusView = function() {
-                if (this.statusViews != null) {
-                    this.statusKeyIndex = (this.statusKeyIndex + 1) % this.statusViewKeys.length;
-                    this.statusViews.activate(this.statusViewKeys[this.statusKeyIndex]);
-                    this.repaint();
-                }
-            };
-        },
-
         function(v) {
             if (zebkit.isString(v) == false &&
                 zebkit.instanceOf(v, ui.Panel) == false &&
@@ -363,10 +303,68 @@ zebkit.package("ui.vk", function(pkg, Class) {
                 v = new ui.ViewPan().setView(v);
                 this.$super(v);
                 this.setLayout(new zebkit.layout.StackLayout());
-            }
-            else {
+            } else {
                 this.$super(v);
             }
+        },
+
+        function $clazz() {
+            this.padding = 1;
+            this.Label = Class(ui.Label, []);
+            this.Label.font = new ui.Font("Arial", "bold", 14);
+        },
+
+        function $prototype() {
+            this.$isVkElement = true;
+            this.canHaveFocus = false;
+            this.statusViews  = null;
+
+            this.showHint = function(ch) {
+                this.hideHint();
+
+                if (tooltip === null) {
+                    tooltip = new pkg.HintPan();
+                }
+
+                tooltip.setValue(ch);
+                tooltip.toPreferredSize();
+                var rl = zebkit.layout.toParentOrigin(this);
+                if (rl.y - tooltip.height > 0) {
+                    tooltip.setLocation(rl.x, rl.y - tooltip.height);
+                } else {
+                    tooltip.setLocation(rl.x, rl.y + this.height);
+                }
+                tooltip.setSize(this.width, tooltip.height);
+                ui.showWindow(this, "info", tooltip);
+            };
+
+            this.hideHint = function() {
+                if (tooltip !== null) tooltip.removeMe();
+            };
+
+            this.findVK = function(id) {
+                var p = this.parent;
+                while (p !== null && p[id] == null) p = p.parent;
+                return p;
+            };
+
+            this.setLabel = function(l) {
+                if (zebkit.instanceOf(this.kids[0], ui.Label)) {
+                    this.kids[0].setValue(l);
+                }
+            };
+
+            this.getLabel = function() {
+                return zebkit.instanceOf(this.kids[0], ui.Label) ? this.kids[0].getValue() : null;
+            };
+
+            this.nextStatusView = function() {
+                if (this.statusViews !== null) {
+                    this.statusKeyIndex = (this.statusKeyIndex + 1) % this.statusViewKeys.length;
+                    this.statusViews.activate(this.statusViewKeys[this.statusKeyIndex]);
+                    this.repaint();
+                }
+            };
         },
 
         function pointerPressed(e) {
@@ -396,6 +394,26 @@ zebkit.package("ui.vk", function(pkg, Class) {
     //    [ "AA" ]  or with variants [ "AA", ["BB"], ["CC"] ]
     //
     pkg.VKey = Class(pkg.VKeyBase, [
+        function(t) {
+            if (zebkit.isString(t)) {
+                t = { ch : t };
+            }
+
+            this.ch   = t.ch == null ? null : t.ch;
+            this.mask = t.mask == null ? 0 : t.mask;
+            this.code = (t.code == null) ? 0 : t.code;
+
+            if (typeof t.hint !== "undefined") {
+                this.hint = t.hint;
+            }
+
+            if (t.repeat != null) {
+                this.setFireParams(true, t.repeat);
+            }
+
+            this.$super(t.view || t.icon || t.label || this.ch);
+        },
+
         function $prototype() {
             this.$sticked = false;
 
@@ -428,7 +446,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
             this.fireVkTyped = function(code, ch, mask) {
                 var vk = this.findVK("vkTyped");
-                if (vk != null) {
+                if (vk !== null) {
                     vk.vkTyped(this, code, ch, mask);
                 }
             };
@@ -437,14 +455,14 @@ zebkit.package("ui.vk", function(pkg, Class) {
                 this.hideHint();
 
                 var vk = this.findVK("vkReleased");
-                if (vk != null) {
+                if (vk !== null) {
                     vk.vkReleased(this, code, ch, mask);
                 }
             };
 
             this.fireVkPressed = function(code, ch, mask) {
                 var vk = this.findVK("vkPressed");
-                if (vk != null) {
+                if (vk !== null) {
                     vk.vkPressed(this, code, ch, mask);
                 }
 
@@ -456,7 +474,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
             this.upperCase = function() {
                 if (this.ch != null) {
                     var l = this.getLabel();
-                    if (l != null && l.toLowerCase() === this.ch.toLowerCase()) {
+                    if (l !== null && l.toLowerCase() === this.ch.toLowerCase()) {
                         this.setLabel(l.toUpperCase());
                     }
                 }
@@ -465,35 +483,15 @@ zebkit.package("ui.vk", function(pkg, Class) {
             this.lowerCase = function() {
                 if (this.ch != null) {
                     var l = this.getLabel();
-                    if (l != null && l.toLowerCase() === this.ch.toLowerCase()) {
+                    if (l !== null && l.toLowerCase() === this.ch.toLowerCase()) {
                         this.setLabel(l.toLowerCase());
                     }
                 }
             };
         },
 
-        function(t) {
-            if (zebkit.isString(t)) {
-                t = { ch : t };
-            }
-
-            this.ch   = t.ch == null ? null : t.ch;
-            this.mask = t.mask == null ? 0 : t.mask;
-            this.code = (t.code == null) ? 0 : t.code;
-
-            if (typeof t.hint != "undefined") {
-                this.hint = t.hint;
-            }
-
-            if (t.repeat != null) {
-                this.setFireParams(true, t.repeat);
-            }
-
-            this.$super(t.view || t.icon || t.label || this.ch);
-        },
-
         function _pointerPressed(e) {
-            if (this.$sticked == true) {
+            if (this.$sticked === true) {
                 this.$sticked = false;
                 this.$getSuper("_pointerReleased").call(this, e);
                 this.fireVkReleased(this.code, this.ch, this.mask);
@@ -604,7 +602,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
             size: "ps",
             hints: "backspace"
         }
-    }
+    };
 
     pkg.VKeyOption = Class(pkg.VKeyBase, [
         function $clazz() {
@@ -617,7 +615,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
         function $prototype() {
             this.catchFired = function() {
-                if (this.menu.parent != null) {
+                if (this.menu.parent !== null) {
                     this.menu.removeMe();
                 } else {
                     var o = zebkit.layout.toParentOrigin(this);
@@ -635,13 +633,12 @@ zebkit.package("ui.vk", function(pkg, Class) {
             this.menu.toPreferredSize();
             this.menu.$isVkElement = true;
 
-
             this.options = options.slice(0);
             var $this = this;
             this.menu.bind(function(src, i) {
                 if (src.selectedIndex >= 0) {
                     var vk = $this.findVK("vkOptionSelected");
-                    if (vk != null) {
+                    if (vk !== null) {
                         vk.vkOptionSelected($this,
                                             src.selectedIndex,
                                             $this.options[src.selectedIndex]);
@@ -669,6 +666,39 @@ zebkit.package("ui.vk", function(pkg, Class) {
     KE.device = "vkeyboard";
 
     pkg.VKeys = Class(pkg.VKey, [
+        function(chars) {
+            if (chars.length < 2) {
+                throw new Error();
+            }
+
+            this.$super( {
+                ch    : chars[0],
+                label : new this.clazz.KeysLabelPan(chars)
+            });
+
+            if (chars.length > 2) {
+                this.keysPopupPan = new this.clazz.KeysPopupPan();
+
+                var $this = this;
+                for(var i = 1; i < chars.length; i++) {
+                    var key = pkg.createVKey(chars[i]);
+                    key.extend([
+                        function findVK(id) {
+                            return $this.findVK(id);
+                        },
+
+                        function fireVkReleased(code, ch, mask) {
+                            this.$super(code, ch, mask);
+                            $this.hideKeysPopupPan();
+                        }
+                    ]);
+                    this.keysPopupPan.add(key);
+                }
+            } else {
+                this.altCh = chars[1];
+            }
+        },
+
         function $clazz () {
             this.layout = new zebkit.layout.BorderLayout();
 
@@ -715,6 +745,8 @@ zebkit.package("ui.vk", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.keysPopupPan = null;
+
             this.getLabel = function() {
                 return this.kids[0].mainLab.getValue();
             };
@@ -726,11 +758,10 @@ zebkit.package("ui.vk", function(pkg, Class) {
             this.showKeysPopupPan = function() {
                 this.hideHint();
 
-                if (this.keysPopupPan == null) {
+                if (this.keysPopupPan === null) {
                     this.$counter = (this.$counter + 1 ) % 2;
                     this.showHint(this.$counter === 0 ? this.ch : this.altCh);
-                }
-                else {
+                } else {
                     this.$pressed.shutdown();
 
                     var rl = zebkit.layout.toParentOrigin(this);
@@ -756,7 +787,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
             };
 
             this.hideKeysPopupPan = function() {
-                if (this.keysPopupPan != null) {
+                if (this.keysPopupPan !== null) {
                     this.keysPopupPan.removeMe();
                 }
             };
@@ -768,60 +799,23 @@ zebkit.package("ui.vk", function(pkg, Class) {
             this.$super(e);
 
             var $this = this;
-            this.$pressed = zebkit.util.tasksSet.run(new function(t) {
+            this.$pressed = zebkit.util.tasksSet.run(function(t) {
                 $this.showKeysPopupPan(t);
             }, 700, 700);
         },
 
         function fireVkTyped(code, ch, mask) {
-            if (this.keysPopupPan == null) {
+            if (this.keysPopupPan === null) {
                 ch = this.$counter > 0 ? this.altCh : this.ch;
                 this.$super(ch.charCodeAt(0), ch, mask);
-            } else {
-                if (this.keysPopupPan.parent == null) {
-                    this.$super(code, ch, mask);
-                }
+            } else  if (this.keysPopupPan.parent === null) {
+                this.$super(code, ch, mask);
             }
         },
 
         function fireVkReleased(code, ch, mask) {
             this.$pressed.shutdown();
             this.$super(code, ch, mask);
-        },
-
-        function(chars) {
-            if (chars.length < 2) {
-                throw new Error();
-            }
-
-            this.$super( {
-                ch    : chars[0],
-                label : new this.clazz.KeysLabelPan(chars)
-            });
-
-            this.keysPopupPan = null;
-            if (chars.length > 2) {
-                this.keysPopupPan = new this.clazz.KeysPopupPan();
-
-                var $this = this;
-                for(var i = 1; i < chars.length; i++) {
-                    var key =  pkg.createVKey(chars[i]);
-                    key.extend([
-                        function findVK(id) {
-                            return $this.findVK(id);
-                        },
-
-                        function fireVkReleased(code, ch, mask) {
-                            this.$super(code, ch, mask);
-                            $this.hideKeysPopupPan();
-                        }
-                    ]);
-                    this.keysPopupPan.add(key);
-                }
-            }
-            else {
-                this.altCh = chars[1];
-            }
         }
     ]);
 
@@ -835,22 +829,17 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
     pkg.createVKey = function(d) {
         if (zebkit.isString(d)) {
-            if (pkg.PredefinedVKey[d.toLowerCase()] != null) {
+            if (pkg.PredefinedVKey.hasOwnProperty(d.toLowerCase())) {
                 d = pkg.PredefinedVKey[d.toLowerCase()];
+            } else if (d.length > 1) {
+                return new pkg.VKeys(d);
             }
-            else {
-                if (d.length > 1) return new pkg.VKeys(d);
-            }
-        }
-        else {
+        } else {
             if (Array.isArray(d)) {
         		return d.length === 1 ? new pkg.VKey (d[0])
                                       : new pkg.VKeys(d);
-            }
-            else {
-                if (d.hasOwnProperty("vkey")) {
-                    return d["vkey"];
-                }
+            } else if (d.hasOwnProperty("vkey")) {
+                return d.vkey;
             }
         }
 
@@ -868,8 +857,8 @@ zebkit.package("ui.vk", function(pkg, Class) {
             this.$dontGrabFocus = true;
 
             this.eachGroupKey = function(g, f) {
-                var g = this.getGroupPan(g);
-                if (g != null) {
+                g = this.getGroupPan(g);
+                if (g !== null) {
                     for(var i = 0; i < g.kids.length; i++) {
                         var k = g.kids[i];
                         f.call(this, g, k);
@@ -885,7 +874,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
             this.show = function(d) {
                 this.removeMe();
-                if (d != null) {
+                if (d !== null) {
                     this.constraints = "bottom";
                     this.toPreferredSize();
 
@@ -917,9 +906,9 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
             this.onMask = function(mask, vk) {
                 var oldMask = this.mask;
-                if (mask != 0) {
+                if (mask !== 0) {
                     this.mask = mask | this.mask;
-                    if (oldMask != this.mask) {
+                    if (oldMask !== this.mask) {
                         this.vkMaskUpdated(vk, oldMask, this.mask);
                     }
                 }
@@ -927,9 +916,9 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
             this.offMask = function(mask, vk) {
                 var oldMask = this.mask;
-                if (mask != 0) {
+                if (mask !== 0) {
                     this.mask = mask ^ this.mask;
-                    if (oldMask != this.mask) {
+                    if (oldMask !== this.mask) {
                         this.vkMaskUpdated(vk, oldMask, this.mask);
                     }
                 }
@@ -941,7 +930,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
             this.vkMaskUpdated = function(vkey, om, nm) {
                 this.eachKey(function(g, k) {
-                    if (k != vkey && k.mask != 0 && k.mask != null) {
+                    if (k !== vkey && k.mask !== 0 && k.mask != null) {
                         k.$syncMask(nm);
                     }
                 });
@@ -950,7 +939,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
             };
 
             this.vkPressed = function (vk, code, key, mask) {
-                if (mask != 0) {
+                if (mask !== 0) {
                     this.onMask(mask, vk);
                 }
 
@@ -968,7 +957,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
             };
 
             this.vkReleased = function(vk, code, key, mask) {
-                if (mask != 0) {
+                if (mask !== 0) {
                     this.offMask(mask, vk);
                 }
                 KE.key = key;
@@ -978,7 +967,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
             };
 
             this.setActiveGroup = function(name) {
-                if (this.group != name) {
+                if (this.group !== name) {
                     this.group = name;
                     for(var i = 0; i < this.kids.length; i++) {
                         var k = this.kids[i];
@@ -987,7 +976,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
                     // adjust size if VK is shown
                     var can = this.getCanvas();
-                    if (can != null && can.win != null) {
+                    if (can !== null && can.win != null) {
                         var win = can.win;
                         this.toPreferredSize();
                         this.setSize(win.width - win.getLeft() - win.getRight(), this.height);
@@ -1038,8 +1027,8 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
         function setParent(p) {
             // mean the vk is removed from its parent
-            if (p == null) {
-                if (this.parent != null) {
+            if (p === null) {
+                if (this.parent !== null) {
                     // remove other VK related elements
                     for(var i = this.parent.kids.length - 1; i >= 0; i--) {
                         var kid = this.parent.kids[i];
@@ -1066,20 +1055,20 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
     function $isVkElement(c) {
         var p = c;
-        while (p != null && p.$isVkElement != true) p = p.parent;
-        return p != null;
+        while (p !== null && p.$isVkElement !== true) p = p.parent;
+        return p !== null;
     }
 
     ui.events.bind({
         focusGained : function (e) {
-            if (pkg.$vk != null && $isVkElement(e.source) === false && e.source.vkMode != null) {
+            if (pkg.$vk !== null && $isVkElement(e.source) === false && e.source.vkMode != null) {
                 pkg.showVK(zebkit.instanceOf(e.source, ui.TextField) ? e.source : null);
             }
         },
 
         pointerPressed : function(e) {
-            if (pkg.$vk != null) {
-                if (pkg.$vk.parent != null &&
+            if (pkg.$vk !== null) {
+                if (pkg.$vk.parent !== null &&
                     $isVkElement(e.source) === false &&
                     zebkit.layout.isAncestorOf(pkg.$vk, e.source) === false)
                 {
@@ -1088,7 +1077,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
                 // if input component holds focus, virtual keyboard is
                 // hidden and we press on the input component
-                if (pkg.$vk.parent == null && e.source.vkMode != null) {
+                if (pkg.$vk.parent === null && e.source.vkMode != null) {
                     pkg.showVK(e.source);
                 }
             }

@@ -240,7 +240,7 @@ zebkit.package("ui", function(pkg, Class) {
                 if (this.target != o) {
                     var old = this.target;
                     this.target = o;
-                    if (this.targetWasChanged != null) {
+                    if (typeof this.targetWasChanged !== 'undefined') {
                         this.targetWasChanged(old, o);
                     }
                 }
@@ -1060,22 +1060,22 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.$recalc = function(v) {
                 var b = 0, ps = v.getPreferredSize();
-                if (v.getLeft != null) {
+                if (typeof v.getLeft !== 'undefined') {
                     b = v.getLeft();
                     if (b > this.left) this.left = b;
                 }
 
-                if (v.getRight != null) {
+                if (typeof v.getRight !== 'undefined') {
                     b = v.getRight();
                     if (b > this.right) this.right = b;
                 }
 
-                if (v.getTop != null) {
+                if (typeof v.getTop !== 'undefined') {
                     b = v.getTop();
                     if (b > this.top) this.top = b;
                 }
 
-                if (v.getBottom != null) {
+                if (typeof v.getBottom !== 'undefined') {
                     b = v.getBottom();
                     if (b > this.bottom) this.bottom = b;
                 }
@@ -1084,7 +1084,7 @@ zebkit.package("ui", function(pkg, Class) {
                 if (ps.width > this.width) this.width = ps.width;
                 if (ps.height > this.height) this.height = ps.height;
 
-                if (this.voutline == null && v.outline != null) {
+                if (typeof this.voutline === 'undefined' && typeof v.outline !== 'undefined') {
                     this.voutline = v;
                 }
             };
@@ -1104,7 +1104,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.ownerChanged = function(o) {
                 this.iterate(function(k, v) {
-                    if (v != null && v.ownerChanged != null) {
+                    if (v !== null && typeof v.ownerChanged !== 'undefined') {
                         v.ownerChanged(o);
                     }
                 });
@@ -1131,7 +1131,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.outline = function(g,x,y,w,h,d) {
-                return this.voutline != null && this.voutline.outline(g,x,y,w,h,d);
+                return typeof this.voutline !== 'undefined' && this.voutline.outline(g,x,y,w,h,d);
             };
         }
     ]);
@@ -1174,7 +1174,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             for(var k in args) {
                 this.views[k] = pkg.$view(args[k]);
-                if (this.views[k] != null) this.$recalc(this.views[k]);
+                if (this.views[k] !== null) this.$recalc(this.views[k]);
             }
             this.activate("*");
         },
@@ -1276,7 +1276,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.lineWidth = 1;
 
-            this.paint = function(g,x,y,w,h,d) {
+            this.paint = function(g,x,y,w,h,t) {
                 g.setColor(this.color);
                 g.beginPath();
                 g.lineWidth = this.lineWidth;
@@ -1436,7 +1436,7 @@ zebkit.package("ui", function(pkg, Class) {
                         this.owner.invalidate();
                     }
 
-                    if (this.invalidate != null) {
+                    if (typeof this.invalidate !== 'undefined') {
                         this.invalidate();
                     }
                 }
@@ -1488,7 +1488,7 @@ zebkit.package("ui", function(pkg, Class) {
                     this.owner.invalidate();
                 }
 
-                if (this.invalidate != null) {
+                if (typeof this.invalidate !== 'undefined') {
                     this.invalidate();
                 }
             };
@@ -1508,6 +1508,28 @@ zebkit.package("ui", function(pkg, Class) {
     pkg.StringRender = Class(pkg.BaseTextRender, [
         function $prototype() {
             this.stringWidth = -1;
+
+            // for the sake of speed up construction of the widely used render
+            // declare it none standard way.
+            this[''] = function(txt, font, color) {
+                this.setTarget(txt);
+
+                /**
+                 * Font to be used to render the target string
+                 * @attribute font
+                 * @readOnly
+                 * @type {zebkit.ui.Font}
+                 */
+                this.font = arguments.length > 1 ? font : this.clazz.font;
+
+                /**
+                 * Color to be used to render the target string
+                 * @readOnly
+                 * @attribute color
+                 * @type {String}
+                 */
+                this.color = arguments.length > 2 ? color : this.clazz.color;
+            };
 
             // implement position metric methods
             this.getMaxOffset = function() {
@@ -1539,11 +1561,11 @@ zebkit.package("ui", function(pkg, Class) {
                     g.setFont(this.font);
                 }
 
-                if (d !== null && d.getStartSelection != null) {
+                if (d !== null && typeof d.getStartSelection !== 'undefined') {
                     var startSel = d.getStartSelection(),
                         endSel   = d.getEndSelection();
 
-                    if (startSel !== null && endSel !== null && startSel.col !== endSel.col && d.selectionView != null) {
+                    if (startSel !== null && endSel !== null && startSel.col !== endSel.col && d.selectionView !== null) {
                         d.selectionView.paint(g, x + this.font.charsWidth(this.target, 0, startSel.col),
                                                  y,
                                                  this.font.charsWidth(this.target,
@@ -1559,8 +1581,10 @@ zebkit.package("ui", function(pkg, Class) {
                 }
 
                 if (d !== null && d.isEnabled === false) {
-                    g.fillStyle = d !== null && d.disabledColor != null ? d.disabledColor
-                                                                        : this.clazz.disabledColor;
+                    g.fillStyle = d !== null &&
+                                  d.disabledColor !== null &&
+                                  typeof d.disabledColor !== 'undefined'  ? d.disabledColor
+                                                                          : this.clazz.disabledColor;
                 }
 
                 g.fillText(this.target, x, y);
@@ -1601,28 +1625,6 @@ zebkit.package("ui", function(pkg, Class) {
                     height: this.font.height
                 };
             };
-
-            // for the sake of speed up construction of the widely used render
-            // declare it none standard way.
-            this[''] = function(txt, font, color) {
-                this.setTarget(txt);
-
-                /**
-                 * Font to be used to render the target string
-                 * @attribute font
-                 * @readOnly
-                 * @type {zebkit.ui.Font}
-                 */
-                this.font = arguments.length > 1 ? font : this.clazz.font;
-
-                /**
-                 * Color to be used to render the target string
-                 * @readOnly
-                 * @attribute color
-                 * @type {String}
-                 */
-                this.color = arguments.length > 2 ? color : this.clazz.color;
-            };
         }
     ]);
 
@@ -1635,6 +1637,36 @@ zebkit.package("ui", function(pkg, Class) {
      */
     pkg.TextRender = Class(pkg.BaseTextRender, zebkit.util.Position.Metric, [
         function $prototype() {
+            // speed up constructor by avoiding super execution since
+            // text render is one of the most used class
+            this[''] = function(text) {
+                /**
+                 * Text color
+                 * @attribute color
+                 * @type {String}
+                 * @default zebkit.ui.TextRender.color
+                 * @readOnly
+                 */
+                this.color = this.clazz.color;
+
+                /**
+                 * Text font
+                 * @attribute font
+                 * @type {String|zebkit.ui.Font}
+                 * @default zebkit.ui.TextRender.font
+                 * @readOnly
+                 */
+                this.font = this.clazz.font;
+
+                this.textWidth = this.textHeight = this.startInvLine = this.invLines = 0;
+
+                //!!!
+                //   since text render is widely used structure we do slight hack -
+                //   don't call parent constructor
+                //!!!
+                this.setTarget(zebkit.isString(text) ? new zebkit.data.Text(text) : text);
+            };
+
             /**
              * Get number of lines of target text
              * @return   {Integer} a number of line in the target text
@@ -1847,7 +1879,7 @@ zebkit.package("ui", function(pkg, Class) {
                             }
 
                             var p1 = null, p2 = null, bsel = false;
-                            if (lines > 0 && d !== null && d.getStartSelection != null) {
+                            if (lines > 0 && d !== null && typeof d.getStartSelection !== 'undefined') {
                                 p1   = d.getStartSelection();
                                 p2   = d.getEndSelection();
                                 bsel = p1 !== null && (p1.row !== p2.row || p1.col !== p2.col);
@@ -1883,8 +1915,10 @@ zebkit.package("ui", function(pkg, Class) {
                                 y += lilh;
                             }
                         } else {
-                            var dcol = d !== null && d.disabledColor != null ? d.disabledColor
-                                                                             : pkg.TextRender.disabledColor;
+                            var dcol = d !== null &&
+                                       d.disabledColor !== null &&
+                                       typeof d.disabledColor !== 'undefined' ? d.disabledColor
+                                                                              : pkg.TextRender.disabledColor;
 
                             for(var i = 0;i < lines; i++) {
                                 g.setColor(dcol);
@@ -1912,40 +1946,9 @@ zebkit.package("ui", function(pkg, Class) {
              * @method paintSelection
              */
             this.paintSelection = function(g, x, y, w, h, line, d) {
-                if (d.selectionView != null) {
+                if (d.selectionView !== null) {
                     d.selectionView.paint(g, x, y, w, h, d);
                 }
-            };
-
-            // speed up constructor by avoiding super execution since
-            // text render is one of the most used class
-            this[''] = function(text) {
-                /**
-                 * Text color
-                 * @attribute color
-                 * @type {String}
-                 * @default zebkit.ui.TextRender.color
-                 * @readOnly
-                 */
-                this.color = this.clazz.color;
-
-                /**
-                 * Text font
-                 * @attribute font
-                 * @type {String|zebkit.ui.Font}
-                 * @default zebkit.ui.TextRender.font
-                 * @readOnly
-                 */
-                this.font = this.clazz.font;
-
-
-                this.textWidth = this.textHeight = this.startInvLine = this.invLines = 0;
-
-                //!!!
-                //   since text render is widely used structure we do slight hack -
-                //   don't call parent constructor
-                //!!!
-                this.setTarget(zebkit.isString(text) ? new zebkit.data.Text(text) : text);
             };
         },
 
@@ -1960,14 +1963,15 @@ zebkit.package("ui", function(pkg, Class) {
 
     pkg.WrappedTextRender = new Class(pkg.TextRender, [
         function $prototype() {
-            this.brokenLines = [];
+            this.brokenLines = null;
             this.lastWidth = -1;
 
             this.breakLine = function (w, startIndex, line, lines) {
                 if (line === "") {
                     lines.push(line);
                 } else {
-                    var breakIndex = startIndex < line.length ? startIndex : line.length - 1,
+                    var breakIndex = startIndex < line.length ? startIndex
+                                                              : line.length - 1,
                         direction  = 0;
 
                     for(; breakIndex >= 0 && breakIndex < line.length ;) {
@@ -2014,7 +2018,7 @@ zebkit.package("ui", function(pkg, Class) {
 
         function invalidate(sl, len){
             this.$super(sl, len);
-            if (this.brokenLines != null) {
+            if (this.brokenLines !== null) {
                 this.brokenLines.length = 0;
             }
             this.lastWidth = -1;
@@ -2255,7 +2259,7 @@ zebkit.package("ui", function(pkg, Class) {
                             g.setColor(this.onColor2);
                             g.beginPath();
                             g.moveTo(xx + dt - s, yy + 1);
-                            g.lineTo(xx + dt - s, y + s*2);
+                            g.lineTo(xx + dt - s, y + s * 2);
                             g.stroke();
                         }
 
@@ -2264,10 +2268,10 @@ zebkit.package("ui", function(pkg, Class) {
                         yy -= dt;
 
                         g.moveTo(x + dt, y);
-                        g.lineTo(x + dt, yy - 2*s);
-                        g.lineTo(x + 2*s + dt, yy);
-                        g.lineTo(xx - 2*s, yy);
-                        g.lineTo(xx + dt, yy - 2*s);
+                        g.lineTo(x + dt, yy - 2 * s);
+                        g.lineTo(x + 2 * s + dt, yy);
+                        g.lineTo(xx - 2 * s, yy);
+                        g.lineTo(xx + dt, yy - 2 * s);
                         g.lineTo(xx + dt, y);
 
                         if (d.isEnabled === true){
@@ -2382,7 +2386,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.outline = function (g,x,y,w,h,d) {
                 var xx = x + w, yy = y + h;
-                if (d.getTitleInfo != null) {
+                if (typeof d.getTitleInfo !== 'undefined') {
                     var r = d.getTitleInfo();
                     if (r !== null) {
                         switch(r.orient) {
@@ -2422,7 +2426,7 @@ zebkit.package("ui", function(pkg, Class) {
                     }
                 }
 
-                if (this.target !== null && this.target.outline != null) {
+                if (this.target !== null && typeof this.target.outline !== 'undefined') {
                    b = this.target.outline(g, x, y, xx - x, yy - y, d);
                    if (b === true) return b;
                 }
@@ -2442,7 +2446,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.paint = function(g,x,y,w,h,d){
-                if (d.getTitleInfo != null){
+                if (typeof d.getTitleInfo !== 'undefined'){
                     var r = d.getTitleInfo();
                     if (r !== null) {
                         var xx = x + w, yy = y + h, t = g.$states[g.$curState];
@@ -2624,14 +2628,16 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.paint =  function(g,x,y,w,h,d) {
                 g.beginPath();
+
+                var  r = 0;
                 if (this.direction === "vertical") {
-                    var r = w/2;
+                    r = w/2;
                     g.arc(x + r, y + r, r, Math.PI, 0, false);
                     g.lineTo(x + w, y + h - r);
                     g.arc(x + r, y + h - r, r, 0, Math.PI, false);
                     g.lineTo(x, y + r);
                 } else {
-                    var r = h/2;
+                    r = h/2;
                     g.arc(x + r, y + r, r, 0.5 * Math.PI, 1.5 * Math.PI, false);
                     g.lineTo(x + w - r, y);
                     g.arc(x + w - r, y + h - r, r, 1.5 * Math.PI, 0.5 * Math.PI, false);

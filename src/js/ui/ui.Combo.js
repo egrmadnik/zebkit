@@ -527,7 +527,7 @@ zebkit.package("ui", function(pkg, Class) {
                     this.list.notifyScrollMan(this.list.selectedIndex);
                     canvas.getLayer(pkg.PopupLayerMix.id).add(this, this.winpad);
                     this.list.requestFocus();
-                    if (this.padShown != null) {
+                    if (typeof this.padShown !== 'undefined') {
                         this.padShown(true);
                     }
 
@@ -547,13 +547,13 @@ zebkit.package("ui", function(pkg, Class) {
 
                     if (this.list !== null) this.list.unbind(this);
                     this.list = l;
-                    if (this.list._) this.list.bind(this);
+                    if (typeof this.list._ !== 'undefined') this.list.bind(this);
 
                     var $this = this;
                     this.winpad = new this.clazz.ComboPadPan(this.list, [
                         function setParent(p) {
                             this.$super(p);
-                            if ($this.padShown != null) {
+                            if (typeof $this.padShown !== 'undefined') {
                                 $this.padShown($this, p !== null);
                             }
                         }
@@ -602,7 +602,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setSelectionView = function (c){
-                if (c != this.selectionView) {
+                if (c !== this.selectionView) {
                     this.selectionView = pkg.$view(c);
                     this.repaint();
                 }
@@ -616,7 +616,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setMaxPadHeight = function(h){
-                if (this.maxPadHeight != h) {
+                if (this.maxPadHeight !== h) {
                     this.hidePad();
                     this.maxPadHeight = h;
                 }
@@ -624,7 +624,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.setEditable = function(b) {
-                if (this.content === null || this.content.isEditable != b) {
+                if (this.content === null || this.content.isEditable !== b) {
                     var ctr = "center";
                     if (this.content !== null) {
                         ctr = this.content.constraints;
@@ -674,7 +674,7 @@ zebkit.package("ui", function(pkg, Class) {
                     throw new Error("Content panel is set");
                 }
 
-                if (c._ != null) c.bind(this);
+                if (typeof c._ !== 'undefined') c.bind(this);
                 this.content = c;
 
                 if (this.list !== null) {
@@ -683,15 +683,15 @@ zebkit.package("ui", function(pkg, Class) {
             }
 
             this.$super(index, s, c);
-            if (this.button === null && c._ != null && c._.fired != null){
+            if (this.button === null && typeof c._ !== 'undefined' && typeof c._.fired !== 'undefined'){
                 this.button = c;
                 this.button.bind(this);
             }
         },
 
         function kidRemoved(index,l){
-            if (this.content === l){
-                if (l._ != null) l.unbind(this);
+            if (this.content === l) {
+                if (typeof l._ !== 'undefined') l.unbind(this);
                 this.content = null;
             }
 

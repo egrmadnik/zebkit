@@ -20,7 +20,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
             if (zebkit.isString(e)) {
                 e = document.createElement(e);
-                if (this.clazz.CLASS_NAME != null) {
+                if (typeof this.clazz.CLASS_NAME !== 'undefined') {
                     e.setAttribute("class", this.clazz.CLASS_NAME);
                 }
                 e.style.border   = "0px solid transparent";   // clean up border
@@ -44,7 +44,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             // this is set to make possible to use set z-index for HTML element
             this.element.style.position = "relative";
 
-            if (e.parentNode != null && e.parentNode.getAttribute("data-zebcont") != null) {
+            if (e.parentNode !== null && e.parentNode.getAttribute("data-zebcont") !== null) {
                 throw new Error("DOM element '" + e + "' already has container");
             }
 
@@ -88,7 +88,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             // if passed DOM element already has parent
             // attach it to container first and than
             // attach the container to the original parent element
-            if (e.parentNode != null) {
+            if (e.parentNode !== null) {
                 // !!!
                 // Pay attention container position cannot be set to absolute
                 // since how the element has to be laid out is defined by its
@@ -111,7 +111,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             this.$super();
 
             // attach listeners
-            if (this.$initListeners != null) {
+            if (typeof this.$initListeners !== "undefined") {
                 this.$initListeners();
             }
 
@@ -290,6 +290,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                     var e         = this.element,
                         vars      = {},
                         domParent = null,
+                        k         = null,
                         b         = !zebkit.web.$contains(this.$container);
 
                     // element doesn't have preferred size if it is not a member of
@@ -303,7 +304,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
                     // save element metrics
                     for(var i = 0; i < $store.length; i++) {
-                        var k = $store[i];
+                        k = $store[i];
                         vars[k] = e.style[k];
                     }
 
@@ -317,15 +318,15 @@ zebkit.package("ui.web", function(pkg, Class) {
                     this.ePsW = e.offsetWidth;
                     this.ePsH = e.offsetHeight;
 
-                    for(var k in vars) {
+                    for(k in vars) {
                         var v = vars[k];
-                        if (v != null) e.style[k] = v;
+                        if (v !== null) e.style[k] = v;
                     }
 
                     if (b) {
                         document.body.removeChild(this.$container);
                         // restore previous parent node
-                        if (domParent != null) domParent.appendChild(this.$container);
+                        if (domParent !== null) domParent.appendChild(this.$container);
                     }
                 }
             };
@@ -366,7 +367,7 @@ zebkit.package("ui.web", function(pkg, Class) {
         function toFront() {
             this.$super();
             var pnode = this.$container.parentNode;
-            if (pnode != null && pnode.lastChild !== this.$container) {
+            if (pnode !== null && pnode.lastChild !== this.$container) {
                 pnode.removeChild(this.$container);
                 pnode.appendChild(this.$container);
             }
@@ -375,14 +376,14 @@ zebkit.package("ui.web", function(pkg, Class) {
         function toBack() {
             this.$super();
             var pnode = this.$container.parentNode;
-            if (pnode != null && pnode.firstChild !== this.$container) {
+            if (pnode !== null && pnode.firstChild !== this.$container) {
                 pnode.removeChild(this.$container);
                 pnode.insertBefore(this.$container, pnode.firstChild);
             }
         },
 
         function setEnabled(b) {
-            if (this.isEnabled != b) {
+            if (this.isEnabled !== b) {
                 if (b) {
                     this.$container.removeChild(this.$blockElement);
                 } else {
@@ -413,7 +414,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                 var ww = 2 * w - this.element.offsetWidth,
                     hh = 2 * h - this.element.offsetHeight;
 
-                if (ww != w || hh != h) {
+                if (ww !== w || hh !== h) {
                     // than we know the component metrics and can compute necessary reductions
                     this.element.style.width   = "" + ww + "px";
                     this.element.style.height  = "" + hh + "px";
@@ -494,7 +495,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
         function validate() {
             // lookup root canvas
-            if (this.$canvas == null && this.parent !== null) {
+            if (this.$canvas === null && this.parent !== null) {
                 this.$canvas = this.getCanvas();
             }
 
@@ -583,11 +584,11 @@ zebkit.package("ui.web", function(pkg, Class) {
              * @return {Boolean} true if the HTML element wrapped with zebkit UI is in invisible state
              */
             function $isInInvisibleState(c) {
-                if (c.isVisible === false           ||
-                    c.$container.parentNode == null ||
-                    c.width       <= 0              ||
-                    c.height      <= 0              ||
-                    c.parent      === null          ||
+                if (c.isVisible === false            ||
+                    c.$container.parentNode === null ||
+                    c.width       <= 0               ||
+                    c.height      <= 0               ||
+                    c.parent      === null           ||
                     zebkit.web.$contains(c.$container) === false)
                 {
                     return true;
@@ -616,7 +617,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
                 // parentElement is null means the component has
                 // not been inserted into DOM hierarchy
-                if (parentElement !== null && c.$container.parentNode == null) {
+                if (parentElement !== null && c.$container.parentNode === null) {
                     // parent DOM element of the component is null, but a DOM container
                     // for the element has been detected. We need to add it to DOM
                     // than we have to add the DOM to the found DOM parent element
@@ -628,7 +629,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                     // test consistency whether the DOM element already has
                     // parent node that doesn't match the discovered
                     if (parentElement           !== null &&
-                        c.$container.parentNode !=  null &&
+                        c.$container.parentNode !== null &&
                         c.$container.parentNode !== parentElement)
                     {
                         throw new Error("DOM parent inconsistent state ");
@@ -654,7 +655,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             //  zebkit component contains DOM component every movement of zebkit component
             //  has to bring to correction of the embedded DOM elements
             function $adjustLocation(c) {
-                if (c.$container.parentNode != null) {
+                if (c.$container.parentNode !== null) {
                     // hide DOM component before move
                     // makes moving more smooth
                     var prevVisibility = null;
@@ -686,11 +687,8 @@ zebkit.package("ui.web", function(pkg, Class) {
                     var e = c.$domKids[k];
                     if (e.isDOMElement === true) {
                         callback.call(this, e);
-                    } else {
-                        // prevent unnecessary method call by condition
-                        if (typeof e.$domKids !== 'undefined') {
-                            $domElements(e, callback);
-                        }
+                    } else if (typeof e.$domKids !== 'undefined') { // prevent unnecessary method call by condition
+                        $domElements(e, callback);
                     }
                 }
             }
@@ -860,21 +858,21 @@ zebkit.package("ui.web", function(pkg, Class) {
             function requestFocus(c) {
                 this.$super(c);
 
+                var canvas = null;
+
                 // when a meta key is pressed a canvas can lose native focus in Window IE/Chrome
                 // to double check the focus will be properly returned the code below is required
                 if (this.focusOwner !== null) {
                     if (this.focusOwner.isDOMElement !== true) {
-                        var canvas = this.focusOwner.getCanvas();
-                        if (canvas != null && document.activeElement !== canvas.element) {
-                            canvas.element.focus();
-                        }
-                    }
-                } else if (c !== null) {
-                    if (c.isDOMElement !== true) {
-                        var canvas = c.getCanvas();
+                        canvas = this.focusOwner.getCanvas();
                         if (canvas !== null && document.activeElement !== canvas.element) {
                             canvas.element.focus();
                         }
+                    }
+                } else if (c !== null && c.isDOMElement !== true) {
+                    canvas = c.getCanvas();
+                    if (canvas !== null && document.activeElement !== canvas.element) {
+                        canvas.element.focus();
                     }
                 }
             },

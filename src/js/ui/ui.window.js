@@ -396,6 +396,82 @@ zebkit.package("ui", function(pkg, Class) {
      * @extends {zebkit.ui.Panel}
      */
     pkg.Window = Class(pkg.StatePan, [
+        function (s, c) {
+            //!!! for some reason state has to be set beforehand
+            this.state = "inactive";
+
+            this.prevH = this.prevX = this.prevY = 0;
+            this.px = this.py = this.dx = this.dy = 0;
+            this.prevW = this.action = -1;
+
+            /**
+             * Root window panel. The root panel has to be used to
+             * add any UI components
+             * @attribute root
+             * @type {zebkit.ui.Panel}
+             * @readOnly
+             */
+            this.root = (c == null ? this.createContentPan() : c);
+
+            /**
+             * Window caption panel. The panel contains window
+             * icons, button and title label
+             * @attribute caption
+             * @type {zebkit.ui.Panel}
+             * @readOnly
+             */
+            this.caption = this.createCaptionPan();
+
+            /**
+             * Window title component
+             * @type {zebkit.ui.Panel}
+             * @attribute title
+             * @readOnly
+             */
+            this.title = this.createTitle();
+            this.title.setValue((s == null ? "" : s));
+
+            /**
+             * Icons panel. The panel can contain number of icons.
+             * @type {zebkit.ui.Panel}
+             * @attribute icons
+             * @readOnly
+             */
+            this.icons = new pkg.Panel(new zebkit.layout.FlowLayout("left", "center", "horizontal", 2));
+            this.icons.add(new this.clazz.Icon());
+
+            /**
+             * Window buttons panel. The panel can contain number of window buttons
+             * @type {zebkit.ui.Panel}
+             * @attribute buttons
+             * @readOnly
+             */
+            this.buttons = new pkg.Panel(new zebkit.layout.FlowLayout("center", "center"));
+
+            this.caption.add("center", this.title);
+            this.caption.add("left", this.icons);
+            this.caption.add("right", this.buttons);
+
+            /**
+             * Window status panel.
+             * @attribute status
+             * @readOnly
+             * @type {zebkit.ui.Panel}
+             */
+            this.status = new this.clazz.StatusPan();
+            this.sizer  = new this.clazz.SizerPan();
+            this.status.add(this.sizer);
+
+            this.setSizeable(true);
+
+            this.$super();
+            this.setLayout(new zebkit.layout.BorderLayout(2,2));
+
+            this.add("center", this.root);
+            this.add("top", this.caption);
+            this.add("bottom", this.status);
+        },
+
         function $clazz() {
             this.CaptionPan = Class(pkg.StatePan, [
                 function $prototype() {
@@ -413,6 +489,8 @@ zebkit.package("ui", function(pkg, Class) {
 
         function $prototype() {
             var MOVE_ACTION = 1, SIZE_ACTION = 2;
+
+            this.sizer = this.caption = null;
 
             this.isPopupEditor = true;
 
@@ -441,7 +519,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.isActive = function() {
                 var c = this.getCanvas();
-                return c != null && c.getLayer("win").activeWin === this.getWinContainer();
+                return c !== null && c.getLayer("win").activeWin === this.getWinContainer();
             };
 
             this.pointerDragStarted = function(e){
@@ -521,7 +599,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.winOpened = function(e) {
                 var state = this.isActive() ? "active" : "inactive";
-                if (this.caption != null && this.caption.setState != null) {
+                if (this.caption !== null && typeof this.caption.setState !== 'undefined') {
                     this.caption.setState(state);
                 }
                 this.setState(state);
@@ -598,7 +676,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.setSizeable = function(b){
                 if (this.isSizeable != b){
                     this.isSizeable = b;
-                    if (this.sizer != null) {
+                    if (this.sizer !== null) {
                         this.sizer.setVisible(b);
                     }
                 }
@@ -665,7 +743,7 @@ zebkit.package("ui", function(pkg, Class) {
                 // remove previously added buttons
                 for(var i=0; i< this.buttons.length; i++) {
                     var kid = this.buttons.kids[i];
-                    if (kid._ != null) kid.unbind();
+                    if (typeof kid._ !== 'undefined') kid.unbind();
                 }
                 this.buttons.removeAll();
 
@@ -687,85 +765,9 @@ zebkit.package("ui", function(pkg, Class) {
 
         function focused(){
             this.$super();
-            if (this.caption != null) {
+            if (this.caption !== null) {
                 this.caption.repaint();
             }
-        },
-
-        function (s, c) {
-            //!!! for some reason state has to be set beforehand
-            this.state = "inactive";
-
-            this.prevH = this.prevX = this.prevY = 0;
-            this.px = this.py = this.dx = this.dy = 0;
-            this.prevW = this.action = -1;
-
-            /**
-             * Root window panel. The root panel has to be used to
-             * add any UI components
-             * @attribute root
-             * @type {zebkit.ui.Panel}
-             * @readOnly
-             */
-            this.root = (c == null ? this.createContentPan() : c);
-
-            /**
-             * Window caption panel. The panel contains window
-             * icons, button and title label
-             * @attribute caption
-             * @type {zebkit.ui.Panel}
-             * @readOnly
-             */
-            this.caption = this.createCaptionPan();
-
-            /**
-             * Window title component
-             * @type {zebkit.ui.Panel}
-             * @attribute title
-             * @readOnly
-             */
-            this.title = this.createTitle();
-            this.title.setValue((s == null ? "" : s));
-
-            /**
-             * Icons panel. The panel can contain number of icons.
-             * @type {zebkit.ui.Panel}
-             * @attribute icons
-             * @readOnly
-             */
-            this.icons = new pkg.Panel(new zebkit.layout.FlowLayout("left", "center", "horizontal", 2));
-            this.icons.add(new this.clazz.Icon());
-
-            /**
-             * Window buttons panel. The panel can contain number of window buttons
-             * @type {zebkit.ui.Panel}
-             * @attribute buttons
-             * @readOnly
-             */
-            this.buttons = new pkg.Panel(new zebkit.layout.FlowLayout("center", "center"));
-
-            this.caption.add("center", this.title);
-            this.caption.add("left", this.icons);
-            this.caption.add("right", this.buttons);
-
-            /**
-             * Window status panel.
-             * @attribute status
-             * @readOnly
-             * @type {zebkit.ui.Panel}
-             */
-            this.status = new this.clazz.StatusPan();
-            this.sizer  = new this.clazz.SizerPan();
-            this.status.add(this.sizer);
-
-            this.setSizeable(true);
-
-            this.$super();
-            this.setLayout(new zebkit.layout.BorderLayout(2,2));
-
-            this.add("center", this.root);
-            this.add("top", this.caption);
-            this.add("bottom", this.status);
         }
     ]);
 });

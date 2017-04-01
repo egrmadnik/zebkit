@@ -267,10 +267,12 @@ zebkit.package("layout", function(pkg, Class) {
             * @type {zebkit.layout.Layoutable}
             */
 
-            this.x = this.y = this.height = this.width = this.cachedHeight= 0;
+            this.x = this.y = this.height = this.width = this.cachedHeight = 0;
 
             this.psWidth = this.psHeight = this.cachedWidth = -1;
             this.isLayoutValid = this.isValid = false;
+
+            this.layout = null;
 
             /**
              * The component layout constraints. The constraints is specific to
@@ -285,8 +287,15 @@ zebkit.package("layout", function(pkg, Class) {
 
             function $normPath(p) {
                 p = p.trim();
-                if (p[0] === '/') return p;
-                if (p[0] === '#') return "//*[@id='" + p.substring(1).trim() + "']";
+
+                if (p[0] === '/') {
+                    return p;
+                }
+
+                if (p[0] === '#') {
+                    return "//*[@id='" + p.substring(1).trim() + "']";
+                }
+
                 return "//" + p;
             }
 
@@ -583,7 +592,9 @@ zebkit.package("layout", function(pkg, Class) {
              * @chainable
              */
             this.setLayout = function (m){
-                if (m == null) throw new Error("Null layout");
+                if (m === null || typeof m === 'undefined') {
+                    throw new Error("Null layout");
+                }
 
                 if (this.layout != m){
                     var pl = this.layout;

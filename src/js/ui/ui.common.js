@@ -71,6 +71,8 @@ zebkit.package("ui", function(pkg, Class) {
      * @return {zebkit.ui.Panel}  a created UI component
      */
     pkg.$component = function(desc, instance) {
+        var hasInstance = arguments.length > 1;
+
         if (zebkit.isString(desc)) {
             //  [x] Text
             //  @(image-path:wxh) Text
@@ -79,19 +81,19 @@ zebkit.package("ui", function(pkg, Class) {
             var m = desc.match(/^(\[[x ]?\])/);
             if (m !== null) {
                 var txt = desc.substring(m[1].length),
-                    ch  = instance != null && instance.clazz.Checkbox != null ? new instance.clazz.Checkbox(txt)
-                                                                              : new pkg.Checkbox(txt);
+                    ch  = hasInstance && typeof instance.clazz.Checkbox !== 'undefined' ? new instance.clazz.Checkbox(txt)
+                                                                                        : new pkg.Checkbox(txt);
                 ch.setValue(m[1].indexOf('x') > 0);
                 return ch;
             } else {
                 var m = desc.match(/^@\((.*)\)(\:[0-9]+x[0-9]+)?/);
                 if (m !== null) {
                     var path = m[1],
-                        txt  = desc.substring(path.length + 3 + (m[2] != null ? m[2].length : 0)).trim(),
-                        img  = instance != null && instance.clazz.ImagePan != null ? new instance.clazz.ImagePan(path)
-                                                                                   : new pkg.ImagePan(path);
+                        txt  = desc.substring(path.length + 3 + (typeof m[2] !== 'undefined' ? m[2].length : 0)).trim(),
+                        img  = hasInstance && typeof instance.clazz.ImagePan !== 'undefined' ? new instance.clazz.ImagePan(path)
+                                                                                             : new pkg.ImagePan(path);
 
-                    if (m[2] != null) {
+                    if (typeof m[2] !== 'undefined') {
                         var s = m[2].substring(1).split('x'),
                             w = parseInt(s[0], 10),
                             h = parseInt(s[1], 10);
@@ -103,11 +105,11 @@ zebkit.package("ui", function(pkg, Class) {
                         return img;
                     }
 
-                    return instance != null && instance.clazz.ImageLabel != null ? new instance.clazz.ImageLabel(txt, img)
-                                                                                 : new pkg.ImageLabel(txt, img);
+                    return hasInstance && typeof instance.clazz.ImageLabel !== 'undefined' ? new instance.clazz.ImageLabel(txt, img)
+                                                                                           : new pkg.ImageLabel(txt, img);
                 } else {
-                    return instance != null && instance.clazz.Label != null ? new instance.clazz.Label(desc)
-                                                                            : new pkg.Label(desc);
+                    return hasInstance && typeof instance.clazz.Label !== 'undefined' ? new instance.clazz.Label(desc)
+                                                                                      : new pkg.Label(desc);
                 }
             }
         } else if (Array.isArray(desc)) {
@@ -120,8 +122,8 @@ zebkit.package("ui", function(pkg, Class) {
                 }
                 return new pkg.grid.Grid(model);
             } else {
-                var clz = instance != null && instance.clazz.Combo != null ? instance.clazz.Combo
-                                                                           : pkg.Combo,
+                var clz = hasInstance && typeof instance.clazz.Combo !== 'undefined' ? instance.clazz.Combo
+                                                                                     : pkg.Combo,
                     combo = new clz(new clz.CompList(true)),
                     selectedIndex = -1;
 
@@ -140,11 +142,11 @@ zebkit.package("ui", function(pkg, Class) {
                 return combo;
             }
         } else if (desc instanceof Image) {
-            return instance != null && instance.clazz.ImagePan != null ? new instance.clazz.ImagePan(desc)
-                                                                       : new pkg.ImagePan(desc);
+            return hasInstance && typeof instance.clazz.ImagePan !== 'undefined' ? new instance.clazz.ImagePan(desc)
+                                                                                 : new pkg.ImagePan(desc);
         } else if (zebkit.instanceOf(desc, pkg.View)) {
-            var v = instance != null && instance.clazz.ViewPan != null ? new instance.clazz.ViewPan()
-                                                                       : new pkg.ViewPan();
+            var v = hasInstance && typeof instance.clazz.ViewPan !== 'undefined' ? new instance.clazz.ViewPan()
+                                                                                 : new pkg.ViewPan();
             v.setView(desc);
             return v;
         }
@@ -259,19 +261,19 @@ zebkit.package("ui", function(pkg, Class) {
                         $this.setView(isPic ? img : new pkg.Picture(i));
                         $this.vrp();
 
-                        if ($this.imageLoaded != null) {
+                        if (typeof $this.imageLoaded !== 'undefined') {
                             $this.imageLoaded(img);
                         }
 
                         // fire imageLoaded event to children
                         for(var t = $this.parent; t !== null; t = t.parent){
-                            if (t.childImageLoaded != null) {
+                            if (typeof t.childImageLoaded !== 'undefined') {
                                 t.childImageLoaded(img);
                             }
                         }
                     }).catch(function(e) {
                         console.log(img);
-                        console.log(zebkit.dumpError(e));
+                        zebkit.dumpError(e);
 
                         $this.$runner = null;
                         $this.setView(null);
@@ -509,9 +511,9 @@ zebkit.package("ui", function(pkg, Class) {
                 if (typeof r === "string" || r.constructor === String) {
                     this.setView(r.length === 0 || r.indexOf('\n') >= 0 ? new pkg.TextRender(new zebkit.data.Text(r))
                                                                         : new pkg.StringRender(r));
-                } else if (typeof r.clazz !== "undefined" &&
-                           r.getTextLength != null        &&    // a bit faster tnan instanceOf checking if
-                           r.getLines      != null           )  //  test if this is an instance of zebkit.data.TextModel
+                } else if (typeof r.clazz         !== "undefined" &&
+                           typeof r.getTextLength !== 'undefined' &&   // a bit faster tnan instanceOf checking if
+                           typeof r.getLines      !== 'undefined'   )  // test if this is an instance of zebkit.data.TextModel
                 {
                     this.setView(new pkg.TextRender(r));
                 } else {
@@ -543,15 +545,15 @@ zebkit.package("ui", function(pkg, Class) {
      * @extends {zebkit.ui.Panel}
      */
     pkg.ImageLabel = Class(pkg.Panel, [
-        function(txt, img) {
-            var img = zebkit.instanceOf(img, pkg.ImagePan) ? img : new this.clazz.ImagePan(img),
-                lab = zebkit.instanceOf(txt, pkg.Panel)    ? txt : new this.clazz.Label(txt);
+        function(txt, path) {
+            var img = zebkit.instanceOf(path, pkg.ImagePan) ? path : new this.clazz.ImagePan(path),
+                lab = zebkit.instanceOf(txt, pkg.Panel)     ? txt  : new this.clazz.Label(txt);
 
             img.constraints = "image";
             lab.constraints = "label";
 
             // TODO: this is copy paste of Panel constructor to initialize fields that has to
-            // be used for adding child components. these components have top be added before
+            // be used for adding child components. these components have to be added before
             // properties() call. a bit dirty trick
             if (typeof this.kids === "undefined") {
                 this.kids = [];
@@ -565,9 +567,8 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.$super();
 
-            lab.setVisible(txt != null);
+            lab.setVisible(txt !== null);
         },
-
 
         function $clazz() {
             this.ImagePan = Class(pkg.ImagePan, []);

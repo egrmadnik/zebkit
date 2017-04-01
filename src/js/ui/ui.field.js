@@ -69,6 +69,8 @@ zebkit.package("ui", function(pkg, Class) {
          * @for zebkit.ui.TextField
          */
         function $prototype() {
+            this.$blinkTask = null;
+
             this.hint = null;
 
             this.vkMode    = "indirect";
@@ -789,11 +791,11 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.getLines = function() {
-                return this.position == null ? -1 : this.position.metrics.getLines();
+                return this.position === null ? -1 : this.position.metrics.getLines();
             };
 
             this.getMaxOffset = function() {
-                return this.position == null ? -1 : this.position.metrics.getMaxOffset();
+                return this.position === null ? -1 : this.position.metrics.getMaxOffset();
             };
 
             this.focusGained = function (e){
@@ -812,7 +814,7 @@ zebkit.package("ui", function(pkg, Class) {
                     this.blinkMe = true;
 
                     var $this = this;
-                    this.blinkTask = zebkit.util.tasksSet.run(function() {
+                    this.$blinkTask = zebkit.util.tasksSet.run(function() {
                             $this.blinkMeCounter = ($this.blinkMeCounter + 1) % 3;
                             if ($this.blinkMeCounter === 0) {
                                 $this.blinkMe = !$this.blinkMe;
@@ -831,9 +833,9 @@ zebkit.package("ui", function(pkg, Class) {
                     if (this.hint !== null) this.repaint();
 
                     if (this.blinkingPeriod > 0) {
-                        if (this.blinkTask != null) {
-                            this.blinkTask.shutdown();
-                            this.blinkTask = null;
+                        if (this.$blinkTask !== null) {
+                            this.$blinkTask.shutdown();
+                            this.$blinkTask = null;
                         }
                         this.blinkMe = true;
                     }
@@ -966,8 +968,8 @@ zebkit.package("ui", function(pkg, Class) {
                 if (b !== this.isEditable){
                     this.isEditable = b;
                     if (b && this.blinkingPeriod > 0 && this.hasFocus()) {
-                        if (this.blinkTask != null) {
-                            this.blinkTask.shutdown();
+                        if (this.$blinkTask !== null) {
+                            this.$blinkTask.shutdown();
                         }
                         this.blinkMe = true;
                     }
@@ -1050,18 +1052,18 @@ zebkit.package("ui", function(pkg, Class) {
 
         function setView(v){
             if (v != this.view) {
-                if (this.view != null && this.view.target != null) {
+                if (this.view !== null && this.view.target != null) {
                     if (this.view.target.bind != null) this.view.target.unbind(this);
                 }
 
                 this.$super(v);
-                if (this.position == null) {
+                if (this.position === null) {
                     this.setPosition(new zebkit.util.Position(this.view));
                 } else {
                     this.position.setMetric(this.view);
                 }
 
-                if (this.view != null && this.view.target != null) {
+                if (this.view !== null && this.view.target != null) {
                     if (this.view.target.bind != null) this.view.target.bind(this);
                 }
             }
@@ -1076,7 +1078,7 @@ zebkit.package("ui", function(pkg, Class) {
          */
         function setValue(s) {
             var txt = this.getValue();
-            if (txt != s){
+            if (txt !== s){
                 if (this.position !== null) {
                     this.position.setOffset(0);
                 }

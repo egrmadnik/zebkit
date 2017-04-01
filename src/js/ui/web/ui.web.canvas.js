@@ -104,7 +104,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
             // if canvas is not yet part of HTML let's attach it to
             // body.
-            if (this.$container.parentNode == null) {
+            if (this.$container.parentNode === null) {
                 document.body.appendChild(this.$container);
             }
 
@@ -130,7 +130,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             }
 
             // call event method if it is defined
-            if (this.canvasInitialized != null) {
+            if (typeof this.canvasInitialized !== 'undefined') {
                 this.canvasInitialized();
             }
 
@@ -140,20 +140,21 @@ zebkit.package("ui.web", function(pkg, Class) {
             // one of of a child DOM element gets focus
             zebkit.web.$focusin(this.$container, function(e) {
                 if (e.target !== $this.$container &&
-                    e.target.parentNode != null &&
-                    e.target.parentNode.getAttribute("data-zebcont") == null)
+                    e.target.parentNode !== null &&
+                    e.target.parentNode.getAttribute("data-zebcont") === null)
                 {
                     ui.focusManager.requestFocus(null);
                 } else {
                     // clear focus if a focus owner component is placed in another zCanvas
                     if (e.target === $this.$container &&
-                        ui.focusManager.focusOwner != null &&
+                        ui.focusManager.focusOwner !== null &&
                         ui.focusManager.focusOwner.getCanvas() !== $this)
                     {
                         ui.focusManager.requestFocus(null);
                     }
                 }
             }, true);
+
         },
 
         function $clazz () {
@@ -222,13 +223,13 @@ zebkit.package("ui.web", function(pkg, Class) {
 
             // TODO: may be rename to dedicated method $doWheelScroll
             this.$doScroll = function(dx, dy, src) {
-                if (src === "wheel") {
+                if (src === "wheel" && pkg.$pointerOwner.mouse != null) {
                     var owner = pkg.$pointerOwner.mouse;
-                    while (owner != null && owner.doScroll == null) {
+                    while (owner !== null && typeof owner.doScroll === 'undefined') {
                         owner = owner.parent;
                     }
 
-                    if (owner != null) {
+                    if (owner !== null) {
                         return owner.doScroll(dx, dy, src);
                     }
                 }
@@ -259,7 +260,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             this.$keyPressed = function(e) {
                 for(var i = this.kids.length - 1;i >= 0; i--){
                     var l = this.kids[i];
-                    if (l.layerKeyPressed != null && l.layerKeyPressed(e) === true) {
+                    if (typeof l.layerKeyPressed !== 'undefined' && l.layerKeyPressed(e) === true) {
                         return true;
                     }
                 }
@@ -504,7 +505,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                 // and mouse exited entered event has to be generated.
                 // the correction takes effect if we have just completed dragging or mouse pressed
                 // event target doesn't match pkg.$pointerOwner
-                if (e.pointerType === "mouse" && (e.pressPageX != e.pageX || e.pressPageY != e.pageY)) {
+                if (e.pointerType === "mouse" && (e.pressPageX !== e.pageX || e.pressPageY !== e.pageY)) {
                     var nd = this.getComponentAt(x, y),
                         po = this.getComponentAt(this.$toElementX(e.pressPageX, e.pressPageY),
                                                  this.$toElementY(e.pressPageX, e.pressPageY));
@@ -599,7 +600,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                                                   zebkit.web.$measure(this.$container, "border-top-width") +
                                                   window.pageYOffset;
 
-                if (this.offx != poffx || this.offy != poffy) {
+                if (this.offx !== poffx || this.offy !== poffy) {
                     // force to fire component re-located event
                     this.relocated(this, poffx, poffy);
                 }
@@ -677,7 +678,7 @@ zebkit.package("ui.web", function(pkg, Class) {
         },
 
         function setSize(w, h) {
-            if (this.width != w || h != this.height) {
+            if (this.width !== w || h !== this.height) {
                 this.$super(w, h);
 
                 // let know to other zebkit canvases that
@@ -695,7 +696,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
             // Since zCanvas has no parent component calling the super
             // method above doesn't trigger repainting. So, do it here.
-            if (b != prev) {
+            if (b !== prev) {
                 this.repaint();
             }
             return this;
@@ -774,7 +775,7 @@ zebkit.package("ui.web", function(pkg, Class) {
     window.onbeforeunload = function(e) {
         var msgs = [];
         for(var i = pkg.zCanvas.$canvases.length - 1; i >= 0; i--) {
-            if (pkg.zCanvas.$canvases[i].saveBeforeLeave != null) {
+            if (typeof pkg.zCanvas.$canvases[i].saveBeforeLeave !== 'undefined') {
                 var m = pkg.zCanvas.$canvases[i].saveBeforeLeave();
                 if (m != null) {
                     msgs.push(m);
@@ -813,7 +814,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             var canvas = pkg.zCanvas.$canvases[i];
             if (zebkit.web.$contains(canvas.element) !== true) {
                 pkg.zCanvas.$canvases.splice(i, 1);
-                if (canvas.saveBeforeLeave != null) {
+                if (typeof canvas.saveBeforeLeave !== 'undefined') {
                     canvas.saveBeforeLeave();
                 }
             }

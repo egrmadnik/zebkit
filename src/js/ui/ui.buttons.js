@@ -66,7 +66,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.fire = function() {
                 this._.fired(this);
-                if (this.catchFired != null) this.catchFired();
+                if (typeof this.catchFired !== 'undefined') this.catchFired();
             };
         },
 
@@ -364,7 +364,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method stateUpdated
              */
             this.updated = function(o, b){
-                if (o != null) o.switched(b);
+                if (o !== null) o.switched(b);
                 this._.fired(this, o);
             };
 
@@ -570,6 +570,34 @@ zebkit.package("ui", function(pkg, Class) {
      * @param {zebkit.ui.SwitchManager} [m] a switch manager
      */
     pkg.Checkbox = Class(pkg.CompositeEvStatePan, pkg.Switchable, [
+        function (c, m) {
+            if (arguments.length < 2) {
+                m = new pkg.SwitchManager();
+            }
+
+            if (zebkit.isString(c)) {
+                c = new this.clazz.Label(c);
+            }
+
+            this.$super();
+
+            /**
+             * Reference to box component
+             * @attribute box
+             * @type {zebkit.ui.Panel}
+             * @readOnly
+             */
+            this.box = new this.clazz.Box();
+            this.add(this.box);
+
+            if (c != null) {
+                this.add(c);
+                this.setFocusAnchorComponent(c);
+            }
+
+            this.setSwitchManager(m);
+        },
+
         function $clazz() {
             /**
              * The box UI component class that is used by default with the check box component.
@@ -613,34 +641,6 @@ zebkit.package("ui", function(pkg, Class) {
                 }
                 return this.getValue() ? "on.disabled" : "off.disabled";
             };
-        },
-
-        function (c, m) {
-            if (arguments.length < 2) {
-                m = new pkg.SwitchManager();
-            }
-
-            if (zebkit.isString(c)) {
-                c = new this.clazz.Label(c);
-            }
-
-            this.$super();
-
-            /**
-             * Reference to box component
-             * @attribute box
-             * @type {zebkit.ui.Panel}
-             * @readOnly
-             */
-            this.box = new this.clazz.Box();
-            this.add(this.box);
-
-            if (c != null) {
-                this.add(c);
-                this.setFocusAnchorComponent(c);
-            }
-
-            this.setSwitchManager(m);
         },
 
         function keyPressed(e){
@@ -720,7 +720,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.$super(null);
 
             // if colors have not been set with default property set it here
-            if (this.colors == null) {
+            if (this.colors === null) {
                 this.colors  = {
                     "pressed.over" : "blue",
                     "out"          : "white",
@@ -734,6 +734,8 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.colors = null;
+
             /**
              * Mouse cursor type.
              * @attribute cursorType

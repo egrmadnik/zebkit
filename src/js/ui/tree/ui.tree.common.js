@@ -126,7 +126,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
              * @return {zebkit.ui.Panel} an editor UI component
              * @method getEditor
              */
-            this.getEditor = function(src,item){
+            this.getEditor = function(src, item){
                 var o = item.value;
                 this.tf.setValue((o == null) ? "" : o.toString());
                 return this.tf;
@@ -194,7 +194,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
              * @method  getView
              */
             this.getView = function (tree, item){
-                if (item.value && item.value.paint != null) {
+                if (item.value && typeof item.value.paint !== 'undefined') {
                     return item.value;
                 }
                 this.render.setValue(item.value == null ? "<null>" : item.value);
@@ -590,7 +590,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
                 return y;
             };
 
-            this.isOpen_ = function (i){
+            this.isOpen_ = function(i) {
                 return i == null || (i.kids.length > 0 && this.getIM(i).isOpen && this.isOpen_(i.parent));
             };
 
@@ -1219,7 +1219,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
                     var vv = ui.$view(v[k]);
 
                     this.views[k] = vv;
-                    if (k != "aselect" && k != "iselect"){
+                    if (k !== "aselect" && k !== "iselect"){
                         this.viewSizes[k] = vv ? vv.getPreferredSize() : { width: 0, height : 0};
                         this.vrp();
                     }

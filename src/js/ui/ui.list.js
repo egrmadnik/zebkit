@@ -365,7 +365,7 @@ zebkit.package("ui", function(pkg, Class) {
                     throw new RangeError(index);
                 }
 
-                if (this.selectedIndex != index) {
+                if (this.selectedIndex !== index) {
                     if (index < 0 || this.isItemSelectable(index)) {
                         var prev = this.selectedIndex;
                         this.selectedIndex = index;
@@ -558,9 +558,16 @@ zebkit.package("ui", function(pkg, Class) {
                         m = new zebkit.data.ListModel(m);
                     }
 
-                    if (this.model !== null && this.model._ != null) this.model.unbind(this);
+                    if (this.model !== null && typeof this.model._ !== 'undefined') {
+                        this.model.unbind(this);
+                    }
+
                     this.model = m;
-                    if (this.model !== null && this.model._ != null) this.model.bind(this);
+
+                    if (this.model !== null && typeof this.model._ !== 'undefined') {
+                        this.model.bind(this);
+                    }
+
                     this.vrp();
                 }
                 return this;
@@ -574,7 +581,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setPosition = function(c) {
-                if (c != this.position) {
+                if (c !== this.position) {
                     if (this.position !== null) {
                         this.position.unbind(this);
                     }
@@ -597,7 +604,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setViewProvider = function (v){
-                if (this.provider != v){
+                if (this.provider !== v){
                     if (typeof v === "function") {
                         var o = new zebkit.Dummy();
                         o.getView = v;
@@ -849,7 +856,7 @@ zebkit.package("ui", function(pkg, Class) {
                             dg       = this.gap * 2;
 
                         for (var i = this.firstVisible; i < count; i++){
-                            if (i != this.selectedIndex && typeof this.provider.getCellColor === 'function') {
+                            if (i !== this.selectedIndex && typeof this.provider.getCellColor === 'function') {
                                 var bc = this.provider.getCellColor(this, i);
                                 if (bc !== null) {
                                     g.setColor(bc);
@@ -918,8 +925,8 @@ zebkit.package("ui", function(pkg, Class) {
                 } else  {
                     if (this.visValid === false ||
                         (prev === null || prev.x !== this.vArea.x ||
-                         prev.y != this.vArea.y || prev.width != this.vArea.width ||
-                         prev.height != this.vArea.height))
+                         prev.y !== this.vArea.y || prev.width !== this.vArea.width ||
+                         prev.height !== this.vArea.height))
                     {
                         var top = this.getTop();
                         if (this.firstVisible >= 0){
@@ -933,7 +940,7 @@ zebkit.package("ui", function(pkg, Class) {
                             this.firstVisibleY = top;
                         }
 
-                        if (this.firstVisible >= 0){
+                        if (this.firstVisible >= 0) {
                             var count = this.model === null ? 0 : this.model.count(),
                                 hh    = this.height - this.getBottom();
 
@@ -1026,6 +1033,21 @@ zebkit.package("ui", function(pkg, Class) {
      * pointer cursor moving
      */
     pkg.CompList = Class(pkg.BaseList, [
+        function (m, b) {
+            this.model = this;
+            this.max   = null;
+            this.setViewProvider(new zebkit.Dummy([
+                function $prototype() {
+                    this.render = new pkg.CompRender();
+                    this.getView = function (target,obj,i) {
+                        this.render.setTarget(obj);
+                        return this.render;
+                    };
+                }
+            ]));
+            this.$super(m, b);
+        },
+
         function $clazz() {
             this.Label      = Class(pkg.Label, []);
             this.ImageLabel = Class(pkg.ImageLabel, []);
@@ -1102,7 +1124,7 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function setPosition(c){
-            if (c != this.position){
+            if (c !== this.position){
                 if (zebkit.instanceOf(this.layout, zebkit.util.Position.Metric)) {
                     c.setMetric(this.layout);
                 }
@@ -1172,21 +1194,6 @@ zebkit.package("ui", function(pkg, Class) {
         function kidRemoved(index,e) {
             this.$super(index,e);
             this.model._.elementRemoved(this, e, index);
-        },
-
-        function (m, b) {
-            this.model = this;
-            this.max   = null;
-            this.setViewProvider(new zebkit.Dummy([
-                function $prototype() {
-                    this.render = new pkg.CompRender();
-                    this.getView = function (target,obj,i) {
-                        this.render.setTarget(obj);
-                        return this.render;
-                    };
-                }
-            ]));
-            this.$super(m, b);
         }
     ]);
 });

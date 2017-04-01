@@ -89,7 +89,8 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.getScaleSize = function(){
-                var bs = this.views.bundle == null ? { width: 0, height:0 } : this.views.bundle.getPreferredSize();
+                var bs = this.views.bundle == null ? { width: 0, height:0 }
+                                                   : this.views.bundle.getPreferredSize();
                 return (this.orient === "horizontal" ? this.width - this.getLeft() -
                                                       this.getRight() - bs.width
                                                     : this.height - this.getTop() -
@@ -208,7 +209,7 @@ zebkit.package("ui", function(pkg, Class) {
                     var nearest = Number.MAX_VALUE, res = 0;
                     for(var i = 0;i < this.intervals.length; i ++ ){
                         var pv = this.getPointValue(i), dt = Math.abs(pv - v);
-                        if(dt < nearest){
+                        if (dt < nearest){
                             nearest = dt;
                             res = pv;
                         }

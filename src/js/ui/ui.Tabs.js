@@ -62,6 +62,55 @@ zebkit.package("ui", function(pkg, Class) {
      * @param {Integer} selectedIndex a tab page index that has been selected
      */
     pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
+        function(o) {
+            if (arguments.length === 0) {
+                o = "top";
+            }
+
+            /**
+             * Selected tab page index
+             * @attribute selectedIndex
+             * @type {Integer}
+             * @readOnly
+             */
+
+
+            /**
+             * Tab orientation
+             * @attribute orient
+             * @type {String}
+             * @readOnly
+             */
+
+            /**
+             * Sides gap
+             * @attribute sideSpace
+             * @type {Integer}
+             * @readOnly
+             * @default 1
+             */
+
+            this.vgap = this.hgap = this.tabAreaX = 0;
+            this.repaintWidth = this.repaintHeight = this.repaintX = this.repaintY = 0;
+            this.sideSpace = 1;
+
+            this.tabAreaY = this.tabAreaWidth = this.tabAreaHeight = 0;
+            this.overTab = this.selectedIndex = -1;
+            this.orient = o;
+            this._ = new zebkit.util.Listeners();
+            this.pages = [];
+            this.views = {};
+
+            if (pkg.Tabs.font != null) this.render.setFont(pkg.Tabs.font);
+            if (pkg.Tabs.fontColor != null) this.render.setColor(pkg.Tabs.fontColor);
+
+            this.$super();
+
+            // since alignment pass as the constructor argument the setter has to be called after $super
+            // because $super can re-set title alignment
+            this.setAlignment(o);
+        },
+
         function $clazz() {
             /**
              * Tab view class that defines the tab page title and icon
@@ -497,12 +546,14 @@ zebkit.package("ui", function(pkg, Class) {
 
                 if (b) {
                     this.repaintX = this.tabAreaX = left ;
-                    this.repaintY = this.tabAreaY = (this.orient === "top") ? top : this.height - bottom - this.tabAreaHeight;
+                    this.repaintY = this.tabAreaY = (this.orient === "top") ? top
+                                                                            : this.height - bottom - this.tabAreaHeight;
                     if (this.orient === "bottom") {
                         this.repaintY -= (this.border !== null ? this.border.getBottom() : 0);
                     }
                 } else {
-                    this.repaintX = this.tabAreaX = (this.orient === "left" ? left : this.width - right - this.tabAreaWidth);
+                    this.repaintX = this.tabAreaX = (this.orient === "left" ? left
+                                                                            : this.width - right - this.tabAreaWidth);
                     this.repaintY = this.tabAreaY = top ;
                     if (this.orient === "right") {
                         this.repaintX -= (this.border !== null ? this.border.getRight() : 0);
@@ -766,7 +817,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setSideSpace = function(sideSpace){
-                if (sideSpace != this.sideSpace) {
+                if (sideSpace !== this.sideSpace) {
                     this.sideSpace = sideSpace;
                     this.vrp();
                 }
@@ -774,7 +825,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.setPageGaps = function (vg,hg){
-                if (this.vgap != vg || hg != this.hgap){
+                if (this.vgap !== vg || hg !== this.hgap){
                     this.vgap = vg;
                     this.hgap = hg;
                     this.vrp();
@@ -806,7 +857,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.enableTab = function(i,b){
                 var c = this.kids[i];
-                if (c.isEnabled != b){
+                if (c.isEnabled !== b){
                     c.setEnabled(b);
                     if (b === false && this.selectedIndex === i) {
                         this.select(-1);
@@ -833,55 +884,6 @@ zebkit.package("ui", function(pkg, Class) {
              *
              *  @method  setViews
              */
-        },
-
-        function(o) {
-            if (arguments.length === 0) {
-                o = "top";
-            }
-
-            /**
-             * Selected tab page index
-             * @attribute selectedIndex
-             * @type {Integer}
-             * @readOnly
-             */
-
-
-            /**
-             * Tab orientation
-             * @attribute orient
-             * @type {String}
-             * @readOnly
-             */
-
-            /**
-             * Sides gap
-             * @attribute sideSpace
-             * @type {Integer}
-             * @readOnly
-             * @default 1
-             */
-
-            this.vgap = this.hgap = this.tabAreaX = 0;
-            this.repaintWidth = this.repaintHeight = this.repaintX = this.repaintY = 0;
-            this.sideSpace = 1;
-
-            this.tabAreaY = this.tabAreaWidth = this.tabAreaHeight = 0;
-            this.overTab = this.selectedIndex = -1;
-            this.orient = o;
-            this._ = new zebkit.util.Listeners();
-            this.pages = [];
-            this.views = {};
-
-            if (pkg.Tabs.font != null) this.render.setFont(pkg.Tabs.font);
-            if (pkg.Tabs.fontColor != null) this.render.setColor(pkg.Tabs.fontColor);
-
-            this.$super();
-
-            // since alignment pass as the constructor argument the setter has to be called after $super
-            // because $super can re-set title alignment
-            this.setAlignment(o);
         },
 
         function focused(){
@@ -944,7 +946,7 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function setSize(w,h){
-            if (this.width != w || this.height != h) {
+            if (this.width !== w || this.height !== h) {
                 if (this.orient === "right" || this.orient === "bottom") {
                     this.tabAreaX =  -1;
                 }

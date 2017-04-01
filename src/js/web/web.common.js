@@ -75,8 +75,8 @@ zebkit.package("web", function(pkg, Class) {
      */
     pkg.$contains = function(element) {
         // TODO: not sure it is required, probably it can be replaced with document.body.contains(e);
-        return (document.contains != null && document.contains(element)) ||
-               (document.body.contains != null && document.body.contains(element)); // !!! use body for IE
+        return (typeof document.contains !== 'undefined' && document.contains(element)) ||
+               (typeof document.body.contains !== 'undefined' && document.body.contains(element)); // !!! use body for IE
     };
 
     /**
@@ -176,14 +176,14 @@ zebkit.package("web", function(pkg, Class) {
      */
     pkg.$2DContextMethods = {
         setFont : function(f) {
-            f = (f.s != null ? f.s : f.toString());
+            f = (typeof f.s !== 'undefined' ? f.s : f.toString());
             if (f !== this.font) {
                 this.font = f;
             }
         },
 
         setColor : function (c) {
-            c = (c.s != null ? c.s : c.toString());
+            c = (typeof c.s !== 'undefined' ? c.s : c.toString());
             if (c !== this.fillStyle) this.fillStyle = c;
             if (c !== this.strokeStyle) this.strokeStyle = c;
         },
@@ -416,7 +416,7 @@ zebkit.package("web", function(pkg, Class) {
         // TODO: top works not good in FF and it is better don't use it
         // So, ascent has to be taking in account as it was implemented
         // before
-        if (ctx.textBaseline != "top" ) {
+        if (ctx.textBaseline !== "top" ) {
             ctx.textBaseline = "top";
         }
 

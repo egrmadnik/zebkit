@@ -23,7 +23,6 @@ var miscFiles = [
 ];
 
 var uiCoreFiles = [
-    "src/js/ui/ui.web.font.js",
     "src/js/ui/ui.core.event.js",
     "src/js/ui/ui.core.js",
     "src/js/ui/ui.views.js",
@@ -148,23 +147,22 @@ gulp.task('http', function() {
 });
 
 gulp.task('lint', function() {
-    return gulp.src(zebkitFiles)
-          .pipe(expect(zebkitFiles))
+    return gulp.src(webFiles)
+         // .pipe(expect(uiGridFiles))
           .pipe(jshint({ eqnull : true }))
           .pipe(jshint.reporter('default'));
 });
 
-gulp.task('theme', function() {
+gulp.task('resources', function() {
     return gulp.src([
-        "src/js/ui/theme/**/*.json",
-        "src/js/ui/theme/**/*.png"
+        "src/js/rs/**/*.json",
+        "src/js/rs/**/*.png"
     ]).pipe(gulp.dest("build/theme"));
 });
 
 //
 packageTask("easyoop", [   "src/js/web/web.environment.js", "src/js/easyoop.js" ], false);
 packageTask("misc", miscFiles, false);
-//packageTask("ui.core", uiCoreFiles, true, "ui");
 packageTask("ui", uiCoreFiles.concat(uiFiles));
 packageTask("ui.grid", uiGridFiles);
 packageTask("ui.tree", uiTreeFiles);
@@ -188,7 +186,7 @@ gulp.task('zebkit',  ['easyoop', 'misc',  'ui', 'ui.grid', 'ui.tree', 'ui.design
 });
 
 
-gulp.task('build', [ "zebkit", "theme", "ui.calendar", "ui.vk", 'website' ]);
+gulp.task('build', [ "zebkit", "resources", "ui.calendar", "ui.vk", 'website' ]);
 
 gulp.task('runtime', [ "build" ], function () {
     return  gulp.src([

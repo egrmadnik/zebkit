@@ -164,7 +164,7 @@ zebkit.package("io", function(pkg, Class) {
              */
             this.parse = function(url) {
                 var m = window.location.search.match(/[?&][a-zA-Z0-9_.]+=[^?&=]+/g), r = {};
-                for(var i=0; m && i < m.length; i++) {
+                for(var i = 0; m !== null && i < m.length; i++) {
                     var l = m[i].split('=');
                     r[l[0].substring(1)] = decodeURIComponent(l[1]);
                 }

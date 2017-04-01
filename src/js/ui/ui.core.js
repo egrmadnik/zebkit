@@ -26,20 +26,16 @@ zebkit.package("ui", function(pkg, Class) {
             path = fn.substring(fn.indexOf('.') + 1) + ".json";
         }
 
-        if (path == null) {
-            throw new Error("Null resource path");
-        }
-
         if (path[0] !== '/') {
-            var theme = zebkit.config['zebkit.theme']; // fetch theme name
-            if (typeof theme === "undefined") {
-                theme = "base";
+            var root = zebkit.config['ui.theme'];
+            if (typeof root === "undefined") {
+                root = "rs/themes/default";
             }
 
-            if (theme[0] !== '/') {
-                path = zebkit.Path.join(zebkit.ui.$url, "theme/" + theme, path);
+            if (root[0] !== '/') {
+                path = zebkit.Path.join(zebkit.ui.$url, root, path);
             } else {
-                path = zebkit.Path.join(zebkit.ui.$url, theme, path);
+                path = zebkit.Path.join(root, path);
             }
         }
 
@@ -81,7 +77,10 @@ zebkit.package("ui", function(pkg, Class) {
      */
     pkg.$cvp = function(c, r) {
         if (c.width > 0 && c.height > 0 && c.isVisible === true){
-            var p = c.parent, px = -c.x, py = -c.y;
+            var p  = c.parent,
+                px = -c.x,
+                py = -c.y;
+
             if (arguments.length < 2) {
                 r = { x:0, y:0, width : c.width, height : c.height };
             } else {
@@ -172,6 +171,209 @@ zebkit.package("ui", function(pkg, Class) {
         return [0, 0];
     };
 
+    /**
+     * This class represents a font and provides basic font metrics like height, ascent. Using
+     * the class developers can compute string width.
+
+     // plain font
+     var f = new zebkit.ui.Font("Arial", 14);
+
+     // bold font
+     var f = new zebkit.ui.Font("Arial", "bold", 14);
+
+     // defining font with CSS font name
+     var f = new zebkit.ui.Font("100px Futura, Helvetica, sans-serif");
+
+     * @constructor
+     * @param {String} name a name of the font. If size and style parameters has not been passed
+     * the name is considered as CSS font name that includes size and style
+     * @param {String} [style] a style of the font: "bold", "italic", etc
+     * @param {Integer} [size] a size of the font
+     * @class zebkit.ui.Font
+     */
+    pkg.Font = Class([
+        function(family, style, size) {
+            if (arguments.length === 1) {
+                this.size = this.clazz.decodeSize(family);
+                if (this.size === null) {
+                    // trim
+                    family = family.trim();
+
+                    // check if a predefined style has been used
+                    if (family === "bold" || family === "italic") {
+                        this.style = family;
+                    } else {  // otherwise handle it as CSS-like font style
+                        // try to parse font if possible
+                        var re = /([a-zA-Z_\- ]+)?(([0-9]+px|[0-9]+em)\s+([,\"'a-zA-Z_ \-]+))?/,
+                            m  = family.match(re);
+
+                        if (typeof m[4] !== 'undefined') {
+                            this.family = m[4].trim();
+                        }
+
+                        if (typeof m[3] !== 'undefined') {
+                            this.size = m[3].trim();
+                        }
+
+                        if (typeof m[1] !== 'undefined') {
+                            this.style = m[1].trim();
+                        }
+
+                        this.s = family;
+                    }
+                }
+            } else if (arguments.length === 2) {
+                this.family = family;
+                this.size   = this.clazz.decodeSize(style);
+                this.style  = this.size == null ? style : null;
+            } else if (arguments.length === 3) {
+                this.family = family;
+                this.style  = style;
+                this.size   = this.clazz.decodeSize(size);
+            }
+
+            if (this.size === null) {
+                this.size = this.clazz.size + "px";
+            }
+
+            if (this.s === null) {
+                this.s = ((this.style != null) ? this.style + " ": "") +
+                         this.size + " " +
+                         this.family;
+            }
+
+            var m = zebkit.environment.fontMetrics(this.s);
+
+            /**
+             * Height of the font
+             * @attribute height
+             * @readOnly
+             * @type {Integer}
+             */
+            this.height = m.height;
+
+            /**
+             * Ascent of the font
+             * @attribute ascent
+             * @readOnly
+             * @type {Integer}
+             */
+            this.ascent = m.ascent;
+        },
+
+        function $clazz() {
+
+            // default values
+            this.family = "Arial, Helvetica";
+            this.style  =  null;
+            this.size   =  14;
+
+            this.entire = true;
+
+            this.decodeSize = function(s, defaultSize) {
+                if (arguments.length < 2) {
+                    defaultSize = this.size;
+                }
+
+                if (zebkit.isString(s)) {
+                    var size = Number(s);
+                    if (isNaN(size)) {
+                        var m = s.match(/^([0-9]+)(%)$/);
+                        if (m !== null && typeof m[1] !== 'undefined' && m[2] !== 'undefined') {
+                            size = Math.floor((defaultSize * parseInt(m[1], 10)) / 100);
+                            return size + "px";
+                        } else {
+                            return /^([0-9]+)(em|px)$/.test(s) === true ? s : null;
+                        }
+                    } else {
+                        if (s[0] === '+') {
+                            size = defaultSize + size;
+                        } else if (s[0] === '-') {
+                            size = defaultSize - size;
+                        }
+                        return size + "px";
+                    }
+                }
+                return s == null ? null : s + "px";
+            };
+        },
+
+        function $prototype(clazz) {
+            this.s = null;
+
+            this.family = clazz.family,
+            this.style  = clazz.style;
+            this.size   = clazz.size;
+
+            /**
+             * Returns CSS font representation
+             * @return {String} a CSS representation of the given Font
+             * @method toString
+             * @for zebkit.ui.Font
+             */
+            this.toString = function() {
+                return this.s;
+            };
+
+            this.stringWidth = function(s) {
+                if (s.length === 0) {
+                    return 0;
+                } else {
+                    var fm = zebkit.environment.fontMeasure;
+                    if (fm.font !== this.s) {
+                        fm.font = this.s;
+                    }
+
+                    return (fm.measureText(s).width + 0.5) | 0;
+                }
+            };
+
+            /**
+             * Calculate the specified substring width
+             * @param  {String} s a string
+             * @param  {Integer} off fist character index
+             * @param  {Integer} len length of substring
+             * @return {Integer} a substring size in pixels
+             * @method charsWidth
+             * @for zebkit.ui.Font
+             */
+            this.charsWidth = function(s, off, len) {
+                var fm = zebkit.environment.fontMeasure;
+                if (fm.font !== this.s) {
+                    fm.font = this.s;
+                }
+                return (fm.measureText(len === 1 ? s[off]
+                                                 : s.substring(off, off + len)).width + 0.5) | 0;
+            };
+
+            /**
+             * Resize font and return new instance of font class with new size.
+             * @param  {Integer | String} size can be specified in pixels as integer value or as
+             * a percentage from the given font:
+             * @return {zebkit.ui.Font} a font
+             * @for zebkit.ui.Font
+             * @method resize
+             * @example
+             *
+             * ```javascript
+             * var font = new zebkit.ui.Font(10); // font 10 pixels
+             * font = font.resize("200%"); // two times higher font
+             * ```
+             */
+            this.resize = function(size) {
+                var nsize = this.clazz.decodeSize(size, this.height);
+                if (nsize === null) {
+                    throw new Error("Invalid font size : " + size);
+                }
+                return new this.clazz(this.family, this.style, nsize);
+            };
+
+            this.restyle = function(style) {
+                return new this.clazz(this.family, style, this.height + "px");
+            };
+        }
+    ]);
+
     var $paintTask = null,
         $paintTasks = [],
         temporary = { x:0, y:0, width:0, height:0 },
@@ -201,7 +403,7 @@ zebkit.package("ui", function(pkg, Class) {
                     // if it is true call clearRect method to clear dirty area
                     // with transparent background, otherwise it will be cleaned
                     // by filling the canvas with background later
-                    if (canvas.bg == null || canvas.bg.isOpaque !== true) {
+                    if (canvas.bg === null || canvas.bg.isOpaque !== true) {
                         canvas.$context.clearRect(canvas.$da.x, canvas.$da.y,
                                                   canvas.$da.width, canvas.$da.height);
                     }
@@ -614,7 +816,7 @@ zebkit.package("ui", function(pkg, Class) {
       */
     pkg.Panel = Class(zebkit.layout.Layoutable, [
         function $prototype() {
-            this.border = null;
+            this.bg = this.border = null;
 
             // TODO: not stable api, probably it should be moved to static
             // this.wrapWithCanvas = function() {
@@ -676,7 +878,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                                 // calculate repainted component absolute location
                                 var cc = this;
-                                while (cc != canvas) {
+                                while (cc !== canvas) {
                                     x += cc.x;
                                     y += cc.y;
                                     cc = cc.parent;
@@ -762,7 +964,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.getEventDestination = function() {
                 var c = this, p = this;
                 while ((p = p.parent) !== null) {
-                    if (p.catchInput != null && (p.catchInput === true || (p.catchInput !== false && p.catchInput(c)))) {
+                    if (typeof p.catchInput !== 'undefined' && (p.catchInput === true || (p.catchInput !== false && p.catchInput(c)))) {
                         c = p;
                     }
                 }
@@ -787,13 +989,13 @@ zebkit.package("ui", function(pkg, Class) {
                         this.validate();
                     }
 
-                    var b = this.bg != null && (this.parent === null || this.bg != this.parent.bg);
+                    var b = this.bg !== null && (this.parent === null || this.bg !== this.parent.bg);
 
                     // if component defines shape and has update, [paint?] or background that
                     // differs from parent background try to apply the shape and than build
                     // clip from the applied shape
-                    if ( (this.border !== null && this.border.outline != null) &&
-                         (b || this.update != null)                           &&
+                    if ( (this.border !== null && typeof this.border.outline !== 'undefined') &&
+                         (b || typeof this.update !== 'undefined')                            &&
                          this.border.outline(g, 0, 0, this.width, this.height, this))
                     {
                         g.save();
@@ -803,7 +1005,7 @@ zebkit.package("ui", function(pkg, Class) {
                             this.bg.paint(g, 0, 0, this.width, this.height, this);
                         }
 
-                        if (this.update != null) {
+                        if (typeof this.update !== 'undefined') {
                             this.update(g);
                         }
 
@@ -813,7 +1015,7 @@ zebkit.package("ui", function(pkg, Class) {
                             this.bg.paint(g, 0, 0, this.width, this.height, this);
                         }
 
-                        if (this.update != null) {
+                        if (typeof this.update !== 'undefined') {
                             this.update(g);
                         }
                     }
@@ -822,7 +1024,7 @@ zebkit.package("ui", function(pkg, Class) {
                         this.border.paint(g, 0, 0, this.width, this.height, this);
                     }
 
-                    if (this.paint != null) {
+                    if (typeof this.paint !== 'undefined') {
                         var left   = this.getLeft(),
                             top    = this.getTop(),
                             bottom = this.getBottom(),
@@ -872,7 +1074,7 @@ zebkit.package("ui", function(pkg, Class) {
                         }
                     }
 
-                    if (this.paintOnTop != null) {
+                    if (typeof this.paintOnTop !== 'undefined') {
                         this.paintOnTop(g);
                     }
                 }
@@ -924,8 +1126,8 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.notifyRender = function(o, n){
-                if (o != null && o.ownerChanged != null) o.ownerChanged(null);
-                if (n != null && n.ownerChanged != null) n.ownerChanged(this);
+                if (o !== null && typeof o.ownerChanged !== 'undefined') o.ownerChanged(null);
+                if (n !== null && typeof n.ownerChanged !== 'undefined') n.ownerChanged(this);
             };
 
             /**
@@ -995,7 +1197,7 @@ zebkit.package("ui", function(pkg, Class) {
                         if (kid !== null) return kid;
                     }
                 }
-                return this.contains == null || this.contains(x, y) === true ? this : null;
+                return typeof this.contains === 'undefined' || this.contains(x, y) === true ? this : null;
             };
 
             /**
@@ -1065,7 +1267,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setConstraints = function(ctr) {
-                if (this.constraints != ctr) {
+                if (this.constraints !== ctr) {
                     this.constraints = ctr;
                     if (this.parent !== null) {
                         this.vrp();
@@ -1357,7 +1559,7 @@ zebkit.package("ui", function(pkg, Class) {
                         this.invalidate();
                     }
 
-                    if (v !== null && v.activate != null) {
+                    if (v !== null && typeof v.activate !== 'undefined') {
                         v.activate(this.hasFocus() ?  "focuson": "focusoff");
                     }
 
@@ -1394,7 +1596,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.setBackground = function (v){
                 var old = this.bg;
                 v = pkg.$view(v);
-                if (v != old) {
+                if (v !== old) {
                     this.bg = v;
                     this.notifyRender(old, v);
                     this.repaint();
@@ -1423,14 +1625,14 @@ zebkit.package("ui", function(pkg, Class) {
                     if (arguments.length > 1) {
                         for(var i = 0; i < arguments.length; i++) {
                             var a = arguments[i];
-                            if (a != null) {
+                            if (a !== null) {
                                 this.add(a.$new != null ? a.$new() : a);
                             }
                         }
                     } else {
                         if (Array.isArray(a)) {
                             for(var i = 0; i < a.length; i++) {
-                                if (a[i] != null) {
+                                if (a[i] !== null) {
                                     this.add(a[i]);
                                 }
                             }
@@ -1453,7 +1655,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.focused = function() {
                 // extents of activate method indicates it is
-                if (this.border !== null && this.border.activate != null) {
+                if (this.border !== null && typeof this.border.activate !== 'undefined') {
                     var id = this.hasFocus() ? "focuson" : "focusoff" ;
                     if (typeof this.border.views[id] !== 'undefined') {
                         this.border.activate(id);
@@ -1558,15 +1760,13 @@ zebkit.package("ui", function(pkg, Class) {
 
                 if (ax === "center") {
                     x = Math.floor((this.width - ps.width)/2);
-                }
-                else if (ax === "right") {
+                } else if (ax === "right") {
                     x = this.width - this.getRight() - ps.width;
                 }
 
                 if (ay === "center") {
                     y = Math.floor((this.height - ps.height)/2);
-                }
-                else if (ay === "bottom") {
+                } else if (ay === "bottom") {
                     y = this.height - this.getBottom() - ps.height;
                 }
 
@@ -1580,7 +1780,7 @@ zebkit.package("ui", function(pkg, Class) {
                     this.kids = [];
                 }
 
-                if (this.layout == null) {
+                if (this.layout === null) {
                     this.layout = this;
                 }
 
