@@ -157,11 +157,11 @@ gulp.task('resources', function() {
     return gulp.src([
         "src/js/rs/**/*.json",
         "src/js/rs/**/*.png"
-    ]).pipe(gulp.dest("build/theme"));
+    ]).pipe(gulp.dest("build/rs"));
 });
 
 //
-packageTask("easyoop", [   "src/js/web/web.environment.js", "src/js/easyoop.js" ], false);
+packageTask("easyoop", [ "src/js/web/web.environment.js", "src/js/easyoop.js" ], false);
 packageTask("misc", miscFiles, false);
 packageTask("ui", uiCoreFiles.concat(uiFiles));
 packageTask("ui.grid", uiGridFiles);
@@ -172,10 +172,10 @@ packageTask("ui.web", uiWebFiles);
 
 // extra packages
 packageTask("ui.calendar", [ "src/js/ui/date/ui.date.js" ], false);
-packageTask("ui.vk", [ "src/js/ui/vk/ui.vk.js" ], false);
+packageTask("ui.vk",       [ "src/js/ui/vk/ui.vk.js" ], false);
 
 
-gulp.task('zebkit',  ['easyoop', 'misc',  'ui', 'ui.grid', 'ui.tree', 'ui.design', 'web', 'ui.web'], function() {
+gulp.task('zebkit',  ['easyoop', 'misc', 'ui', 'ui.grid', 'ui.tree', 'ui.design', 'web', 'ui.web'], function() {
     return gulp.src(zebkitFiles)
           .pipe(expect(zebkitFiles))
           .pipe(concat('build/zebkit.js'))
