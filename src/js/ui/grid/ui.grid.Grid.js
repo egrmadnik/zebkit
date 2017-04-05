@@ -17,7 +17,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                     b = true;
                 }
 
-                if (this.isSelected(row, col) != b){
+                if (this.isSelected(row, col) !== b){
                     if (this.selectedIndex >= 0) this.clearSelect();
                     if (b === true) {
                         this.selectedIndex = row;
@@ -319,7 +319,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                 };
 
                 this.setDefCellAlignments = function(ax, ay) {
-                    if (this.defXAlignment != ax || this.defYAlignment != ay) {
+                    if (this.defXAlignment !== ax || this.defYAlignment !== ay) {
                         this.defXAlignment = ax;
                         this.defYAlignment = ay;
                         this.repaint();
@@ -585,7 +585,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                         d     = (col > this.visibility.fc[0]) ? 1 : -1;
                     }
 
-                    for(var i = start;i != col; x += ((this.colWidths[i] + this.lineSize) * d),i += d);
+                    for(var i = start;i !== col; x += ((this.colWidths[i] + this.lineSize) * d),i += d);
                     return x;
                 };
 
@@ -614,7 +614,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                         d     = (row > this.visibility.fr[0]) ? 1 : -1;
                     }
 
-                    for(var i = start;i != row; y += ((this.rowHeights[i] + this.lineSize) * d),i += d);
+                    for(var i = start;i !== row; y += ((this.rowHeights[i] + this.lineSize) * d),i += d);
                     return y;
                 };
 
@@ -784,7 +784,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                  * @chainable
                  */
                 this.setDrawLines = function(hor, ver){
-                    if (this.drawVerLines != hor || this.drawHorLines != ver) {
+                    if (this.drawVerLines !== hor || this.drawHorLines !== ver) {
                         this.drawHorLines = hor;
                         this.drawVerLines = ver;
                         this.repaint();
@@ -890,7 +890,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                  * @method isSelected
                  */
                 this.isSelected = function(row, col) {
-                    return row == this.selectedIndex;
+                    return row === this.selectedIndex;
                 };
 
                 /**
@@ -940,11 +940,12 @@ zebkit.package("ui.grid", function(pkg, Class) {
                         rx1 = v.fc[1] + dx,
                         row = -1,
                         col = -1,
+                        i   = 0,
                         ry2 = v.lr[1] + this.rowHeights[v.lr[0]] + dy,
                         rx2 = v.lc[1] + this.colWidths[v.lc[0]] + dx;
 
                     if (y > ry1 && y < ry2) {
-                        for(var i = v.fr[0];i <= v.lr[0]; ry1 += this.rowHeights[i] + this.lineSize, i++) {
+                        for(i = v.fr[0];i <= v.lr[0]; ry1 += this.rowHeights[i] + this.lineSize, i++) {
                             if (y > ry1 && y < ry1 + this.rowHeights[i]) {
                                 row = i;
                                 break;
@@ -952,7 +953,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                         }
                     }
                     if (x > rx1 && x < rx2) {
-                        for (var i = v.fc[0];i <= v.lc[0]; rx1 += this.colWidths[i] + this.lineSize, i++ ) {
+                        for (i = v.fc[0];i <= v.lc[0]; rx1 += this.colWidths[i] + this.lineSize, i++ ) {
                             if (x > rx1 && x < rx1 + this.colWidths[i]) {
                                 col = i;
                                 break;
@@ -1114,6 +1115,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                  */
                 this.paintNet = function(g) {
                     var v    = this.visibility,
+                        i    = 0,
                         topX = v.fc[1] - this.lineSize,
                         topY = v.fr[1] - this.lineSize,
                         botX = v.lc[1] + this.colWidths[v.lc[0]],
@@ -1125,8 +1127,9 @@ zebkit.package("ui.grid", function(pkg, Class) {
                     g.beginPath();
 
                     if (this.drawHorLines === true) {
+                        i = v.fr[0];
+
                         var y  = topY + this.lineSize/2,
-                            i  = v.fr[0],
                             tx = (this.paintNetOnCaption === true) ? this.getLeft() : topX;
 
                         for(;i <= v.lr[0]; i++){
@@ -1139,7 +1142,8 @@ zebkit.package("ui.grid", function(pkg, Class) {
                     }
 
                     if (this.drawVerLines === true) {
-                        var i = v.fc[0];
+                        i = v.fc[0];
+
                         if (this.drawSideLines !== true && v.fc[0] === 0) {
                             i++;
                             topX = v.fc[1] + this.colWidths[0];
@@ -1312,11 +1316,12 @@ zebkit.package("ui.grid", function(pkg, Class) {
                 };
 
                 this.rPsMetric = function(){
-                    var cols = this.getGridCols(),
-                        rows = this.getGridRows(),
-                        addW = this.cellInsetsLeft + this.cellInsetsRight,
-                        addH = this.cellInsetsTop  + this.cellInsetsBottom,
-                        i    = 0;
+                    var cols  = this.getGridCols(),
+                        rows  = this.getGridRows(),
+                        addW  = this.cellInsetsLeft + this.cellInsetsRight,
+                        addH  = this.cellInsetsTop  + this.cellInsetsBottom,
+                        capPS = null,
+                        i     = 0;
 
                     if (this.colWidths === null || this.colWidths.length !== cols) {
                         this.colWidths = Array(cols);
@@ -1355,14 +1360,14 @@ zebkit.package("ui.grid", function(pkg, Class) {
 
                     if (this.topCaption !== null && this.topCaption.isVisible === true) {
                         for(i = 0;i < cols; i++ ) {
-                            var capPS = this.topCaption.getCaptionPS(i);
+                            capPS = this.topCaption.getCaptionPS(i);
                             if (capPS  > this.colWidths[i]) this.colWidths[i] = capPS;
                         }
                     }
 
                     if (this.leftCaption !== null && this.leftCaption.isVisible === true) {
                         for(i = 0;i < rows; i++ ) {
-                            var capPS = this.leftCaption.getCaptionPS(i);
+                            capPS = this.leftCaption.getCaptionPS(i);
                             if (capPS  > this.rowHeights[i]) this.rowHeights[i] = capPS;
                         }
                     }
@@ -1595,7 +1600,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                     this.vrp();
 
                     for(var i=0; i < this.kids.length; i++) {
-                        if (typeof this.kids[i].matrixSorted != 'undefined') {
+                        if (typeof this.kids[i].matrixSorted !== 'undefined') {
                             this.kids[i].matrixSorted(target, info);
                         }
                     }

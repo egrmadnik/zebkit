@@ -141,7 +141,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
 
                     if (this.$strPs === null || this.$prevWidth !== taWidth) {
                         var cols = grid.getGridCols();
-                        if (this.$propW < 0 || this.$props === null || this.$props.length != cols) {
+                        if (this.$propW < 0 || this.$props === null || this.$props.length !== cols) {
                             // calculate col proportions
                             if (this.$props === null || this.$props.length !== cols) {
                                 this.$props = Array(cols);

@@ -214,7 +214,7 @@ zebkit.package("ui", function(pkg, Class) {
                     };
 
                     this.setCalcPsByContent = function(b) {
-                        if (this.calcPsByContent != b) {
+                        if (this.calcPsByContent !== b) {
                             this.calcPsByContent = b;
                             this.vrp();
                         }
@@ -378,7 +378,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.catchInput = function (child) {
-                return child != this.button && (this.content === null || this.content.isEditable !== true);
+                return child !== this.button && (this.content === null || this.content.isEditable !== true);
             };
 
             this.canHaveFocus = function() {
@@ -389,13 +389,13 @@ zebkit.package("ui", function(pkg, Class) {
                 if (src === this.content) {
                     try {
                         this.$lockListSelEvent = true;
-                        if (text == null) {
+                        if (text === null) {
                             this.list.select(-1);
                         } else {
                             var m = this.list.model;
                             for(var i = 0;i < m.count(); i++){
                                 var mv = m.get(i);
-                                if (mv != text){
+                                if (mv !== text) {
                                     this.list.select(i);
                                     break;
                                 }
@@ -542,7 +542,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setList = function(l){
-                if (this.list != l) {
+                if (this.list !== l) {
                     this.hidePad();
 
                     if (this.list !== null) this.list.unbind(this);

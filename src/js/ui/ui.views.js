@@ -108,7 +108,7 @@ zebkit.package("ui", function(pkg, Class) {
     };
 
     zebkit.util.rgb.prototype.paint = function(g,x,y,w,h,d) {
-        if (this.s != g.fillStyle) {
+        if (this.s !== g.fillStyle) {
             g.fillStyle = this.s;
         }
 
@@ -116,7 +116,7 @@ zebkit.package("ui", function(pkg, Class) {
         // and the area that has to be filled. IE11/10 have a bug
         // that triggers filling more space than it is restricted
         // with clip
-        if (g.$states != null) {
+        if (typeof g.$states !== 'undefined') {
             var t  = g.$states[g.$curState],
                 rx = x > t.x ? x : t.x,
                 rw = Math.min(x + w, t.x + t.width) - rx;
@@ -237,7 +237,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @param  {Object} o a target object to be visualized
              */
             this.setTarget = function(o) {
-                if (this.target != o) {
+                if (this.target !== o) {
                     var old = this.target;
                     this.target = o;
                     if (typeof this.targetWasChanged !== 'undefined') {
@@ -822,9 +822,9 @@ zebkit.package("ui", function(pkg, Class) {
                     x2 = (x + w - 1) * d[1],
                     y2 = (y + h - 1) * d[0];
 
-                if (this.gradient === null || this.gx1 != x1 ||
-                    this.gx2 != x2         || this.gy1 != y1 ||
-                    this.gy2 != y2                             )
+                if (this.gradient === null  || this.gx1 !== x1 ||
+                    this.gx2 !== x2         || this.gy1 !== y1 ||
+                    this.gy2 !== y2                              )
                 {
                     this.gx1 = x1;
                     this.gx2 = x2;
@@ -1163,6 +1163,14 @@ zebkit.package("ui", function(pkg, Class) {
             */
             this.views = {};
 
+            for(var k in args) {
+                this.views[k] = pkg.$view(args[k]);
+                if (this.views[k] !== null) this.$recalc(this.views[k]);
+            }
+            this.activate("*");
+        },
+
+        function $prototype() {
             /**
              * Active in the set view
              * @attribute activeView
@@ -1172,14 +1180,6 @@ zebkit.package("ui", function(pkg, Class) {
             */
             this.activeView = null;
 
-            for(var k in args) {
-                this.views[k] = pkg.$view(args[k]);
-                if (this.views[k] !== null) this.$recalc(this.views[k]);
-            }
-            this.activate("*");
-        },
-
-        function $prototype() {
             this.paint = function(g,x,y,w,h,d) {
                 if (this.activeView !== null) {
                     this.activeView.paint(g, x, y, w, h, d);
@@ -1197,11 +1197,11 @@ zebkit.package("ui", function(pkg, Class) {
                 var old = this.activeView;
 
                 if (id === null) {
-                    return (this.activeView = null) != old;
+                    return (this.activeView = null) !== old;
                 }
 
                 if (typeof this.views[id] !== 'undefined') {
-                    return (this.activeView = this.views[id]) != old;
+                    return (this.activeView = this.views[id]) !== old;
                 }
 
                 if (id.length > 1 && id[0] !== '*' && id[id.length-1] !== '*') {
@@ -1209,17 +1209,17 @@ zebkit.package("ui", function(pkg, Class) {
                     if (i > 0) {
                         var k = id.substring(0, i + 1) + '*';
                         if (typeof this.views[k] !== 'undefined') {
-                            return (this.activeView = this.views[k]) != old;
+                            return (this.activeView = this.views[k]) !== old;
                         }
 
                         k = "*" + id.substring(i);
                         if (typeof this.views[k] !== 'undefined') {
-                            return (this.activeView = this.views[k]) != old;
+                            return (this.activeView = this.views[k]) !== old;
                         }
                     }
                 }
 
-                return typeof this.views["*"] !== 'undefined' ? (this.activeView = this.views["*"]) != old
+                return typeof this.views["*"] !== 'undefined' ? (this.activeView = this.views["*"]) !== old
                                                               : false;
             };
 
@@ -1742,9 +1742,9 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.recalc = function() {
                 if (this.invLines > 0 && this.target !== null){
-                    var model = this.target;
+                    var model = this.target, i = 0;
                     if (this.invLines > 0) {
-                        for(var i = this.startInvLine + this.invLines - 1; i >= this.startInvLine; i--) {
+                        for(i = this.startInvLine + this.invLines - 1; i >= this.startInvLine; i--) {
                             model.$lineTags(i).$lineWidth = this.font.stringWidth(this.getLine(i));
                         }
                         this.startInvLine = this.invLines = 0;
@@ -1752,7 +1752,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                     this.textWidth = 0;
                     var size = model.getLines();
-                    for(var i = 0; i < size; i++){
+                    for(i = 0; i < size; i++){
                         var len = model.$lineTags(i).$lineWidth;
                         if (len > this.textWidth) {
                             this.textWidth = len;
@@ -1861,7 +1861,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                     var size = this.getLines();
                     if (startInvLine < size){
-                        var lines = Math.floor((h + lineIndent) / lilh) + (((h + lineIndent) % lilh > lineIndent) ? 1 : 0);
+                        var lines = Math.floor((h + lineIndent) / lilh) + (((h + lineIndent) % lilh > lineIndent) ? 1 : 0), i = 0;
                         if (startInvLine + lines > size) {
                             lines = size - startInvLine;
                         }
@@ -1885,7 +1885,7 @@ zebkit.package("ui", function(pkg, Class) {
                                 bsel = p1 !== null && (p1.row !== p2.row || p1.col !== p2.col);
                             }
 
-                            for(var i = 0; i < lines; i++){
+                            for(i = 0; i < lines; i++){
                                 if (bsel === true) {
                                     var line = i + startInvLine;
                                     if (line >= p1.row && line <= p2.row){
@@ -1920,7 +1920,7 @@ zebkit.package("ui", function(pkg, Class) {
                                        typeof d.disabledColor !== 'undefined' ? d.disabledColor
                                                                               : pkg.TextRender.disabledColor;
 
-                            for(var i = 0;i < lines; i++) {
+                            for(i = 0; i < lines; i++) {
                                 g.setColor(dcol);
                                 this.paintLine(g, x, y, i + startInvLine, d);
                                 y += lilh;
@@ -2049,7 +2049,10 @@ zebkit.package("ui", function(pkg, Class) {
 
     pkg.DecoratedTextRender = zebkit.Class(pkg.TextRender, [
         function(text) {
-            this.decorations = {};
+            this.decorations = {
+                underline : null,
+                strike    : null
+            };
             this.$super(text);
         },
 
@@ -2057,7 +2060,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.lineWidth = 1;
 
             this.setDecoration = function(id, color) {
-                if (id == null) throw new Error();
+                if (id === null || typeof id === 'undefined') throw new Error();
                 this.decorations[id] = color;
                 return this;
             };
@@ -2073,13 +2076,13 @@ zebkit.package("ui", function(pkg, Class) {
             var lw = this.calcLineWidth(line),
                 lh = this.getLineHeight(line);
 
-            if (this.decorations.underline != null) {
+            if (this.decorations.underline !== null) {
                 g.lineWidth = this.lineWidth;
                 g.setColor(this.decorations.underline);
                 g.drawLine(x, y + lh - 1, x + lw, y  + lh - 1);
             }
 
-            if (this.decorations.strike != null) {
+            if (this.decorations.strike !== null) {
                 var yy = y + Math.round(lh / 2) - 1;
                 g.setColor(this.decorations.strike);
                 g.lineWidth = this.lineWidth;
@@ -2170,6 +2173,8 @@ zebkit.package("ui", function(pkg, Class) {
                     o  = d.parent.orient,
                     t  = this.type,
                     s  = this.width,
+                    ww = 0,
+                    hh = 0,
                     dt = s / 2;
 
                 g.beginPath();
@@ -2192,7 +2197,7 @@ zebkit.package("ui", function(pkg, Class) {
                         g.stroke();
 
                         if (d.isEnabled === true) {
-                            var ww = Math.floor((w - 6) / 2);
+                            ww = Math.floor((w - 6) / 2);
                             g.setColor(this.fillColor3);
                             g.fillRect(xx - ww + 1, y + s, ww, h - s - 1);
                         }
@@ -2223,7 +2228,7 @@ zebkit.package("ui", function(pkg, Class) {
                         g.stroke();
 
                         if (d.isEnabled === true) {
-                            var ww = Math.floor((w - 6) / 2);
+                            ww = Math.floor((w - 6) / 2);
                             g.setColor(this.fillColor3);
                             g.fillRect(x, y + s, ww, h - s - 1);
                         }
@@ -2251,7 +2256,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                         if (d.isEnabled === true){
                             g.setColor(this.fillColor3);
-                            var hh = Math.floor((h - 6) / 2);
+                            hh = Math.floor((h - 6) / 2);
                             g.fillRect(x + s, yy - hh + 1 , w - s - 1, hh);
                         }
 
@@ -2284,7 +2289,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                         if (d.isEnabled === true){
                             g.setColor(this.fillColor3);
-                            var hh = Math.floor((h - 6) / 2);
+                            hh = Math.floor((h - 6) / 2);
                             g.fillRect(x + s, y, w - s - 1, hh);
                         }
 

@@ -204,7 +204,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
 
             this.$super(model);
 
-            if (old != this.model) {
+            if (old !== this.model) {
                 this.removeAll();
                 if (this.model !== null) {
                     var $this = this;
@@ -235,8 +235,8 @@ zebkit.package("ui.tree", function(pkg, Class) {
             var node = this.getIM(root);
             if (isVis === true) {
                 var viewSize = this.getItemPreferredSize(root);
-                if (this.$isMetricUpdated === false && (node.viewWidth != viewSize.width  ||
-                                                        node.viewHeight != viewSize.height  ))
+                if (this.$isMetricUpdated === false && (node.viewWidth  !== viewSize.width  ||
+                                                        node.viewHeight !== viewSize.height  ))
                 {
                     this.$isMetricUpdated = true;
                 }

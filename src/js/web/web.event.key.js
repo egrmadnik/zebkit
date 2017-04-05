@@ -216,7 +216,7 @@ zebkit.package("web", function(pkg, Class) {
                             this.key = e.keyIdentifier;
                         }
                     } else {
-                        if (this.code != null && CODES[this.code] != null && CODES[this.code].key != null) {
+                        if (this.code != null && CODES.hasOwnProperty(this.code) === true && CODES[this.code].key != null) {
                             this.key = CODES[this.code].key;
                         } else {
                             this.key = e.charCode > 0 && keyCode >= 32 ? String.fromCharCode(e.charCode)
@@ -321,8 +321,8 @@ zebkit.package("web", function(pkg, Class) {
                         KEY_DOWN_EVENT.metaKey   = true;
                         KEY_DOWN_EVENT.timeStamp = ts;
                         destination.$keyReleased(KEY_DOWN_EVENT);
-                    } catch(e) {
-                        zebkit.dumpError(e);
+                    } catch(ex) {
+                        zebkit.dumpError(ex);
                     } finally {
                         KEY_DOWN_EVENT.code = null;
                         code = null;
@@ -338,8 +338,8 @@ zebkit.package("web", function(pkg, Class) {
                         KEY_DOWN_EVENT.metaKey   = true;
                         KEY_DOWN_EVENT.timeStamp = ts;
                         destination.$keyReleased(KEY_DOWN_EVENT);
-                    } catch(e) {
-                        zebkit.dumpError(e);
+                    } catch(ex) {
+                        zebkit.dumpError(ex);
                     } finally {
                         KEY_DOWN_EVENT.code = null;
                         code = null;
@@ -372,8 +372,8 @@ zebkit.package("web", function(pkg, Class) {
                 // fire key pressed event
                 try {
                     destination.$keyPressed(KEY_DOWN_EVENT);
-                } catch(e) {
-                    zebkit.dumpError(e);
+                } catch(ex) {
+                    zebkit.dumpError(ex);
                 }
 
                 if (KEY_DOWN_EVENT.code === "MetaLeft") {
@@ -393,8 +393,8 @@ zebkit.package("web", function(pkg, Class) {
                                 KEY_UP_EVENT.repeat = 0;
                                 KEY_UP_EVENT.timeStamp = ts;
                                 destination.$keyReleased(KEY_UP_EVENT);
-                            } catch(e) {
-                                zebkit.dumpError(e);
+                            } catch(ex) {
+                                zebkit.dumpError(ex);
                             }
                         }
                     } else if (KEY_DOWN_EVENT.code === "Space" ||

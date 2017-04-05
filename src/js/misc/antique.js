@@ -7,7 +7,7 @@
 
     if (!Array.prototype.indexOf) {
         Array.prototype.indexOf = function(searchElement) {
-            if (this == null) {
+            if (this === null) {
                 throw new TypeError();
             }
 
@@ -17,7 +17,7 @@
             var n = 0;
             if (arguments.length > 0) {
                 n = Number(arguments[1]);
-                if (n != n) n = 0;
+                if (n !== n) n = 0;
                 else if (n !== 0 && n != Infinity && n != -Infinity) {
                     n = (n > 0 || -1) * ~~Math.abs(n);
                 }
@@ -33,7 +33,7 @@
 
     if (!Array.isArray) {
         Array.isArray = function(a) {
-            return Object.prototype.toString.call(a) == '[object Array]';
+            return Object.prototype.toString.call(a) === '[object Array]';
         };
     }
 })();

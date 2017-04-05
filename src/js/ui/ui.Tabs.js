@@ -101,8 +101,8 @@ zebkit.package("ui", function(pkg, Class) {
             this.pages = [];
             this.views = {};
 
-            if (pkg.Tabs.font != null) this.render.setFont(pkg.Tabs.font);
-            if (pkg.Tabs.fontColor != null) this.render.setColor(pkg.Tabs.fontColor);
+            if (typeof pkg.Tabs.font      !== 'undefined') this.render.setFont(pkg.Tabs.font);
+            if (typeof pkg.Tabs.fontColor !== 'undefined') this.render.setColor(pkg.Tabs.fontColor);
 
             this.$super();
 
@@ -563,10 +563,12 @@ zebkit.package("ui", function(pkg, Class) {
                 var count = this.kids.length,
                     sp    = 2 * this.sideSpace,
                     xx    = (this.orient === "right"  ? this.tabAreaX : this.tabAreaX + this.sideSpace),
-                    yy    = (this.orient === "bottom" ? this.tabAreaY : this.tabAreaY + this.sideSpace);
+                    yy    = (this.orient === "bottom" ? this.tabAreaY : this.tabAreaY + this.sideSpace),
+                    r     = null,
+                    i     = 0;
 
-                for(var i = 0; i < count; i++ ){
-                    var r = this.getTabBounds(i);
+                for(i = 0; i < count; i++ ){
+                    r = this.getTabBounds(i);
 
                     r.x = xx;
                     r.y = yy;
@@ -592,7 +594,9 @@ zebkit.package("ui", function(pkg, Class) {
 
                 // make visible tab title
                 if (this.selectedIndex >= 0){
-                    var r = this.getTabBounds(this.selectedIndex), dt = 0;
+                    var dt = 0;
+
+                    r = this.getTabBounds(this.selectedIndex);
                     if (b) {
                         r.x -= this.sideSpace;
                         r.y -= ((this.orient === "top") ? this.sideSpace : 0);
@@ -605,14 +609,14 @@ zebkit.package("ui", function(pkg, Class) {
                                          : (r.y + r.height > this.height - bottom) ? this.height - bottom - r.y - r.height : 0;
                     }
 
-                    for(var i = 0;i < count; i ++ ){
+                    for(i = 0;i < count; i ++ ){
                         var br = this.getTabBounds(i);
                         if (b) br.x += dt;
                         else   br.y += dt;
                     }
                 }
 
-                for(var i = 0;i < count; i++){
+                for(i = 0;i < count; i++){
                     var l = this.kids[i];
                     if (i === this.selectedIndex) {
                         if (b) {
@@ -644,14 +648,16 @@ zebkit.package("ui", function(pkg, Class) {
                     var bv   = this.views.tab,
                         b    = (this.orient === "left" || this.orient === "right"),
                         max  = 0,
+                        i    = 0,
+                        r    = null,
                         hadd = bv == null ? 0 : bv.getLeft() + bv.getRight(),
                         vadd = bv == null ? 0 : bv.getTop()  + bv.getBottom();
 
-                    for(var i = 0;i < count; i++){
+                    for(i = 0;i < count; i++){
                         var ps =  this.pages[i * 2] != null ? this.pages[i * 2].getPreferredSize()
-                                                            : { width:0, height:0},
-                            r = this.getTabBounds(i);
+                                                            : { width:0, height:0};
 
+                        r = this.getTabBounds(i);
                         if (b) {
                             r.height = ps.height + vadd;
                             if (ps.width + hadd > max) max = ps.width + hadd;
@@ -664,8 +670,8 @@ zebkit.package("ui", function(pkg, Class) {
                     }
 
                     // align tabs widths or heights to have the same size
-                    for(var i = 0; i < count; i++ ){
-                        var r = this.getTabBounds(i);
+                    for(i = 0; i < count; i++ ){
+                        r = this.getTabBounds(i);
                         if (b) r.width  = max;
                         else   r.height = max;
                     }
@@ -688,7 +694,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                     // make selected tab page title bigger
                     if (this.selectedIndex >= 0) {
-                        var r = this.getTabBounds(this.selectedIndex);
+                        r = this.getTabBounds(this.selectedIndex);
                         if (b) {
                             r.height += 2 * this.sideSpace;
                             r.width += this.sideSpace +  (this.border !== null ? (b === "left" ? this.border.getLeft()
@@ -719,17 +725,19 @@ zebkit.package("ui", function(pkg, Class) {
                     x < this.tabAreaX + this.tabAreaWidth &&
                     y < this.tabAreaY + this.tabAreaHeight)
                 {
+                    var tb = null;
+
                     // handle selected as a special case since it can overlap neighborhood titles
                     if (this.selectedIndex >= 0) {
-                        var tb = this.getTabBounds(this.selectedIndex);
+                        tb = this.getTabBounds(this.selectedIndex);
                         if (x >= tb.x && y >= tb.y && x < tb.x + tb.width && y < tb.y + tb.height) {
                             return i;
                         }
                     }
 
                     for(var i = 0; i < Math.floor(this.pages.length / 2); i++) {
-                        if (this.selectedIndex != i) {
-                            var tb = this.getTabBounds(i);
+                        if (this.selectedIndex !== i) {
+                            tb = this.getTabBounds(i);
                             if (x >= tb.x && y >= tb.y && x < tb.x + tb.width && y < tb.y + tb.height) {
                                 return i;
                             }
@@ -745,17 +753,18 @@ zebkit.package("ui", function(pkg, Class) {
              * @method keyPressed
              */
             this.keyPressed = function(e){
-                if (this.selectedIndex != -1 && this.pages.length > 0){
+                if (this.selectedIndex !== -1 && this.pages.length > 0){
+                    var nxt = 0;
                     switch(e.code) {
                         case "ArrowUp":
                         case "ArrowLeft":
-                            var nxt = this.next(this.selectedIndex - 1,  -1);
-                            if(nxt >= 0) this.select(nxt);
+                            nxt = this.next(this.selectedIndex - 1,  -1);
+                            if (nxt >= 0) this.select(nxt);
                             break;
                         case "ArrowDown":
                         case "ArrowRight":
-                            var nxt = this.next(this.selectedIndex + 1, 1);
-                            if(nxt >= 0) this.select(nxt);
+                            nxt = this.next(this.selectedIndex + 1, 1);
+                            if (nxt >= 0) this.select(nxt);
                             break;
                     }
                 }
@@ -780,7 +789,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.select = function(index){
-                if (this.selectedIndex != index){
+                if (this.selectedIndex !== index){
                     var prev = this.selectedIndex;
                     this.selectedIndex = index;
 

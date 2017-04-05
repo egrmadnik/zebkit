@@ -22,7 +22,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                 function $prototype() {
                     this.color = "black";
-                    this.size = 2;
+                    this.size  = 2;
 
                     this.paint = function (g,x,y,w,h,d) {
                         if (this.color !== null) {
@@ -216,7 +216,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @type {Boolean}
              * @default true
              */
-            this.hideTooltipByPress = false;
+            this.hideTooltipByPress = true;
 
             /**
              * Define interval (in milliseconds) between entering a component and showing
@@ -264,12 +264,11 @@ zebkit.package("ui", function(pkg, Class) {
              * @method pointerEntered
              */
             this.pointerEntered = function(e) {
-                if (this.$target === null && (e.source.tooltip != null || e.source.getTooltip != null)) {
-                    var c     = e.source,
-                        $this = this;
+                if (this.$target === null && (e.source.tooltip != null || typeof e.source.getTooltip !== 'undefined')) {
+                    var  $this = this;
 
-                    this.$target = c;
-                    this.$targetTooltipLayer = c.getCanvas().getLayer("win");
+                    this.$target = e.source;
+                    this.$targetTooltipLayer = e.source.getCanvas().getLayer("win");
                     this.$tooltipX = e.x;
                     this.$tooltipY = e.y;
                     this.$toolTask = zebkit.util.tasksSet.run(
@@ -325,7 +324,11 @@ zebkit.package("ui", function(pkg, Class) {
                     var ntooltip = this.$target.tooltip != null ? this.$target.tooltip
                                                                 : this.$target.getTooltip(this.$target,
                                                                                           this.$tooltipX,
-                                                                                          this.$tooltipY);
+                                                                                          this.$tooltipY),
+                        p = null,
+                        tx = 0,
+                        ty = 0;
+
                     if (this.$tooltip !== ntooltip) {
 
                         // hide previously shown tooltip
@@ -338,12 +341,13 @@ zebkit.package("ui", function(pkg, Class) {
 
                         // if new tooltip exists than show it
                         if (ntooltip !== null) {
-                            var p = zebkit.layout.toParentOrigin(this.$tooltipX, this.$tooltipY, this.$target);
+                            p = zebkit.layout.toParentOrigin(this.$tooltipX, this.$tooltipY, this.$target);
 
                             this.$tooltip.toPreferredSize();
-                            var tx = p.x,
-                                ty = p.y - this.$tooltip.height,
-                                dw = this.$targetTooltipLayer.width;
+                            tx = p.x;
+                            ty = p.y - this.$tooltip.height;
+
+                            var dw = this.$targetTooltipLayer.width;
 
                             if (tx + this.$tooltip.width > dw) {
                                 tx = dw - this.$tooltip.width - 1;
@@ -351,7 +355,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                             this.$tooltip.setLocation(tx < 0 ? 0 : tx, ty < 0 ? 0 : ty);
 
-                            if (this.$tooltip.winType == null) {
+                            if (typeof this.$tooltip.winType === 'undefined') {
                                 this.$tooltip.winType = "info";
                             }
 
@@ -362,11 +366,11 @@ zebkit.package("ui", function(pkg, Class) {
                         }
                     } else {
                         if (this.$tooltip !== null && this.syncTooltipPosition === true) {
-                            var p  = zebkit.layout.toParentOrigin(this.$tooltipX,
-                                                                  this.$tooltipY,
-                                                                  this.$target),
-                                tx = p.x,
-                                ty = p.y - this.$tooltip.height;
+                            p  = zebkit.layout.toParentOrigin(this.$tooltipX,
+                                                              this.$tooltipY,
+                                                              this.$target);
+                            tx = p.x;
+                            ty = p.y - this.$tooltip.height;
 
                             this.$tooltip.setLocation(tx < 0 ? 0 : tx, ty < 0 ? 0 : ty);
                         }
@@ -423,7 +427,9 @@ zebkit.package("ui", function(pkg, Class) {
              * @param  {zebkit.ui.PointerEvent} e a pointer event
              * @method pointerPressed
              */
-            this.pointerPressed = function(e){
+            this.pointerPressed = function(e) {
+                console.log("ToltipManager.pointerPressed()");
+
                 if (this.hideTooltipByPress === true &&
                     e.pointerType === "mouse" &&
                     this.$target !== null &&

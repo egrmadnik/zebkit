@@ -57,7 +57,7 @@ zebkit.package("io", function(pkg, Class) {
         while(i < len) {
             c1 = input.charCodeAt(i++) & 0xff;
             out.push(b64str.charAt(c1 >> 2));
-            if (i == len) {
+            if (i === len) {
                 out.push(b64str.charAt((c1 & 0x3) << 4), "==");
                 break;
             }
@@ -125,7 +125,7 @@ zebkit.package("io", function(pkg, Class) {
         if (d[12]) date.setMilliseconds(Number("0." + d[12]) * 1000);
         if (d[14]) {
             offset = (Number(d[16]) * 60) + Number(d[17]);
-            offset *= ((d[15] == '-') ? 1 : -1);
+            offset *= ((d[15] === '-') ? 1 : -1);
         }
 
         offset -= date.getTimezoneOffset();
@@ -289,7 +289,7 @@ zebkit.package("io", function(pkg, Class) {
                 //
                 // TODO: think also about changing content type
                 // "application/x-www-form-urlencoded; charset=UTF-8"
-                if (d != null && zebkit.isString(d) === false && d.constructor === Object) {
+                if (d !== null && zebkit.isString(d) === false && d.constructor === Object) {
                     d = pkg.QS.toQS(d, false);
                 }
 
@@ -377,11 +377,12 @@ zebkit.package("io", function(pkg, Class) {
      * @for zebkit.io
      */
     pkg.GET = function(url) {
+        var http = null;
         if (zebkit.isString(url)) {
-            var http = new pkg.HTTP(url);
+            http = new pkg.HTTP(url);
             return http.GET.apply(http, Array.prototype.slice.call(arguments, 1));
         } else {
-            var http = new pkg.HTTP(url.url);
+            http = new pkg.HTTP(url.url);
             if (url.header) {
                 http.header = url.header;
             }
@@ -515,7 +516,7 @@ zebkit.package("io", function(pkg, Class) {
                     $this[name] = function() {
                         var args = Array.prototype.slice.call(arguments);
                         return this.send(url, this.encode(name, args)).then(function(req) {
-                            if (req.status == 200) {
+                            if (req.status === 200) {
                                 return $this.decode(req.responseText);
                             } else {
                                 this.error(new Error("Status: " + req.status + ", '" + req.statusText + "'"));
@@ -544,7 +545,7 @@ zebkit.package("io", function(pkg, Class) {
                 if (this.contentType !== null) {
                     http.header['Content-Type'] = this.contentType;
                 }
-                return http.POST(data, callback);
+                return http.POST(data);
             };
         }
 
@@ -743,10 +744,11 @@ zebkit.package("io", function(pkg, Class) {
             };
 
             this.decodeValue = function (node) {
-                var tag = node.tagName.toLowerCase();
+                var tag = node.tagName.toLowerCase(), i = 0;
+
                 if (tag === "struct") {
                      var p = {};
-                     for(var i=0; i < node.childNodes.length; i++) {
+                     for(i = 0; i < node.childNodes.length; i++) {
                         var member = node.childNodes[i],  // <member>
                             key    = member.childNodes[0].childNodes[0].nodeValue.trim(); // <name>/text()
                         p[key] = this.decodeValue(member.childNodes[1].childNodes[0]);   // <value>/<xxx>
@@ -757,7 +759,7 @@ zebkit.package("io", function(pkg, Class) {
                 if (tag === "array") {
                     var a = [];
                     node = node.childNodes[0]; // <data>
-                    for(var i=0; i < node.childNodes.length; i++) {
+                    for(i = 0; i < node.childNodes.length; i++) {
                         a[i] = this.decodeValue(node.childNodes[i].childNodes[0]); // <value>
                     }
                     return a;

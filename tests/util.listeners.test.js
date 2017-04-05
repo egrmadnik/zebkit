@@ -282,36 +282,36 @@ zebkit.runTests("Util Listeners",
     function test_multiple_listener() {
         var clazz = ListenersClass("test1", "test2"), aaa = 100, bbb = 111, ccc = 1, l = new clazz();
 
-        assert(clazz.prototype.test1 != null, true);
-        assert(clazz.prototype.test2 != null, true);
-        assert(l.test1 != null, true);
-        assert(l.test2 != null, true);
-        assert(l.test2 != l.test1, true);
-        assert(typeof l.methods, "undefined");
+        assert(clazz.prototype.test1 != null, true, "test_multiple_listener 1");
+        assert(clazz.prototype.test2 != null, true, "test_multiple_listener 2");
+        assert(l.test1 != null, true, "test_multiple_listener 3");
+        assert(l.test2 != null, true, "test_multiple_listener 4");
+        assert(l.test2 != l.test1, true, "test_multiple_listener 5");
+        assert(l.methods, null, "test_multiple_listener 6");
 
         var ll = l.add(function test1() {
             aaa = 200;
             ccc = 111;
         })
 
-        assert(l.methods["test1"] != null, true);
-        assert(l.methods["test1"].length, 2);
-        assert(typeof l.methods["test2"], "undefined");
+        assert(l.methods["test1"] != null, true, "test_multiple_listener 7");
+        assert(l.methods["test1"].length, 2, "test_multiple_listener 8");
+        assert(typeof l.methods["test2"], "undefined", "test_multiple_listener 9");
 
 
         l.test1();
-        assert(aaa, 200);
-        assert(ccc, 111);
-        assert(l.methods["test1"] != null, true);
-        assert(l.methods["test1"].length, 2);
-        assert(typeof l.methods["test2"], "undefined");
+        assert(aaa, 200, "test_multiple_listener 10");
+        assert(ccc, 111, "test_multiple_listener 11");
+        assert(l.methods["test1"] != null, true, "test_multiple_listener 12");
+        assert(l.methods["test1"].length, 2, "test_multiple_listener 13");
+        assert(typeof l.methods["test2"], "undefined", "test_multiple_listener 14");
 
 
-        assertException(function() { l.add(function t() {} )}, Error);
+        assertException(function() { l.add(function t() {} )}, Error, "test_multiple_listener 15");
 
         assertNoException(function() {
             l.test2();
-        })
+        }, "test_multiple_listener 16")
 
         var A = Class([
             function test1() {
@@ -327,84 +327,83 @@ zebkit.runTests("Util Listeners",
         ccc = 0;
         aaa = 0;
         bbb = 0;
-        assert(l.methods["test1"] != null, true);
-        assert(l.methods["test1"].length, 4);
-        assert(l.methods["test2"] != null, true);
-        assert(l.methods["test2"].length, 2);
+        assert(l.methods["test1"] != null, true, "test_multiple_listener 17");
+        assert(l.methods["test1"].length, 4, "test_multiple_listener 18");
+        assert(l.methods["test2"] != null, true, "test_multiple_listener 19");
+        assert(l.methods["test2"].length, 2, "test_multiple_listener 20");
 
         l.test1();
         l.test2();
-        assert(aaa, 300);
-        assert(bbb, 777);
-        assert(ccc, 111);
+        assert(aaa, 300, "test_multiple_listener 21");
+        assert(bbb, 777, "test_multiple_listener 22");
+        assert(ccc, 111, "test_multiple_listener 23");
 
         l.remove(a);
         ccc = 0;
         aaa = 0;
         bbb = 0;
-        assert(l.methods["test1"] != null, true);
-        assert(l.methods["test1"].length, 2);
-        assert(l.methods["test2"], undefined);
+        assert(l.methods["test1"] != null, true, "test_multiple_listener 24");
+        assert(l.methods["test1"].length, 2, "test_multiple_listener 25");
+        assert(l.methods["test2"], undefined, "test_multiple_listener 26");
 
         l.test1();
-        assert(aaa, 200);
-        assert(ccc, 111);
-        assert(l.methods["test1"] != null, true);
-        assert(l.methods["test1"].length, 2);
+        assert(aaa, 200, "test_multiple_listener 27");
+        assert(ccc, 111, "test_multiple_listener 28");
+        assert(l.methods["test1"] != null, true, "test_multiple_listener 29");
+        assert(l.methods["test1"].length, 2, "test_multiple_listener 30");
 
         assertNoException(function() {
             l.test2();
-        })
-        assert(aaa, 200);
-        assert(bbb, 0);
-        assert(ccc, 111);
+        }, "test_multiple_listener 31")
+        assert(aaa, 200, "test_multiple_listener 32");
+        assert(bbb, 0, "test_multiple_listener 33");
+        assert(ccc, 111, "test_multiple_listener 34");
 
         l.remove(ll);
         ccc = 0;
         aaa = 0;
         bbb = 0;
-        assert(l.methods["test1"], undefined);
-        assert(l.methods["test2"], undefined);
+        assert(l.methods["test1"], undefined, "test_multiple_listener 35");
+        assert(l.methods["test2"], undefined, "test_multiple_listener 36");
 
         assertNoException(function() {
             l.test1();
             l.test2();
             l.remove();
-        })
-        assert(aaa, 0);
-        assert(bbb, 0);
-        assert(ccc, 0);
+        }, "test_multiple_listener 37")
+        assert(aaa, 0, "test_multiple_listener 38");
+        assert(bbb, 0, "test_multiple_listener 39");
+        assert(ccc, 0, "test_multiple_listener 40");
 
         // side effect
         var clazz2 = ListenersClass("a1", "a2", "a3"), l2 = new clazz2();
 
-        assert(clazz.prototype.test1 != null, true);
-        assert(clazz.prototype.test2 != null, true);
-        assert(clazz.prototype.a1, undefined);
-        assert(clazz.prototype.a2, undefined);
-        assert(clazz.prototype.a3, undefined);
+        assert(clazz.prototype.test1 != null, true, "test_multiple_listener 41");
+        assert(clazz.prototype.test2 != null, true, "test_multiple_listener 42");
+        assert(clazz.prototype.a1, undefined, "test_multiple_listener 43");
+        assert(clazz.prototype.a2, undefined, "test_multiple_listener 44");
+        assert(clazz.prototype.a3, undefined, "test_multiple_listener 45");
 
-        assert(clazz2.prototype.a1 != null, true);
-        assert(clazz2.prototype.a2 != null, true);
-        assert(clazz2.prototype.a3 != null, true);
-        assert(clazz2.prototype.test1, undefined);
-        assert(clazz2.prototype.test2, undefined);
+        assert(clazz2.prototype.a1 != null, true, "test_multiple_listener 46");
+        assert(clazz2.prototype.a2 != null, true, "test_multiple_listener 47");
+        assert(clazz2.prototype.a3 != null, true, "test_multiple_listener 48");
+        assert(clazz2.prototype.test1, undefined, "test_multiple_listener 49");
+        assert(clazz2.prototype.test2, undefined, "test_multiple_listener 50");
 
 
-        assert(l2.test1, undefined);
-        assert(l2.test2, undefined);
-        assert(l2.a1 != null, true);
-        assert(l2.a2 != null, true);
-        assert(l2.a3 != null, true);
+        assert(l2.test1, undefined, "test_multiple_listener 51");
+        assert(l2.test2, undefined, "test_multiple_listener 52");
+        assert(l2.a1 != null, true, "test_multiple_listener 53");
+        assert(l2.a2 != null, true, "test_multiple_listener 54");
+        assert(l2.a3 != null, true, "test_multiple_listener 55");
 
-        assert(l.test1 != null, true);
-        assert(l.test2 != null, true);
-        assert(l.a1, undefined);
-        assert(l.a2, undefined);
-        assert(l.a3, undefined);
+        assert(l.test1 != null, true, "test_multiple_listener 56");
+        assert(l.test2 != null, true, "test_multiple_listener 57");
+        assert(l.a1, undefined, "test_multiple_listener 58");
+        assert(l.a2, undefined, "test_multiple_listener 59");
+        assert(l.a3, undefined, "test_multiple_listener 60");
 
-        assert(typeof l2.methods, "undefined");
-        assert(l.methods != null, true);
+        assert(l2.methods, null, "test_multiple_listener 61");
 
         var ddd = 100;
         l2.add( {

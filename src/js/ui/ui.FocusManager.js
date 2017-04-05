@@ -190,9 +190,11 @@ zebkit.package("ui", function(pkg, Class) {
                     return top.traverseFocus(c, d);
                 }
 
-                for(var index = (d > 0) ? 0 : c.kids.length - 1; c != top.parent; ){
+                for(var index = (d > 0) ? 0 : c.kids.length - 1; c !== top.parent; ){
                     var cc = this.fd(c, index, d);
-                    if (cc !== null) return cc;
+                    if (cc !== null) {
+                        return cc;
+                    }
                     cc = c;
                     c = c.parent;
                     if (c !== null) index = d + c.indexOf(cc);
@@ -211,7 +213,9 @@ zebkit.package("ui", function(pkg, Class) {
                     var oldFocusOwner = this.focusOwner;
                     if (c !== null) {
                         var nf = c.getEventDestination();
-                        if (nf === null || oldFocusOwner === nf) return;
+                        if (nf === null || oldFocusOwner === nf) {
+                            return;
+                        }
                         this.focusOwner = nf;
                     } else {
                         this.focusOwner = c;

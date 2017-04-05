@@ -20,6 +20,8 @@ zebkit.package("ui.vk", function(pkg, Class) {
                     row   = -1,
                     x     =  0,
                     y     =  0,
+                    i     =  0,
+                    r     =  null,
                     left  =  t.getLeft(),
                     top   =  t.getTop(),
                     ew    =  t.width - left - t.getRight(),
@@ -28,10 +30,10 @@ zebkit.package("ui.vk", function(pkg, Class) {
                 // compute extra alignment for fixed size keys to
                 // take larger than preferred size horizontal
                 // space
-                for(var i = 0; i < rows.length; i++) {
+                for(i = 0; i < rows.length; i++) {
                     if (rows[i].fixKeys !== 0) {
-                        var r  = rows[i],
-                            w  = (r.keys > 0 ? r.keys - 1 : 0) * this.gap + m.fixKeyWidth * r.fixKeys + r.occupiedHorSpace,
+                        r  = rows[i];
+                        var w  = (r.keys > 0 ? r.keys - 1 : 0) * this.gap + m.fixKeyWidth * r.fixKeys + r.occupiedHorSpace,
                             ex = ew - w;
 
                         ex =  Math.round(ex/r.fixKeys);
@@ -54,8 +56,10 @@ zebkit.package("ui.vk", function(pkg, Class) {
                     m.width = this.maxRowWidth(rows, m.fixKeyWidth);
                 }
 
-                for (var i = 0; i < t.kids.length; i++) {
-                    var k = t.kids[i], ctr = k.constraints, r = m.rows[ctr.row];
+                for (i = 0; i < t.kids.length; i++) {
+                    var k = t.kids[i], ctr = k.constraints;
+
+                    r = m.rows[ctr.row];
 
                     if (row !== ctr.row) {
                         row ++;
@@ -73,7 +77,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
                     }
 
                     if (k.isVisible === true) {
-                        if (ctr.size == null) {
+                        if (ctr.size === null) {
                             k.setSize(m.fixKeyWidth, m.rowHeight);
                         } else {
                             var ps = k.getPreferredSize();
@@ -153,14 +157,14 @@ zebkit.package("ui.vk", function(pkg, Class) {
                     ctr = k.constraints;
 
                     // next row detected
-                    if (ctr.row > row) {
+                    if (ctr !== null && ctr.row > row) {
                         break;
                     }
 
                     if (ctr.row === row && k.isVisible === true) {
                         var ps = k.getPreferredSize();
 
-                        if (ctr.size == null) {
+                        if (ctr.size === null) {
                             if (fixKeyMaxWidth < ps.width) fixKeyMaxWidth = ps.width;
                             fixKeys ++;
                         } else {
@@ -178,7 +182,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
                 }
 
                 // no row exists
-                if (ctr == null || ctr.row < row) {
+                if (ctr === null || ctr.row < row) {
                     return null;
                 }
 
@@ -246,12 +250,12 @@ zebkit.package("ui.vk", function(pkg, Class) {
             this.paint = function(g,x,y,w,h,d) {
                 this.outline(g,x,y,w,h,d);
 
-                if (this.lineColor) {
+                if (this.lineColor !== null) {
                     g.setColor(this.lineColor);
                     g.stroke();
                 }
 
-                if (this.bg != null) {
+                if (this.bg !== null) {
                     g.setColor(this.bg);
                     g.fill();
                 }
@@ -285,9 +289,9 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
     pkg.VKeyBase = Class(ui.Button, [
         function(v) {
-            if (zebkit.isString(v) == false &&
-                zebkit.instanceOf(v, ui.Panel) == false &&
-                (v instanceof Image) == false)
+            if (zebkit.isString(v) === false &&
+                zebkit.instanceOf(v, ui.Panel) === false &&
+                (v instanceof Image) === false)
             {
                 v = ui.$view(v);
 
@@ -344,7 +348,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
             this.findVK = function(id) {
                 var p = this.parent;
-                while (p !== null && p[id] == null) p = p.parent;
+                while (p !== null && typeof p[id] === 'undefined') p = p.parent;
                 return p;
             };
 
@@ -976,8 +980,8 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
                     // adjust size if VK is shown
                     var can = this.getCanvas();
-                    if (can !== null && can.win != null) {
-                        var win = can.win;
+                    if (can !== null && can.hasOwnProperty("win") === true) {
+                        var win = can.getLayer("win");
                         this.toPreferredSize();
                         this.setSize(win.width - win.getLeft() - win.getRight(), this.height);
                     }
@@ -1027,14 +1031,12 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
         function setParent(p) {
             // mean the vk is removed from its parent
-            if (p === null) {
-                if (this.parent !== null) {
-                    // remove other VK related elements
-                    for(var i = this.parent.kids.length - 1; i >= 0; i--) {
-                        var kid = this.parent.kids[i];
-                        if (kid.$isVkElement === true) {
-                            kid.removeMe();
-                        }
+            if (p === null && this.parent !== null) {
+                // remove other VK related elements
+                for(var i = this.parent.kids.length - 1; i >= 0; i--) {
+                    var kid = this.parent.kids[i];
+                    if (kid.$isVkElement === true) {
+                        kid.removeMe();
                     }
                 }
             }
@@ -1061,7 +1063,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
     ui.events.bind({
         focusGained : function (e) {
-            if (pkg.$vk !== null && $isVkElement(e.source) === false && e.source.vkMode != null) {
+            if (pkg.$vk !== null && $isVkElement(e.source) === false && typeof e.source.vkMode !== 'undefined') {
                 pkg.showVK(zebkit.instanceOf(e.source, ui.TextField) ? e.source : null);
             }
         },
@@ -1077,7 +1079,7 @@ zebkit.package("ui.vk", function(pkg, Class) {
 
                 // if input component holds focus, virtual keyboard is
                 // hidden and we press on the input component
-                if (pkg.$vk.parent === null && e.source.vkMode != null) {
+                if (pkg.$vk.parent === null && typeof e.source.vkMode !== 'undefined') {
                     pkg.showVK(e.source);
                 }
             }

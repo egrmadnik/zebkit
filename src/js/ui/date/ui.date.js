@@ -130,7 +130,7 @@ zebkit.package("ui.date", function(pkg, Class) {
                 },
 
                 tag : function(tag) {
-                    if (tag == null) throw new Error();
+                    if (tag === null || typeof tag === 'undefined') throw new Error();
 
                     if (this.hasTag(tag) === false) {
                         this.tags.push(tag);
@@ -141,7 +141,7 @@ zebkit.package("ui.date", function(pkg, Class) {
                 },
 
                 untag : function(tag) {
-                    if (tag == null) throw new Error();
+                    if (tag === null || typeof tag === 'undefined') throw new Error();
 
                     if (this.hasTag(tag) === true) {
                         var i = this.$exists[tag];
@@ -229,8 +229,12 @@ zebkit.package("ui.date", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.tagger = null;
+
             this.retagModel = function() {
-                for(var i = 0; i < this.model.rows * this.model.cols; i++) {
+                var i = 0;
+
+                for(i = 0; i < this.model.rows * this.model.cols; i++) {
                     var item = this.model.geti(i);
                     item.untagAll();
 
@@ -250,12 +254,12 @@ zebkit.package("ui.date", function(pkg, Class) {
                         item.tag("notSelectable");
                     }
 
-                    if (this.tagger != null) {
+                    if (this.tagger !== null) {
                         this.tagger.tag(item);
                     }
                 }
 
-                var i = this.indexOfItem(new Date());
+                i = this.indexOfItem(new Date());
                 if (i > 0) {
                     this.model.geti(i).tag("today");
                 }
@@ -271,7 +275,7 @@ zebkit.package("ui.date", function(pkg, Class) {
 
                 pkg.validateDate(month, year);
 
-                if (this.month != month || this.year != year) {
+                if (this.month !== month || this.year !== year) {
                     var prevYear  = this.year,
                         prevMonth = this.month;
 
@@ -373,7 +377,7 @@ zebkit.package("ui.date", function(pkg, Class) {
                 var m = this.model.rows * this.model.cols;
                 for(var i = 0; i < m; i++) {
                     var item = this.model.geti(i);
-                    if (item.year == year && item.day == day && item.month == month) {
+                    if (item.year === year && item.day === day && item.month === month) {
                         return i;
                     }
                 }
@@ -434,7 +438,7 @@ zebkit.package("ui.date", function(pkg, Class) {
                     b = arguments[3];
                 }
 
-                if (offset == null) {
+                if (offset === null || typeof offset === 'undefined') {
                     throw new Error("" + offset);
                 }
 
@@ -454,12 +458,12 @@ zebkit.package("ui.date", function(pkg, Class) {
         function rPsMetric() {
             this.$super();
 
-            var max = 0, cols = this.getGridCols();
-            for(var i = 0; i < cols; i++) {
+            var max = 0, cols = this.getGridCols(), i = 0;
+            for(i = 0; i < cols; i++) {
                 if (this.colWidths[i] > max) max = this.colWidths[i];
             }
 
-            for(var i = 0; i < cols; i++) {
+            for(i = 0; i < cols; i++) {
                 this.colWidths[i] = max;
             }
         },
@@ -490,7 +494,6 @@ zebkit.package("ui.date", function(pkg, Class) {
 
         function () {
             this.tags    = {};
-            this.tagger  = null;
             this.view    = new ui.CompRender(null);
             this.itemPan = new this.clazz.ItemPan();
 
@@ -627,7 +630,7 @@ zebkit.package("ui.date", function(pkg, Class) {
             };
 
             this.canDateBeSet = function (date) {
-                return  date == null || (
+                return  date === null || (
                             (this.minDate === null || pkg.compareDates(date, this.minDate) >= 0) &&
                             (this.maxDate === null || pkg.compareDates(date, this.maxDate) <= 0)
                         );
@@ -639,12 +642,10 @@ zebkit.package("ui.date", function(pkg, Class) {
                     if (item.tags.length > 0) {
                         if (item.hasTag("shownMonth") === true) {
                             this.setValue(item.day, item.month, item.year);
-                        }
-                        else {
+                        } else {
                             if (item.hasTag("nextMonth")  === true) {
                                 this.showNextMonth();
-                            }
-                            else {
+                            } else {
                                 this.showPrevMonth();
                             }
                         }
@@ -845,7 +846,7 @@ zebkit.package("ui.date", function(pkg, Class) {
             this.date = null;
 
             this.$format = function(d) {
-                return zebkit.util.format(this.format, d != null ? d :{}, this.notDefined);
+                return zebkit.util.format(this.format, d !== null ? d :{}, this.notDefined);
             };
         },
 
@@ -901,8 +902,8 @@ zebkit.package("ui.date", function(pkg, Class) {
     var PopupCalendarMix = zebkit.Interface([
         function childKeyPressed(e) {
             if (e.code === "Enter") this.showCalendar(e.source);
-            else {
-                if (e.code === "Backspace") {}
+            else if (e.code === "Backspace") {
+                //
             }
         },
 

@@ -85,7 +85,7 @@ zebkit.package("ui", function(pkg, Class) {
                 var psx = this.getSX(),
                     psy = this.getSY();
 
-                if (psx != x || psy != y){
+                if (psx !== x || psy !== y){
                     this.sx = x;
                     this.sy = y;
                     if (typeof this.scrollStateUpdated !== 'undefined') this.scrollStateUpdated(x, y, psx, psy);
@@ -268,7 +268,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method pointerDragged
              */
             this.pointerDragged = function(e){
-                if (Number.MAX_VALUE != this.startDragLoc) {
+                if (Number.MAX_VALUE !== this.startDragLoc) {
                     this.position.setOffset(this.pixel2value(this.bundleLoc -
                                                              this.startDragLoc +
                                                              ((this.orient === "horizontal") ? e.x : e.y)));
@@ -372,7 +372,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setMaximum = function (m){
-                if (m != this.max) {
+                if (m !== this.max) {
                     this.max = m;
                     if (this.position.offset > this.max) {
                         this.position.setOffset(this.max);
@@ -394,7 +394,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.setPosition = function(p){
-                if (p != this.position){
+                if (p !== this.position){
                     if (this.position !== null) this.position.unbind(this);
                     this.position = p;
 
@@ -408,7 +408,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.setExtraSize = function(e){
-                if (e != this.extra){
+                if (e !== this.extra){
                     this.extra = e;
                     this.vrp();
                 }
@@ -626,7 +626,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setAutoHide = function(b) {
-                if (this.autoHide != b) {
+                if (this.autoHide !== b) {
                     this.autoHide = b;
                     if (this.hBar !== null) {
                         if (this.hBar.incBt !== null) this.hBar.incBt.setVisible(!b);
@@ -950,11 +950,11 @@ zebkit.package("ui", function(pkg, Class) {
                     this.$target     = e.source;
 
                     // detect scrollable component
-                    while (this.$target !== null && this.$target.doScroll == null) {
+                    while (this.$target !== null && typeof this.$target.doScroll === 'undefined') {
                         this.$target = this.$target.parent;
                     }
 
-                    if (this.$target !== null && this.$target.pointerDragged != null) {
+                    if (this.$target !== null && typeof this.$target.pointerDragged !== 'undefined') {
                          this.$target = null;
                     }
                 }

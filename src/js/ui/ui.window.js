@@ -158,17 +158,21 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.layerPointerPressed = function(e) {
                 if (this.kids.length > 0) {
-                    // I) check if  clicks has occurred on active window that is located on the top
-                    if (this.activeWin !== null && this.indexOf(this.activeWin) === this.kids.length - 1) {
-                        var x1 = this.activeWin.x,
-                            y1 = this.activeWin.y,
-                            x2 = x1 + this.activeWin.width,
-                            y2 = y1 + this.activeWin.height;
 
-                        // pressed has occurred inside the topest active window, so let process normally by
-                        // calling winLayer.getComponetAt(x,y)
-                        if (e.x >= x1 && e.y >= y1 && e.x <= x2 && e.y <= y2) {
-                            return false;
+                    // I) check most probable variant - pressed has occurred inside an active window that
+                    // is placed on the top of all other windows
+                    if (this.activeWin !== null) {
+                        if (this.indexOf(this.activeWin) === this.kids.length - 1) {
+                            var x1 = this.activeWin.x,
+                                y1 = this.activeWin.y,
+                                x2 = x1 + this.activeWin.width,
+                                y2 = y1 + this.activeWin.height;
+
+                            // pressed has occurred inside the topest active window, so let process
+                            // goes normally by calling winLayer.getComponetAt(x,y)
+                            if (e.x >= x1 && e.y >= y1 && e.x <= x2 && e.y <= y2) {
+                                return false;
+                            }
                         }
                     }
 
@@ -177,30 +181,31 @@ zebkit.package("ui", function(pkg, Class) {
                     for(var i = this.kids.length - 1; i >= 0 && i >= this.topModalIndex; i--) {
                         var d = this.kids[i];
 
-                        if (d.isVisible &&
-                            d.isEnabled &&
-                            d.winType !== "info" &&
-                            e.x >= d.x &&
-                            e.y >= d.y &&
-                            e.x < d.x + d.width &&
-                            e.y < d.y + d.height)
+                        if (d.isVisible === true  &&   // check pressed is inside of a MDI window that
+                            d.isEnabled === true  &&   // is shown after currently active modal window
+                            d.winType  !== "info" &&
+                            e.x >= d.x            &&
+                            e.y >= d.y            &&
+                            e.x < d.x + d.width   &&
+                            e.y < d.y + d.height     )
                         {
                             if (d !== this.activeWin) {
                                 this.activate(d);
                                 return true;
+                            } else {
+                                return false;  // we are inside activated modal window
                             }
-                            return false;
                         }
                     }
 
-                    // III) pressed has occurred outside window and no any modal
-                    // window exists
-                    if (this.topModalIndex < 0 && this.activeWin !== null) {
+                    // III) Check if have to deactivate active MDI window since on prev. step we could not find
+                    // a target window  what means pressed was outside of a window
+                    if (this.topModalIndex < 0 && this.activeWin !== null) { // no a modal window has been shown
                         this.activate(null);
                         return false;
                     }
 
-                    return true;
+                    return this.topModalIndex >= 0;
                 }
 
                 return false;
@@ -209,7 +214,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.layerKeyPressed = function(e){
                 if (this.kids.length > 0 &&
                     e.code === "Tab"     &&
-                    e.shiftKey              )
+                    e.shiftKey === true     )
                 {
                     if (this.activeWin === null) {
                         this.activate(this.kids[this.kids.length - 1]);
@@ -267,7 +272,7 @@ zebkit.package("ui", function(pkg, Class) {
                         this.activeWin = null;
                         pkg.events.fireEvent("winActivated", WIN_EVENT.$fillWith(old, this, false, false));
 
-                        // TODO: special flag $dontGrabFocus is not very elegant
+                        // TODO: special flag $dontGrabFocus is not very elegant solution
                         if (type === "mdi" && old.$dontGrabFocus !== true) {
                             pkg.focusManager.requestFocus(null);
                         }
@@ -320,7 +325,7 @@ zebkit.package("ui", function(pkg, Class) {
         function kidAdded(index, constr, lw){
             this.$super(index, constr, lw);
 
-            if (lw.winType == null) {
+            if (typeof lw.winType === 'undefined') {
                 lw.winType = "mdi";
             } else {
                 zebkit.util.$validateValue(lw.winType, "mdi", "modal", "info");
@@ -390,8 +395,8 @@ zebkit.package("ui", function(pkg, Class) {
 
      * @class zebkit.ui.Window
      *
-     * @param {String} [content] a window title
-     * @param {zebkit.ui.Panel} [content] a window content
+     * @param {String} [s] a window title
+     * @param {zebkit.ui.Panel} [c] a window content
      * @constructor
      * @extends {zebkit.ui.Panel}
      */
@@ -411,7 +416,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @type {zebkit.ui.Panel}
              * @readOnly
              */
-            this.root = (c == null ? this.createContentPan() : c);
+            this.root = (c === null || arguments.length < 2 ? this.createContentPan() : c);
 
             /**
              * Window caption panel. The panel contains window
@@ -429,7 +434,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @readOnly
              */
             this.title = this.createTitle();
-            this.title.setValue((s == null ? "" : s));
+            this.title.setValue((s === null || arguments.length === 0 ? "" : s));
 
             /**
              * Icons panel. The panel can contain number of icons.
@@ -626,7 +631,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method isMaximized
              */
             this.isMaximized = function() {
-                return this.prevW != -1;
+                return this.prevW !== -1;
             };
 
             /**
@@ -674,7 +679,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method setSizeable
              */
             this.setSizeable = function(b){
-                if (this.isSizeable != b){
+                if (this.isSizeable !== b){
                     this.isSizeable = b;
                     if (this.sizer !== null) {
                         this.sizer.setVisible(b);

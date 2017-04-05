@@ -57,8 +57,8 @@ zebkit.package("ui.web", function(pkg, Class) {
              * @method pointerEntered
              */
             this.pointerEntered = function(e) {
-                if (e.source.cursorType !== null || e.source.getCursorType != null) {
-                    this.$isFunc = (e.source.getCursorType != null);
+                if (e.source.cursorType !== null || typeof e.source.getCursorType !== 'undefined') {
+                    this.$isFunc = (typeof e.source.getCursorType === 'function');
                     this.target = e.target;
                     this.source = e.source;
 

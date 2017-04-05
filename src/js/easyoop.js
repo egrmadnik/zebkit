@@ -244,7 +244,9 @@
                     var pc = this.$taskCounter, args = null, r;
 
                     if (this.$error === null) {
-                        args = this.$results[level];
+                        if (typeof this.$results[level] !== 'undefined') {
+                            args = this.$results[level];
+                        }
 
                         this.$taskCounter    = 0;  // we have to count the tasks on this level
                         this.$level          = level + 1;
@@ -299,7 +301,7 @@
                             else               completed.apply(this, args);
                         }
                     }
-                    if (args != null) args.length = 0;
+                    if (args !== null) args.length = 0;
                 };
 
                 if (this.$error === null) {
@@ -430,9 +432,11 @@
                     // since error can occur and times variable
                     // can be reset to 0 we have to check it
                     if ($this.$busy > 0) {
+                        var i = 0;
+
                         if (arguments.length > 0) {
                             $this.$results[level][index] = [];
-                            for(var i = 0; i < arguments.length; i++) {
+                            for(i = 0; i < arguments.length; i++) {
                                 $this.$results[level][index][i] = arguments[i];
                             }
                         }
@@ -443,7 +447,7 @@
                                 var args = $this.$results[level],
                                     res  = [];
 
-                                for(var i = 0; i < args.length; i++) {
+                                for(i = 0; i < args.length; i++) {
                                     Array.prototype.push.apply(res, args[i]);
                                 }
                                 $this.$results[level] = res;
@@ -735,7 +739,7 @@
      */
     Package.prototype.fullname = function() {
         var n = [ this.$name ], p = this;
-        while(p.$parent !== null) {
+        while (p.$parent !== null) {
             p = p.$parent;
             n.unshift(p.$name);
         }
@@ -924,7 +928,7 @@
 
         var target = this;
         if (typeof arguments[0] !== 'function') {
-            if (name == null) {
+            if (typeof name === 'undefined' || name === null) {
                 throw new Error("Null package name");
             }
 
@@ -1103,7 +1107,8 @@
             if (arguments.length > 2 && inheritanceList.length > 0) {
                 for(var i = 0; i < inheritanceList.length; i++) {
                     var toInherit = inheritanceList[i];
-                    if (toInherit == null                       ||
+                    if (typeof toInherit === 'undefined'        ||
+                        toInherit === null                      ||
                         typeof toInherit        !== "function"  ||
                         typeof toInherit.$hash$ === "undefined"   )
                     {
@@ -1258,7 +1263,7 @@
                 },
 
                 forEach: function(callback, context) {
-                    var $this = context == null ? this : context;
+                    var $this = arguments.length < 2 ? this : context;
                     for(var i = 0 ; i < this.size; i++) {
                         callback.call($this, this.values[i], this.keys[i], this);
                     }
@@ -1282,11 +1287,12 @@
          */
         pkg.clone = function (obj, map) {
             // clone atomic type
-            if (obj == null || pkg.isString(obj) || pkg.isBoolean(obj) || pkg.isNumber(obj)) {
-                return obj;
-            }
-
-            if (obj.$notClonable === true) {
+            // TODO: to speedup cloning we don't use isString, isNumber, isBoolean
+            if (obj === null || typeof obj === 'undefined' || obj.$notClonable === true ||
+                                                              (typeof obj === "string"  || obj.constructor === String  ) ||
+                                                              (typeof obj === "boolean" || obj.constructor === Boolean ) ||
+                                                              (typeof obj === "number"  || obj.constructor === Number  )    )
+            {
                 return obj;
             }
 
@@ -1350,7 +1356,7 @@
          */
         pkg.newInstance = function(clazz, args) {
             if (arguments.length > 1 && args.length > 0) {
-                function f() {}
+                var f = function () {};
                 f.prototype = clazz.prototype;
                 var o = new f();
                 clazz.apply(o, args);
@@ -1372,16 +1378,16 @@
          * @for  zebkit
          */
         pkg.getPropertySetter = function(obj, name) {
-            var pi = obj.constructor.$propertyInfo;
+            var pi = obj.constructor.$propertyInfo, m = null;
             if (typeof pi !== 'undefined') {
                 if (typeof pi[name] === "undefined") {
-                    var m = obj[ "set" + name[0].toUpperCase() + name.substring(1) ];
+                    m = obj[ "set" + name[0].toUpperCase() + name.substring(1) ];
                     pi[name] = (typeof m  === "function") ? m : null;
                 }
                 return pi[name];
             }
 
-            var m = obj[ "set" + name[0].toUpperCase() + name.substring(1) ];
+            m = obj[ "set" + name[0].toUpperCase() + name.substring(1) ];
             return (typeof m  === "function") ? m : null;
         };
 
@@ -1427,7 +1433,7 @@
         };
 
         function $make_proto(props, superProto) {
-            if (superProto == null) {
+            if (superProto === null) {
                 return function $prototype(clazz) {
                     for(var k in props) {
                         if (props.hasOwnProperty(k)) {
@@ -1437,10 +1443,7 @@
                 };
             } else {
                 return function $prototype(clazz) {
-                    if (superProto !== null) {
-                        superProto.call(this, clazz);
-                    }
-
+                    superProto.call(this, clazz);
                     for(var k in props) {
                         if (props.hasOwnProperty(k)) {
                             this[k] = props[k];
@@ -1518,10 +1521,8 @@
             var arg = arguments.length === 0 ? [] : arguments[0];
             if (arg.constructor === Object) {
                 arg = [ $make_proto(arg, null) ];
-            } else {
-                if (Array.isArray(arg) === false) {
-                    throw new Error("Invalid argument type. List of methods pr properties is expected");
-                }
+            } else if (Array.isArray(arg) === false) {
+                throw new Error("Invalid argument type. List of methods pr properties is expected");
             }
 
             if (arg.length > 0) {
@@ -1549,7 +1550,7 @@
 
                         if (name === "$clazz") {
                             method.call($Interface, $Interface);
-                        } else if (isAbstract) {
+                        } else if (isAbstract === true) {
                             (function(name) {
                                 proto[name] = function() {
                                     throw new Error("Abstract method '" + name + "(...)' is not implemented");
@@ -1569,10 +1570,10 @@
             }
 
             $Interface.$clone = function() {
-                var clone = pkg.Interface(); // create interface
+                var clone = pkg.Interface(), k = null; // create interface
 
                 // clone interface level variables
-                for(var k in this) {
+                for(k in this) {
                     if (this.hasOwnProperty(k)) {
                         clone[k] = pkg.clone(this[k]);
                     }
@@ -1580,8 +1581,8 @@
 
                 // copy methods from proto
                 var proto = this.prototype;
-                for(var k in proto) {
-                    if (k !== "clazz" && proto.hasOwnProperty(k)) {
+                for(k in proto) {
+                    if (k !== "clazz" && proto.hasOwnProperty(k) === true) {
                         clone.prototype[k] = pkg.clone(proto[k]);
                     }
                 }
@@ -1851,7 +1852,8 @@
                 }
             }, toInherit);
 
-            // prepare fields that caches the class properties
+            // prepare fields that caches the class properties. existence of the property
+            // force getPropertySetter method to cache the method
             classTemplate.$propertyInfo = {};
 
             /**
@@ -1914,7 +1916,8 @@
                 var clazz = this.clazz,
                     l = arguments.length,
                     f = arguments[l - 1],
-                    hasArray = Array.isArray(f);
+                    hasArray = Array.isArray(f),
+                    i = 0;
 
                 // replace the instance class with a new intermediate class
                 // that inherits the replaced class. it is done to support
@@ -1928,7 +1931,7 @@
 
                 if (hasArray) {
                     var init = null;
-                    for(var i = 0; i < f.length; i++) {
+                    for(i = 0; i < f.length; i++) {
                         var n = pkg.$FN(f[i]);
                         if (n === pkg.CDNAME) {
                             init = f[i];  // postpone calling initializer before all methods will be defined
@@ -1947,7 +1950,7 @@
                 }
 
                 // add new interfaces if they has been passed
-                for (var i = 0; i < arguments.length - (hasArray ? 1 : 0); i++) {
+                for (i = 0; i < arguments.length - (hasArray ? 1 : 0); i++) {
                     if (arguments[i].clazz !== pkg.Interface) {
                         throw new Error("Invalid argument " + arguments[i] + " Interface is expected.");
                     }
@@ -1993,6 +1996,27 @@
                         var m = $s.prototype[$caller.methodName];
                         if (typeof m !== 'undefined') {
                             return m.apply(this, arguments);
+                        }
+                    }
+
+                    // handle method not found error
+                    var cln = this.clazz && this.clazz.$name ? this.clazz.$name + "." : "";
+                    throw new ReferenceError("Method '" +
+                                             cln +
+                                             ($caller.methodName === pkg.CNAME ? "constructor"
+                                                                               : $caller.methodName) + "(" + arguments.length + ")" + "' not found");
+                } else {
+                    throw new Error("$super is called outside of class context");
+                }
+            };
+
+            // TODO: not stable API
+            classTemplate.prototype.$supera = function(args) {
+               if ($caller !== null) {
+                    for (var $s = $caller.boundTo.$parent; $s !== null; $s = $s.$parent) {
+                        var m = $s.prototype[$caller.methodName];
+                        if (typeof m !== 'undefined') {
+                            return m.apply(this, args);
                         }
                     }
 
@@ -2124,12 +2148,12 @@
                     cpMethods(ic.prototype, classTemplate.prototype, classTemplate);
 
                     // copy static fields from interface to the class
-                    for(var k in ic) {
-                        if (k[0] !== '$' &&
-                            ic.hasOwnProperty(k) &&
-                            classTemplate.hasOwnProperty(k) === false)
+                    for(var sk in ic) {
+                        if (sk[0] !== '$' &&
+                            ic.hasOwnProperty(sk) === true &&
+                            classTemplate.hasOwnProperty(sk) === false)
                         {
-                            classTemplate[k] = pkg.clone(ic[k]);
+                            classTemplate[sk] = pkg.clone(ic[sk]);
                         }
                     }
                 }

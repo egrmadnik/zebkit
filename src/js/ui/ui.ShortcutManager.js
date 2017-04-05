@@ -197,11 +197,9 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.keyShortcuts = {};
 
-
-            if (shortcuts != null) {
-
+            if (arguments.length > 0) {
                 this.setShortcuts(shortcuts.common);
-                if (zebkit.isMacOS === true && shortcuts.osx != null) {
+                if (zebkit.isMacOS === true && typeof shortcuts.osx !== 'undefined') {
                     this.setShortcuts(shortcuts.osx);
                 }
             }

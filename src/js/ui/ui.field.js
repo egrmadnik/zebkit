@@ -395,9 +395,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.keyPressed = function(e) {
                 if (this.isFiltered(e) === false)  {
-                    var position    = this.position,
-                        line        = position.currentLine,
-                        foff        = 1;
+                    var position    = this.position;
 
                     if (e.shiftKey) {
                         this.startSelection();
@@ -406,22 +404,26 @@ zebkit.package("ui", function(pkg, Class) {
                     switch(e.code) {
                         case "ArrowDown" : position.seekLineTo("down"); break;
                         case "ArrowUp"   : position.seekLineTo("up"); break;
-                        case "ArrowLeft" : foff *= -1;
+                        case "ArrowLeft" :
+                            if (e.ctrlKey === false && e.metaKey === false) {
+                                position.seek(-1);
+                            }
+                            break;
                         case "ArrowRight":
                             if (e.ctrlKey === false && e.metaKey === false) {
-                                position.seek(foff);
+                                position.seek(1);
                             }
                             break;
                         case "End":
                             if (e.ctrlKey) {
-                                position.seekLineTo("down", this.getLines() - line - 1);
+                                position.seekLineTo("down", this.getLines() - position.currentLine - 1);
                             } else {
                                 position.seekLineTo("end");
                             }
                             break;
                         case "Home":
                             if (e.ctrlKey) {
-                                position.seekLineTo("up", line);
+                                position.seekLineTo("up", position.currentLine);
                             } else {
                                 position.seekLineTo("begin");
                             }
@@ -446,7 +448,7 @@ zebkit.package("ui", function(pkg, Class) {
                                     this.removeSelected();
                                 } else {
                                     if (this.isEditable === true && position.offset > 0){
-                                        position.seek(-1 * foff);
+                                        position.seek(-1);
                                         this.remove(position.offset, 1);
                                     }
                                 }
@@ -604,7 +606,7 @@ zebkit.package("ui", function(pkg, Class) {
                     throw new Error("Invalid selection offsets");
                 }
 
-                if (this.startOff != startOffset || endOffset != this.endOff) {
+                if (this.startOff !== startOffset || endOffset !== this.endOff) {
                     if (startOffset === endOffset) {
                         this.clearSelection();
                     } else {
@@ -629,7 +631,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method hasSelection
              */
             this.hasSelection = function () {
-                return this.startOff != this.endOff;
+                return this.startOff !== this.endOff;
             };
 
             this.posChanged = function (target,po,pl,pc){
@@ -760,9 +762,9 @@ zebkit.package("ui", function(pkg, Class) {
              * @method getStartSelection
              */
             this.getStartSelection = function(){
-                return this.startOff != this.endOff ? ((this.startOff < this.endOff) ? { row: this.startLine, col: this.startCol }
-                                                                                     : { row: this.endLine, col: this.endCol } )
-                                                    : null;
+                return this.startOff !== this.endOff ? ((this.startOff < this.endOff) ? { row: this.startLine, col: this.startCol }
+                                                                                      : { row: this.endLine, col: this.endCol } )
+                                                     : null;
             };
 
             /**
@@ -773,9 +775,9 @@ zebkit.package("ui", function(pkg, Class) {
              * @method getEndSelection
              */
             this.getEndSelection = function(){
-                return this.startOff != this.endOff ? ((this.startOff < this.endOff) ? { row : this.endLine,   col : this.endCol   }
-                                                                                     : { row : this.startLine, col : this.startCol })
-                                                    : null;
+                return this.startOff !== this.endOff ? ((this.startOff < this.endOff) ? { row : this.endLine,   col : this.endCol   }
+                                                                                      : { row : this.startLine, col : this.startCol })
+                                                     : null;
             };
 
             /**
@@ -784,10 +786,10 @@ zebkit.package("ui", function(pkg, Class) {
              * @method getSelectedText
              */
             this.getSelectedText = function(){
-                return this.startOff != this.endOff ? this.getSubString(this.view,
-                                                                        this.getStartSelection(),
-                                                                        this.getEndSelection())
-                                                    : null;
+                return this.startOff !== this.endOff ? this.getSubString(this.view,
+                                                                         this.getStartSelection(),
+                                                                         this.getEndSelection())
+                                                     : null;
             };
 
             this.getLines = function() {
@@ -881,7 +883,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.clipPaste = function(txt){
-                if (txt != null){
+                if (txt !== null) {
                     this.removeSelected();
                     this.write(this.position.offset, txt);
                 }
@@ -909,7 +911,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setPosition = function (p){
-                if (this.position != p) {
+                if (this.position !== p) {
                     if (this.position !== null) {
                         this.position.unbind(this);
                     }
@@ -934,7 +936,7 @@ zebkit.package("ui", function(pkg, Class) {
                 // TODO: cursor size should be set by property
                 this.curW = 1;
                 this.curView = pkg.$view(v);
-                //this.curW = this.curView != null ? this.curView.getPreferredSize().width : 1;
+                //this.curW = this.curView !== null ? this.curView.getPreferredSize().width : 1;
                 this.vrp();
 
                 return this;
@@ -1052,8 +1054,8 @@ zebkit.package("ui", function(pkg, Class) {
 
         function setView(v){
             if (v != this.view) {
-                if (this.view !== null && this.view.target != null) {
-                    if (this.view.target.bind != null) this.view.target.unbind(this);
+                if (this.view !== null && this.view.target != null && typeof this.view.target.bind !== 'undefined') {
+                    this.view.target.unbind(this);
                 }
 
                 this.$super(v);
@@ -1063,8 +1065,8 @@ zebkit.package("ui", function(pkg, Class) {
                     this.position.setMetric(this.view);
                 }
 
-                if (this.view !== null && this.view.target != null) {
-                    if (this.view.target.bind != null) this.view.target.bind(this);
+                if (this.view !== null && this.view.target != null && typeof this.view.target.bind !== 'undefined') {
+                    this.view.target.bind(this);
                 }
             }
             return this;

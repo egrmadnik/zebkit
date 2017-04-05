@@ -12,11 +12,9 @@ zebkit.package("web", function(pkg, Class) {
      * @private
      * @type {Number}
      */
-    pkg.$deviceRatio = typeof window.devicePixelRatio !== "undefined"
-                        ? window.devicePixelRatio
-                        : (typeof window.screen.deviceXDPI !== "undefined"
-                            ? window.screen.deviceXDPI / window.screen.logicalXDPI // IE
-                            : 1);
+    pkg.$deviceRatio = typeof window.devicePixelRatio !== "undefined" ? window.devicePixelRatio
+                                                                      : (typeof window.screen.deviceXDPI !== "undefined" ? window.screen.deviceXDPI / window.screen.logicalXDPI // IE
+                                                                                                                         : 1);
 
     pkg.$windowSize = function() {
         // iOS retina devices can have a problem with performance
@@ -194,15 +192,12 @@ zebkit.package("web", function(pkg, Class) {
             this.beginPath();
             if (this.lineWidth !== w) this.lineWidth = w;
 
-            if (x1 == x2) {
+            if (x1 === x2) {
                 x1 += w / 2;
                 x2 = x1;
-            }
-            else {
-                if (y1 == y2) {
-                    y1 += w / 2;
-                    y2 = y1;
-                }
+            } else if (y1 === y2) {
+                y1 += w / 2;
+                y2 = y1;
             }
 
             this.moveTo(x1, y1);
@@ -278,9 +273,10 @@ zebkit.package("web", function(pkg, Class) {
             this.beginPath();
             this.moveTo(x, y);
             for (var i = 0; dist >= 0.1; i++) {
-                var idx  = i % pattern.length;
+                var idx  = i % pattern.length,
                     dl   = dist < pattern[idx] ? dist : pattern[idx],
                     step = Math.sqrt(dl * dl / (1 + slope * slope)) * sign;
+
                 compute(step);
                 this[(i % 2 === 0) ? 'lineTo' : 'moveTo'](x + 0.5, y + 0.5);
                 dist -= dl;
@@ -304,7 +300,7 @@ zebkit.package("web", function(pkg, Class) {
                 methods[k].call(ctx);
             } else {
                 var old = ctx[k];
-                if (old != null) {
+                if (typeof old !== 'undefined') {
                     var kk = "$" + k;
                     if (typeof ctx[kk] === 'undefined') {
                         ctx[kk] = old;
@@ -352,7 +348,7 @@ zebkit.package("web", function(pkg, Class) {
         // parameters have been passed and they don't match current CSS
         // width and height
         if (arguments.length > 1) {
-            if (cw != w || ch != h) {
+            if (cw !== w || ch !== h) {
                 c.style.width  = "" + w + "px";
                 c.style.height = "" + h + "px";
                 updateRatio = true;

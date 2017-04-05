@@ -28,8 +28,8 @@ zebkit.package(function(pkg, Class) {
                 o = this.format(o);
                 if (l === 0) console.log(o);
                 else {
-                    if (l == 1) console.warn(o);
-                    else        console.error(o);
+                    if (l === 1) console.warn(o);
+                    else         console.error(o);
                 }
             };
 
@@ -52,13 +52,13 @@ zebkit.package(function(pkg, Class) {
             element = element || "zebkit.out";
             if (pkg.isString(element)) {
                 this.el = document.getElementById(element);
-                if (this.el == null) {
+                if (this.el === null) {
                     this.el = document.createElement('div');
                     this.el.setAttribute("id", element);
                     document.body.appendChild(this.el);
                 }
             } else {
-                if (element == null) {
+                if (element === null) {
                     throw new Error("Unknown HTML output element");
                 }
 
@@ -85,9 +85,11 @@ zebkit.package(function(pkg, Class) {
         },
 
         function $prototype() {
-            this.query = function(cmd,args) {
+            this.$timer = null;
+
+            this.query = function(cmd, args) {
                 var s = "apikey=" + this.apikey + "&command=" + cmd;
-                if (args != null) {
+                if (arguments.length > 1 && args !== null) {
                     for(var k in args) s += "&" + k + "=" + args[k];
                 }
                 return s;
@@ -98,11 +100,11 @@ zebkit.package(function(pkg, Class) {
             this.warn  = function(s,f) { this.out("warning", s,f); };
 
             this.out = function(l, s, f) {
-                if (f == null) {
+                if (arguments.length < 3 || f === null) {
                     this.$justSaved = true;
                     this.buffer.push({ level: l, message: s, time:(new Date()).toString() });
 
-                    if (this.$timer == null) {
+                    if (this.$timer === null) {
                         var $this = this;
                         this.$timer = setInterval(function() {
                             if ($this.$justSaved === true) {
@@ -114,9 +116,9 @@ zebkit.package(function(pkg, Class) {
                                 try {
                                     var q = $this.query("log", {});
                                     for(var i=0; i < $this.buffer.length; i++) {
-                                        q   += "&level=" + $this.buffer[i]["level"];
-                                        q   += "&message=" +  $this.buffer[i]["message"];
-                                        q   += "&time=" + $this.buffer[i]["time"];
+                                        q   += "&level=" + $this.buffer[i].level;
+                                        q   += "&message=" +  $this.buffer[i].message;
+                                        q   += "&time=" + $this.buffer[i].time;
                                     }
                                     $this.buffer.length= 0;
 
@@ -128,8 +130,7 @@ zebkit.package(function(pkg, Class) {
                             }
                         }, 1500);
                     }
-                }
-                else {
+                } else {
                     this.http.POST(this.query("log", { "level"  : l, "message": s, "time": (new Date()).toString() }),
                                     function(result, req) {
                                         var r = result.split("\n");
@@ -168,7 +169,7 @@ zebkit.package(function(pkg, Class) {
     pkg.error = function() { pkg.$out.error.apply(pkg.$out, arguments); };
     pkg.warn  = function() { pkg.$out.warn.apply(pkg.$out, arguments); };
 
-    if (typeof console == "undefined") {
+    if (typeof console === "undefined") {
         console = { log   : pkg.print,
                     error : pkg.error,
                     debug : pkg.print };
@@ -210,12 +211,12 @@ zebkit.package(function(pkg, Class) {
 
             if (obj1 === obj2) return true;
 
-            if (obj1 == null || obj2 == null) {
+            if (obj1 === null || obj2 === null || typeof obj1 === 'undefined' || typeof obj2 === 'undefined') {
                 throw new AssertionError("One of the compared object is null. " + (lab ? "'" + lab + "' ":""));
             }
 
             if (Array.isArray(obj1)) {
-                if (!Array.isArray(obj2) || obj1.length != obj2.length) {
+                if (!Array.isArray(obj2) || obj1.length !== obj2.length) {
                     throw new AssertionError("Array type or length mismatch. " + (lab ? "'" + lab + "' ":""));
                 }
 
@@ -234,7 +235,7 @@ zebkit.package(function(pkg, Class) {
             }
 
             for(var k in obj1) {
-                var pp =  path == "" ? k : path + "." + k;
+                var pp =  path === "" ? k : path + "." + k;
 
                 if (typeof obj2[k] === "undefined") {
                     throw new AssertionError("Object field '"  + pp + "' is undefined. " + (lab ? "'" + lab + "' ":""));
@@ -288,12 +289,14 @@ zebkit.package(function(pkg, Class) {
     pkg.obj2str = function(v, shift) {
         if (typeof shift === "undefined") shift = "";
 
-        if (v == null || zebkit.isNumber(v) || zebkit.isBoolean(v) || zebkit.isString(v)) {
+        if (v === null || typeof v === 'undefined' || zebkit.isNumber(v) || zebkit.isBoolean(v) || zebkit.isString(v)) {
             return v;
         }
 
+        var s = null;
+
         if (Array.isArray(v)) {
-            var s = [  "["  ];
+            s = [  "["  ];
             for(var i=0; i < v.length; i++) {
                 if (i > 0) s.push(", ");
                 s.push(pkg.obj2str(v[i]));
@@ -302,9 +305,9 @@ zebkit.package(function(pkg, Class) {
             return s.join("");
         }
 
-        var s = [shift, "{"];
+        s = [shift, "{"];
         for(var k in v) {
-            if (v.hasOwnProperty(k) && k[0] != '$') {
+            if (v.hasOwnProperty(k) && k[0] !== '$') {
                 s.push("\n  " + shift + k + " = " + pkg.obj2str(v[k], shift + "  "));
             }
         }
@@ -313,7 +316,7 @@ zebkit.package(function(pkg, Class) {
     };
 
     pkg.runTests = function() {
-        var out = pkg.$out, c = 0,  err = 0, sk = 0, title = null;
+        var out = pkg.$out, c = 0,  err = 0, sk = 0, title = null, i = 0, f = null, k = null;
         if (typeof navigator !== "undefined") {
             out = new pkg.HtmlOutput();
         }
@@ -324,8 +327,8 @@ zebkit.package(function(pkg, Class) {
         }
 
         // validate arguments
-        for(var i = 0; i < args.length; i++) {
-            var f = args[i];
+        for(i = 0; i < args.length; i++) {
+            f = args[i];
             if (typeof f !== "function") {
                 throw new Error("Test case has to be function");
             }
@@ -333,16 +336,17 @@ zebkit.package(function(pkg, Class) {
 
         out.print("Running " + args.length + " test cases "  + (title !== null? "from '" + title + "' test suite" : "") + " :");
         out.print("==============================================");
-        if (typeof zebkit.DoIt !== "undefined" && pkg.$useSyncTest != true) {
+        if (typeof zebkit.DoIt !== "undefined" && pkg.$useSyncTest !== true) {
             var runner = new zebkit.DoIt();
 
-            for(var i = 0; i < args.length; i++) {
-                var f = args[i], k = pkg.$FN(f);
+            for(i = 0; i < args.length; i++) {
+                f = args[i];
+                k = pkg.$FN(f);
 
                 // if some of usea cases already genereated error
                 // we should not start new test cases since it
                 // will override faieled test case name
-                if (runner.$error != null) {
+                if (runner.$error !== null) {
                     break;
                 }
 
@@ -366,7 +370,7 @@ zebkit.package(function(pkg, Class) {
                                 } catch(e) {
                                     $this.error(e);
                                 }
-                            }
+                            };
                         };
 
                         runner.then(function() {
@@ -402,16 +406,16 @@ zebkit.package(function(pkg, Class) {
                 if (e instanceof AssertionError) {
                     out.error("- " + this.$currentTestCase + " || " + e.message);
                 } else {
-                    out.error("" + this.$currentTestCase + " (unexpected error) " + (e.stack ? e.stack : e));
-                    console.log("" + e.stack);
+                    out.error("" + this.$currentTestCase + " (unexpected error) ");
+                    zebkit.dumpError(e);
                 }
 
                 this.$currentTestCase = null;
             });
-
         } else {
-            for(var i = 0; i < args.length; i++) {
-                var f = args[i], k = pkg.$FN(f);
+            for(i = 0; i < args.length; i++) {
+                f = args[i];
+                k = pkg.$FN(f);
 
                 try {
                     if (k.indexOf("_") === 0) {
@@ -427,7 +431,8 @@ zebkit.package(function(pkg, Class) {
                     if (e instanceof AssertionError) {
                         out.error("- " + k + " || " + e.message);
                     } else {
-                        out.error("" + k + " (unexpected error) " + (e.stack ? e.stack : e));
+                        out.error("" + k + " (unexpected error) ");
+                        zebkit.dumpError(e);
                         throw e;
                     }
                 }
@@ -467,7 +472,7 @@ zebkit.package(function(pkg, Class) {
         }
 
         clazz.prototype[methodName] = function() {
-            var o = new Object(), t = this, a = Array.prototype.slice.call(arguments);
+            var o = {}, t = this, a = Array.prototype.slice.call(arguments);
             o.method = m;
             o.args   = a;
             o.call = function() {

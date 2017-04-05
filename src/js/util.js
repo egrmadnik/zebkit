@@ -61,11 +61,11 @@ zebkit.package("util", function(pkg, Class) {
                 v = f.call(obj);
             }
 
-            if (m[1] != null) {
+            if (typeof m[1] !== 'undefined') {
                 var ml  = parseInt(m[1].substring(0, m[1].length - 1).trim()),
-                    ph2 = m[2] != null ? m[2].substring(0, m[2].length - 1) : ph;
+                    ph2 = typeof m[2] !== 'undefined' ? m[2].substring(0, m[2].length - 1) : ph;
 
-                if (v == null) {
+                if (v === null || typeof v === 'undefined') {
                     ph2 = ph;
                     v = "";
                 } else {
@@ -77,7 +77,7 @@ zebkit.package("util", function(pkg, Class) {
                 }
             }
 
-            if (v == null) v = ph;
+            if (v === null || typeof v === 'undefined') v = ph;
 
             r[i++] = v;
         }
@@ -113,14 +113,14 @@ zebkit.package("util", function(pkg, Class) {
 
 
     function _ls_child(r, name, deep, eq, cb) {
-        if (r.kids != null) {
+        if (typeof r.kids !== 'undefined') {
             for (var i = 0; i < r.kids.length; i++) {
                 var kid = r.kids[i];
                 if (name === '*' || eq(kid, name)) {
                     if (cb(kid)) return true;
                 }
 
-                if (deep && _ls_child(kid, name, deep, eq, cb)) {
+                if (deep === true && _ls_child(kid, name, deep, eq, cb)) {
                     return true;
                 }
             }
@@ -129,7 +129,7 @@ zebkit.package("util", function(pkg, Class) {
     }
 
     function _find(root, ms, idx, eq, cb) {
-        if (ms == null || idx >= ms.length) {
+        if (ms === null || typeof ms === 'undefined' || idx >= ms.length) {
             return cb(root);
         }
 
@@ -137,7 +137,7 @@ zebkit.package("util", function(pkg, Class) {
         return _ls_child(root, m[2], m[1] === "//", eq, function(child) {
             if (m[3]) {
                 var v = child[m[4].substring(1)];
-                if (v == null || v.toString() !== m[5]) {
+                if (v === null || typeof v === 'undefined' || v.toString() !== m[5]) {
                     return false;
                 }
             }
@@ -161,7 +161,7 @@ zebkit.package("util", function(pkg, Class) {
             zebkit.util.findInTree(treeLikeRoot,
                                   "/item1",
                                   function(item, fragment) {
-                                      return item.value == fragment;
+                                      return item.value === fragment;
                                   },
                                   function(foundElement) {
                                      ...
@@ -208,7 +208,7 @@ zebkit.package("util", function(pkg, Class) {
      * @for  zebkit.util
      */
     pkg.findInTree = function(root, path, eq, cb) {
-        if (root == null) {
+        if (root === null || typeof root === 'undefined') {
             throw new Error("Invalid null root");
         }
 
@@ -226,8 +226,8 @@ zebkit.package("util", function(pkg, Class) {
                 res    = [],
                 c      = 0;
 
-            while (m = findRE.exec(path)) {
-                if (m[1] == null || m[2] == null || m[2].trim().length === 0) {
+            while ((m = findRE.exec(path)) !== null) {
+                if (typeof m[1] === 'undefined' || typeof m[2] === 'undefined' || m[2].trim().length === 0) {
                     break;
                 }
 
@@ -387,7 +387,7 @@ zebkit.package("util", function(pkg, Class) {
             this.darkBlue    = new this(0, 0, 140);
             this.transparent = new this(0, 0, 0, 0.0);
 
-            this.entire = true;
+            this.mergeable = false;
         }
     ]);
 
@@ -538,7 +538,7 @@ zebkit.package("util", function(pkg, Class) {
                     }
                 }
 
-                if (arguments.length > 1 && arguments[0] != name) {
+                if (arguments.length > 1 && arguments[0] !== name) {
                     throw new Error("Unknown event type :" + name);
                 }
 
@@ -547,7 +547,7 @@ zebkit.package("util", function(pkg, Class) {
             };
 
             clazz.prototype.remove = function(l) {
-                if (this.v != null) {
+                if (this.v !== null) {
                     if (arguments.length === 0) {
                         // remove all
                         this.v.length = 0;
@@ -563,7 +563,7 @@ zebkit.package("util", function(pkg, Class) {
 
             clazz.prototype[name] = function() {
                 if (this.v !== null) {
-                    for(var i = 0; i < this.v.length; i+=2) {
+                    for(var i = 0; i < this.v.length; i +=2 ) {
                         if (this.v[i + 1].apply(this.v[i], arguments) === true) {
                             return true;
                         }
@@ -621,18 +621,18 @@ zebkit.package("util", function(pkg, Class) {
                 for(var i = 0; i < arguments.length; i++) {
                     var name = arguments[i];
 
-                    if (name == null || this[name] != null) {
+                    if (name === null || typeof name === 'undefined' || typeof this[name] !== 'undefined') {
                         throw new Error("" + name + " (event name)");
                     }
 
                     this[name] = (function(name) {
                         return function() {
                             if (this.methods !== null) {
-                                var c;
+                                var c, i;
 
                                 if (this.methods.hasOwnProperty(name)) {
                                     c = this.methods[name];
-                                    for(var i = 0; i < c.length; i += 2) {
+                                    for(i = 0; i < c.length; i += 2) {
                                         if (c[i + 1].apply(c[i], arguments) === true) {
                                             return true;
                                         }
@@ -641,7 +641,7 @@ zebkit.package("util", function(pkg, Class) {
 
                                 if (this.methods.hasOwnProperty('')) {
                                     c = this.methods[''];
-                                    for(var i = 0; i < c.length; i += 2) {
+                                    for(i = 0; i < c.length; i += 2) {
                                         if (c[i + 1].apply(c[i], arguments) === true) {
                                             return true;
                                         }
@@ -660,13 +660,14 @@ zebkit.package("util", function(pkg, Class) {
 
             clazz.prototype.remove = function(l) {
                 if (this.methods !== null) {
+                    var k = null;
                     if (arguments.length === 0) {
-                        for(var k in this.methods) {
+                        for(k in this.methods) {
                             if (this.methods.hasOwnProperty(k)) this.methods[k].length = 0;
                         }
                         this.methods = {};
                     } else {
-                        for (var k in this.methods) {
+                        for (k in this.methods) {
                             var v = this.methods[k], i = 0;
                             while ((i = v.indexOf(l)) >= 0) {
                                 if (i % 2 > 0) i--;
@@ -796,7 +797,7 @@ zebkit.package("util", function(pkg, Class) {
         },
 
         function $clazz() {
-            this.Listeners = pkg.ListenersClass("posChanged"),
+            this.Listeners = pkg.ListenersClass("posChanged");
 
             /**
              * Position metric interface. This interface is designed for describing
@@ -826,9 +827,17 @@ zebkit.package("util", function(pkg, Class) {
 
             this.Metric = zebkit.Interface([
                 "abstract",
-                    function getLines()     {},
-                    function getLineSize()  {},
-                    function getMaxOffset() {}
+                    function getLines()     {
+
+                    },
+
+                    function getLineSize()  {
+
+                    },
+
+                    function getMaxOffset() {
+
+                    }
             ]);
         },
 
@@ -955,7 +964,7 @@ zebkit.package("util", function(pkg, Class) {
                     if (off === 0) return [0, 0];
 
                     var d = 0, sl = 0, so = 0;
-                    if (this.isValid === true && this.offset != -1) {
+                    if (this.isValid === true && this.offset !== -1) {
                         sl = this.currentLine;
                         so = this.offset - this.currentCol;
                         if (off > this.offset) d = 1;
@@ -990,7 +999,7 @@ zebkit.package("util", function(pkg, Class) {
              * @method getOffsetByPoint
              */
             this.getOffsetByPoint = function (row, col){
-                var startOffset = 0, startLine = 0, m = this.metrics;
+                var startOffset = 0, startLine = 0, m = this.metrics, i = 0;
 
                 if (row >= m.getLines()) {
                     throw new RangeError(row);
@@ -1000,17 +1009,17 @@ zebkit.package("util", function(pkg, Class) {
                     throw new RangeError(col);
                 }
 
-                if (this.isValid === true && this.offset !=  -1) {
+                if (this.isValid === true && this.offset !==  -1) {
                     startOffset = this.offset - this.currentCol;
                     startLine = this.currentLine;
                 }
 
                 if (startLine <= row) {
-                    for(var i = startLine;i < row; i++) {
+                    for(i = startLine;i < row; i++) {
                         startOffset += m.getLineSize(i);
                     }
                 } else {
-                    for(var i = startLine - 1;i >= row; i--) {
+                    for(i = startLine - 1;i >= row; i--) {
                         startOffset -= m.getLineSize(i);
                     }
                 }
@@ -1038,7 +1047,12 @@ zebkit.package("util", function(pkg, Class) {
                 } else {
                     if (arguments.length === 1) num = 1;
 
-                    var prevOffset = this.offset, prevLine = this.currentLine, prevCol = this.currentCol;
+                    var prevOffset = this.offset,
+                        prevLine   = this.currentLine,
+                        prevCol    = this.currentCol,
+                        maxCol     = 0,
+                        i          = 0;
+
                     switch(t) {
                         case "begin":
                             if (this.currentCol > 0){
@@ -1046,7 +1060,7 @@ zebkit.package("util", function(pkg, Class) {
                                 this.currentCol = 0;
                             } break;
                         case "end":
-                            var maxCol = this.metrics.getLineSize(this.currentLine);
+                            maxCol = this.metrics.getLineSize(this.currentLine);
                             if (this.currentCol < (maxCol - 1)) {
                                 this.offset += (maxCol - this.currentCol - 1);
                                 this.currentCol = maxCol - 1;
@@ -1055,11 +1069,11 @@ zebkit.package("util", function(pkg, Class) {
                             if (this.currentLine > 0) {
                                 this.offset -= (this.currentCol + 1);
                                 this.currentLine--;
-                                for(var i = 0; this.currentLine > 0 && i < (num - 1); i++, this.currentLine--) {
+                                for(i = 0; this.currentLine > 0 && i < (num - 1); i++, this.currentLine--) {
                                     this.offset -= this.metrics.getLineSize(this.currentLine);
                                 }
 
-                                var maxCol = this.metrics.getLineSize(this.currentLine);
+                                maxCol = this.metrics.getLineSize(this.currentLine);
                                 if (this.currentCol < maxCol) {
                                     this.offset -= (maxCol - this.currentCol - 1);
                                 } else {
@@ -1071,11 +1085,11 @@ zebkit.package("util", function(pkg, Class) {
                                 this.offset += (this.metrics.getLineSize(this.currentLine) - this.currentCol);
                                 this.currentLine++;
                                 var size = this.metrics.getLines() - 1;
-                                for(var i = 0;this.currentLine < size && i < (num - 1); i++ ,this.currentLine++ ) {
+                                for (i = 0; this.currentLine < size && i < (num - 1); i++ ,this.currentLine++ ) {
                                     this.offset += this.metrics.getLineSize(this.currentLine);
                                 }
 
-                                var maxCol = this.metrics.getLineSize(this.currentLine);
+                                maxCol = this.metrics.getLineSize(this.currentLine);
                                 if (this.currentCol < maxCol) {
                                     this.offset += this.currentCol;
                                 } else {
@@ -1097,11 +1111,11 @@ zebkit.package("util", function(pkg, Class) {
              * @method setMetric
              */
             this.setMetric = function (p){
-                if (p == null) {
+                if (p === null || typeof p === 'undefined') {
                     throw new Error("Null metric");
                 }
 
-                if (p != this.metrics){
+                if (p !== this.metrics){
                     this.metrics = p;
                     this.setOffset(null);
                 }
@@ -1126,7 +1140,7 @@ zebkit.package("util", function(pkg, Class) {
             this.setOffset = function(o){
                 if (o < 0) o = 0;
                 else {
-                    if (o == null) o = -1;
+                    if (o === null) o = -1;
                     else {
                         var max = this.metrics.getMaxOffset();
                         if (o >= max) o = max;
@@ -1404,7 +1418,7 @@ zebkit.package("util", function(pkg, Class) {
              * @method run
              */
             this.run = function(f, si, ri){
-                if (f == null) {
+                if (f === null || typeof f === 'undefined') {
                     throw new Error("" + f);
                 }
 
@@ -1419,7 +1433,7 @@ zebkit.package("util", function(pkg, Class) {
                             c++;
                         }
 
-                        if (t.isStarted) {
+                        if (t.isStarted === true) {
                             if (t.si <= 0) {
                                 try {
                                     if (typeof t.task.run !== 'undefined') {
@@ -1638,6 +1652,9 @@ zebkit.package("util", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.url = null;
+
+
             /**
              * Object that keeps loaded and resolved content of a JSON
              * @readOnly
@@ -1687,7 +1704,7 @@ zebkit.package("util", function(pkg, Class) {
              * @method  get
              */
             this.get = function(key) {
-                if (key == null) {
+                if (key === null || typeof key === 'undefined') {
                     throw new Error("Null key");
                 }
 
@@ -1715,6 +1732,10 @@ zebkit.package("util", function(pkg, Class) {
              * object
              */
             this.$get = function(keys, root) {
+                if (keys.length === 0) {
+                    throw new Error("No keys were found");
+                }
+
                 var v = root;
                 for(var i = 0; i < keys.length; i++) {
                     v = v[keys[i]];
@@ -1722,7 +1743,7 @@ zebkit.package("util", function(pkg, Class) {
                         return undefined;
                     }
                 }
-                return v != null && v.$new ? v.$new() : v;
+                return v !== null && v.$new ? v.$new() : v;
             };
 
             /**
@@ -1733,7 +1754,10 @@ zebkit.package("util", function(pkg, Class) {
              * @method  $isAtomic
              */
             this.$isAtomic = function(v) {
-                return zebkit.isString(v) || zebkit.isNumber(v) || zebkit.isBoolean(v);
+                return v === null || typeof v === 'undefined' ||
+                       (typeof v === "string"  || v.constructor === String)  ||
+                       (typeof v === "number"  || v.constructor === Number)  ||
+                       (typeof v === "boolean" || v.constructor === Boolean)  ;
             };
 
             /**
@@ -1748,7 +1772,7 @@ zebkit.package("util", function(pkg, Class) {
                     ts  = this.$runner.$tasks.length,
                     bs  = this.$runner.$busy;
 
-                if (m == null || typeof m !== 'function') {
+                if (typeof m !== 'function') {
                     throw new Error("Method '" + name + "' cannot be found");
                 }
 
@@ -1804,7 +1828,7 @@ zebkit.package("util", function(pkg, Class) {
             this.$resolveRef = function(target, names) {
                 var fn = function(ref, rn) {
                     rn.then(function(target) {
-                        if (target != null && target.hasOwnProperty(ref)) {
+                        if (target != null && target.hasOwnProperty(ref) === true) {
                             var v = target[ref];
                             if (v instanceof zebkit.DoIt) {
                                 var jn = this.join();
@@ -1946,11 +1970,13 @@ zebkit.package("util", function(pkg, Class) {
             };
 
             this.$buildRef = function(d) {
+                var idx = -1;
+
                 if (d[2] === "<") {
                     // if the referenced path is not absolute path and the bag has been also
                     // loaded by an URL than build the full URL as a relative path from
                     // BAG URL
-                    var idx = d.indexOf('>');
+                    idx = d.indexOf('>');
                     if (idx <= 4) {
                         throw new Error("Invalid content type in URL '" + d + "'");
                     }
@@ -1963,9 +1989,9 @@ zebkit.package("util", function(pkg, Class) {
                         return this.expr(path);
                     }
 
-                    if (this.url != null && zebkit.Path.isAbsolute(path) === false) {
+                    if (this.url !== null && zebkit.Path.isAbsolute(path) === false) {
                         var pURL = zebkit.Path.getParent(this.url);
-                        if (pURL != null) {
+                        if (pURL !== null) {
                             path = zebkit.Path.join(pURL, path);
                         }
                     }
@@ -1993,7 +2019,7 @@ zebkit.package("util", function(pkg, Class) {
 
                 } else {
                     // don't throw exception if reference cannot be resolved
-                    var idx = 2;
+                    idx = 2;
                     if (d[2] === '?') {
                         idx ++;
                     }
@@ -2004,7 +2030,7 @@ zebkit.package("util", function(pkg, Class) {
 
                     for(var i = 0; i < targets.length; i++) {
                         var target = targets[i];
-                        if (target != null) {
+                        if (target !== null) {
                             var value = this.$resolveRef(target, names);
                             if (typeof value !== 'undefined') {
                                 return value;
@@ -2028,7 +2054,10 @@ zebkit.package("util", function(pkg, Class) {
              * @method buildValue
              */
             this.buildValue = function(d) {
-                if (d == null || d instanceof zebkit.DoIt || zebkit.isNumber(d) || zebkit.isBoolean(d)) {
+                if (typeof d === 'undefined' || d === null || d instanceof zebkit.DoIt ||
+                    (typeof d === "number"   || d.constructor === Number)              ||
+                    (typeof d === "boolean"  || d.constructor === Boolean)                )
+                {
                     return d;
                 }
 
@@ -2036,7 +2065,7 @@ zebkit.package("util", function(pkg, Class) {
                     return this.$buildArray(d);
                 }
 
-                if (zebkit.isString(d)) {
+                if (typeof d === "string" || d.constructor === String) {
                     if (d[0] === '%' && d[1] === '{' && d[d.length - 1] === '}') {
                         return this.$buildRef(d);
                     } else {
@@ -2044,8 +2073,10 @@ zebkit.package("util", function(pkg, Class) {
                     }
                 }
 
+                var k = null;
+
                 // test whether we have a class definition
-                for (var k in d) {
+                for (k in d) {
                     // handle class definition
                     if (k[0] === '$' && d.hasOwnProperty(k) === true) {
                         return this.$buildClass(k, d);
@@ -2058,7 +2089,7 @@ zebkit.package("util", function(pkg, Class) {
                     break;
                 }
 
-                for (var k in d) {
+                for (k in d) {
                     if (d.hasOwnProperty(k)) {
                         var v = d[k];
 
@@ -2111,7 +2142,7 @@ zebkit.package("util", function(pkg, Class) {
 
                 for (var k in src) {
                     if (src.hasOwnProperty(k)) {
-                        var sv = src[k],
+                        var sv = src [k],
                             dv = dest[k];
 
                         if (this.usePropertySetters === true) {
@@ -2122,12 +2153,12 @@ zebkit.package("util", function(pkg, Class) {
                             }
                         }
 
-                        if (dv == null || this.$isAtomic(dv) || Array.isArray(dv) ||
-                            sv == null || this.$isAtomic(sv) || Array.isArray(sv)   )
+                        if (this.$isAtomic(dv) || Array.isArray(dv) ||
+                            this.$isAtomic(sv) || Array.isArray(sv)   )
                         {
                             this.$assignValue(dest, k, sv);
                         } else if (recursively === true) {
-                            if (dv != null && dv.clazz != null && dv.clazz.entire === true) {
+                            if (dv != null && typeof dv.clazz !== 'undefined' && dv.clazz.mergeable === false) {
                                 this.$assignValue(dest, k, sv);
                             } else {
                                 this.merge(dv, sv);
@@ -2183,7 +2214,7 @@ zebkit.package("util", function(pkg, Class) {
             };
 
             this.loadImage = function(path) {
-                if (this.url != null && zebkit.Path.isAbsolute(path) === false) {
+                if (this.url !== null && zebkit.Path.isAbsolute(path) === false) {
                     path = zebkit.Path.join(zebkit.Path.getParent(this.url),
                                             path);
                 }
@@ -2212,7 +2243,7 @@ zebkit.package("util", function(pkg, Class) {
              *     });
              */
             this.then = function(json, fn) {
-                if (json == null || (zebkit.isString(json) && json.trim().length === 0)) {
+                if (json === null || typeof json === 'undefined' || (zebkit.isString(json) && json.trim().length === 0)) {
                     throw new Error("Null content");
                 }
 

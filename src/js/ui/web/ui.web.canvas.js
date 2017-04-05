@@ -93,7 +93,10 @@ zebkit.package("ui.web", function(pkg, Class) {
                 }
             }
 
+            this.$layers = {};
+
             this.$super(element);
+
 
             // since zCanvas is top level element it doesn't have to have
             // absolute position
@@ -125,7 +128,7 @@ zebkit.package("ui.web", function(pkg, Class) {
 
             // sync canvas visibility with what canvas style says
             var cvis = (this.element.style.visibility === "hidden" ? false : true);
-            if (this.isVisible != cvis) {
+            if (this.isVisible !== cvis) {
                 this.setVisible(cvis);
             }
 
@@ -139,13 +142,14 @@ zebkit.package("ui.web", function(pkg, Class) {
             // this method should clean focus if
             // one of of a child DOM element gets focus
             zebkit.web.$focusin(this.$container, function(e) {
+                // TODO: uncomment
                 if (e.target !== $this.$container &&
                     e.target.parentNode !== null &&
                     e.target.parentNode.getAttribute("data-zebcont") === null)
                 {
                     ui.focusManager.requestFocus(null);
                 } else {
-                    // clear focus if a focus owner component is placed in another zCanvas
+                    // clear focus if a focus owner component is hosted with another zCanvas
                     if (e.target === $this.$container &&
                         ui.focusManager.focusOwner !== null &&
                         ui.focusManager.focusOwner.getCanvas() !== $this)
@@ -160,6 +164,15 @@ zebkit.package("ui.web", function(pkg, Class) {
         function $clazz () {
             this.CLASS_NAME = "zebcanvas";
             this.$canvases  = [];
+
+            this.$getCanvasByElement = function(e) {
+                for (var i = 0; i < this.$canvases.length; i++) {
+                    if (this.$canvases[i] === e) {
+                        return this.$canvases[i];
+                    }
+                }
+                return null;
+            };
         },
 
         function $prototype() {
@@ -431,7 +444,6 @@ zebkit.package("ui.web", function(pkg, Class) {
                 return false;
             };
 
-
             this.$isBlockedByLayer = function(id, method, e) {
                 // adjust event for passing it to layers
                 // e.x = x;
@@ -439,9 +451,12 @@ zebkit.package("ui.web", function(pkg, Class) {
 
                 for(var i = this.kids.length - 1; i >= 0; i--){
                     var layer = this.kids[i];
-                    if (layer[method] != null) {
+                    if (typeof layer[method] !== 'undefined') {
                         e.id = id;
                         if (layer[method](e) === true) {
+
+                            console.log("zCanvas.$isBlockedByLayer() '" + method + "' blocked by " + layer.clazz.$name);
+
                             return true;
                         }
                     }
@@ -497,7 +512,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                             ui.events.fireEvent("pointerReleased", e);
                         }
                     } finally {
-                        pkg.$pointerPressedOwner[e.identifier] = null;
+                        delete pkg.$pointerPressedOwner[e.identifier];
                     }
                 }
 
@@ -535,12 +550,16 @@ zebkit.package("ui.web", function(pkg, Class) {
                     y  = this.$toElementY(e.pageX, e.pageY),
                     pp = pkg.$pointerPressedOwner[e.identifier];
 
+
+                console.log("zCanvas.$pointerPressed() " + e.identifier);
+
                 // free pointer prev pressed if any
                 if (pp != null) {
                     try {
+                        console.log("zCanvas.$pointerPressed() 3");
                         ui.events.fireEvent("pointerReleased", e.update(pp, x, y));
                     } finally {
-                        pkg.$pointerPressedOwner[e.identifier] = null;
+                        delete pkg.$pointerPressedOwner[e.identifier];
                     }
                 }
 
@@ -552,6 +571,10 @@ zebkit.package("ui.web", function(pkg, Class) {
                 }
 
                 var d = this.getComponentAt(x, y);
+
+                console.log("zCanvas.$pointerPressed() getComponentAt() : " + d);
+
+
                 if (d !== null && d.isEnabled === true) {
                     if (pkg.$pointerOwner[e.identifier] !== d) {
                         pkg.$pointerOwner[e.identifier] = d;
@@ -576,7 +599,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                     if (c !== null) {
                         var p = c;
                         while ((p = p.parent) !== null) {
-                            if (p.catchInput != null && (p.catchInput === true || (p.catchInput !== false && p.catchInput(c)))) {
+                            if (typeof p.catchInput !== 'undefined' && (p.catchInput === true || (p.catchInput !== false && p.catchInput(c)))) {
                                 c = p;
                             }
                         }
@@ -615,7 +638,7 @@ zebkit.package("ui.web", function(pkg, Class) {
              * @method getLayer
              */
             this.getLayer = function(id) {
-                return this[id];
+                return this.$layers[id];
             };
 
             // override relocated and resized
@@ -710,16 +733,18 @@ zebkit.package("ui.web", function(pkg, Class) {
         },
 
         function kidAdded(i,constr,c){
-            if (typeof this[c.id] !== "undefined") {
+            if (this.$layers.hasOwnProperty(c.id)) {
                 throw new Error("Layer '" + c.id + "' already exist");
             }
 
-            this[c.id] = c;
+            this.$layers[c.id] = c;
+            if (c.id === "root") this.root = c;
             this.$super(i, constr, c);
         },
 
         function kidRemoved(i, c){
-            delete this[c.id];
+            delete this.$layers[c.id];
+            if (c.id === "root") this.root = null;
             this.$super(i, c);
         }
     ]);
@@ -753,7 +778,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             $wpw = window.innerWidth;
             $wph = window.innerHeight;
 
-            if ($wrt != null) {
+            if ($wrt !== null) {
                 $winSizeUpdated = true;
             } else {
                 $wrt = zebkit.util.tasksSet.run(

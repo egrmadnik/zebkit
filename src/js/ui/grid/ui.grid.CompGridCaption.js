@@ -241,7 +241,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
              */
             this.setSortable = function(col, b) {
                 var c = this.kids[col];
-                if (c.isSortable != b) {
+                if (c.isSortable !== b) {
                     c.isSortable = b;
                     c.statusPan.setVisible(b);
                 }
@@ -249,7 +249,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
             };
 
             this.matrixSorted = function(target, info) {
-                for(var i=0; i < this.kids.length; i++) {
+                for(var i = 0; i < this.kids.length; i++) {
                     if (this.kids[i].matrixSorted) {
                         this.kids[i].matrixSorted(target, info);
                     }

@@ -97,7 +97,7 @@ zebkit.package("ui", function(pkg, Class) {
                     h1 = r.y + r.height,
                     h2 = py  + p.height;
 
-                r.width  = (w1 < w2 ? w1 : w2) - xx,
+                r.width  = (w1 < w2 ? w1 : w2) - xx;
                 r.height = (h1 < h2 ? h1 : h2) - yy;
                 r.x = xx;
                 r.y = yy;
@@ -225,7 +225,7 @@ zebkit.package("ui", function(pkg, Class) {
             } else if (arguments.length === 2) {
                 this.family = family;
                 this.size   = this.clazz.decodeSize(style);
-                this.style  = this.size == null ? style : null;
+                this.style  = this.size === null ? style : null;
             } else if (arguments.length === 3) {
                 this.family = family;
                 this.style  = style;
@@ -237,12 +237,12 @@ zebkit.package("ui", function(pkg, Class) {
             }
 
             if (this.s === null) {
-                this.s = ((this.style != null) ? this.style + " ": "") +
+                this.s = ((this.style !== null) ? this.style + " ": "") +
                          this.size + " " +
                          this.family;
             }
 
-            var m = zebkit.environment.fontMetrics(this.s);
+            var mt = zebkit.environment.fontMetrics(this.s);
 
             /**
              * Height of the font
@@ -250,7 +250,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @readOnly
              * @type {Integer}
              */
-            this.height = m.height;
+            this.height = mt.height;
 
             /**
              * Ascent of the font
@@ -258,7 +258,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @readOnly
              * @type {Integer}
              */
-            this.ascent = m.ascent;
+            this.ascent = mt.ascent;
         },
 
         function $clazz() {
@@ -268,7 +268,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.style  =  null;
             this.size   =  14;
 
-            this.entire = true;
+            this.mergeable = false;
 
             this.decodeSize = function(s, defaultSize) {
                 if (arguments.length < 2) {
@@ -294,14 +294,14 @@ zebkit.package("ui", function(pkg, Class) {
                         return size + "px";
                     }
                 }
-                return s == null ? null : s + "px";
+                return s === null ? null : s + "px";
             };
         },
 
         function $prototype(clazz) {
             this.s = null;
 
-            this.family = clazz.family,
+            this.family = clazz.family;
             this.style  = clazz.style;
             this.size   = clazz.size;
 
@@ -432,7 +432,7 @@ zebkit.package("ui", function(pkg, Class) {
             } catch(ex) {
                 // catch error and clean task list if any to avoid memory leaks
                 try {
-                    if (canvas != null) {
+                    if (canvas !== null) {
                         canvas.$waitingForPaint = false;
                         canvas.$da.width = -1;
                         if (canvas.$context !== null) {
@@ -445,7 +445,7 @@ zebkit.package("ui", function(pkg, Class) {
                     throw exx;
                 }
 
-                console.error(ex);
+                zebkit.dumpError(ex);
             }
         }
 
@@ -850,7 +850,7 @@ zebkit.package("ui", function(pkg, Class) {
                     //!!! find context buffer that holds the given component
 
                     var canvas = this;
-                    for(; canvas.$context == null; canvas = canvas.parent) {
+                    for(; typeof canvas.$context === 'undefined'; canvas = canvas.parent) {
                         // component either is not in visible state or is not in hierarchy
                         // than stop repaint procedure
                         if (canvas.isVisible === false || canvas.parent === null) {
@@ -1054,7 +1054,7 @@ zebkit.package("ui", function(pkg, Class) {
                     var count = this.kids.length;
                     for(var i = 0; i < count; i++) {
                         var kid = this.kids[i];
-                        if (kid.isVisible === true && kid.$context == null) {
+                        if (kid.isVisible === true && typeof kid.$context === 'undefined') {
                             // calculate if the given component area has intersection
                             // with current clipping area
                             var kidXW = kid.x + kid.width,
@@ -1551,10 +1551,10 @@ zebkit.package("ui", function(pkg, Class) {
                     this.notifyRender(old, v);
 
                     if ( old === null || v === null       ||
-                         old.getTop()    != v.getTop()    ||
-                         old.getLeft()   != v.getLeft()   ||
-                         old.getBottom() != v.getBottom() ||
-                         old.getRight()  != v.getRight()     )
+                         old.getTop()    !== v.getTop()    ||
+                         old.getLeft()   !== v.getLeft()   ||
+                         old.getBottom() !== v.getBottom() ||
+                         old.getRight()  !== v.getRight()     )
                     {
                         this.invalidate();
                     }
@@ -1621,17 +1621,19 @@ zebkit.package("ui", function(pkg, Class) {
                 if (arguments.length === 1 && zebkit.instanceOf(a, pkg.Panel)) {
                    this.add(a);
                 } else {
+                    var i = 0;
+
                     // if components list passed as number of arguments
                     if (arguments.length > 1) {
-                        for(var i = 0; i < arguments.length; i++) {
-                            var a = arguments[i];
-                            if (a !== null) {
-                                this.add(a.$new != null ? a.$new() : a);
+                        for(i = 0; i < arguments.length; i++) {
+                            var kid = arguments[i];
+                            if (kid !== null) {
+                                this.add(typeof kid.$new !== 'undefined' ? kid.$new() : kid);
                             }
                         }
                     } else {
                         if (Array.isArray(a)) {
-                            for(var i = 0; i < a.length; i++) {
+                            for(i = 0; i < a.length; i++) {
                                 if (a[i] !== null) {
                                     this.add(a[i]);
                                 }
@@ -1664,7 +1666,7 @@ zebkit.package("ui", function(pkg, Class) {
                 }
 
                 // TODO: think if the background has to be focus dependent
-                // if (this.bg != null && this.bg.activate != null) {
+                // if (this.bg !== null && typeof this.bg.activate !== 'undefined') {
                 //     var id = this.hasFocus() ? "focuson" : "focusoff" ;
                 //     if (this.bg.views[id]) {
                 //         this.bg.activate(id);

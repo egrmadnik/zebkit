@@ -31,14 +31,20 @@ zebkit.package("ui", function(pkg, Class) {
      */
     pkg.BaseList = Class(pkg.Panel, zebkit.util.Position.Metric, pkg.$ViewsSetterMix, [
         function (m, b) {
-            if (arguments.length < 2) b = false;
-
-            if (m == null) {
+            if (arguments.length === 0) {
                 m = [];
-            } else if (zebkit.isBoolean(m))  {
-                b = m;
-                m = [];
+                b = false;
+            } else if (arguments.length === 1) {
+                if (zebkit.isBoolean(m))  {
+                    b = m;
+                    m = [];
+                } else {
+                    b = false;
+                }
+            } else {
+                if (m === null) m = [];
             }
+
 
             /**
              * Currently selected list item index
@@ -87,7 +93,7 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function $prototype() {
-            this.position = this.model = null;
+            this.scrollManager = this.position = this.model = null;
 
             this.canHaveFocus = true;
             /**
@@ -185,7 +191,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.$pointerMoved = function(x, y){
                 if (this.isComboMode === true && this.model !== null) {
                     var index = this.getItemIdxAt(x, y);
-                    if (index != this.position.offset && (index < 0 || this.isItemSelectable(index) === true)) {
+                    if (index !== this.position.offset && (index < 0 || this.isItemSelectable(index) === true)) {
                         this.$triggeredByPointer = true;
 
                         if (index < 0) this.position.setOffset(null);
@@ -205,11 +211,11 @@ zebkit.package("ui", function(pkg, Class) {
                     { x:{Integer}, y:{Integer} }
              * @method getItemLocation
              */
-            this.getItemLocation = function(i) {
+            this.getItemLocation = function(index) {
                 this.validate();
-                var y = this.getTop() + this.scrollManager.getSY();
 
-                for(var i = 0;i < index; i++) {
+                var y = this.getTop() + this.scrollManager.getSY();
+                for(var i = 0; i < index; i++) {
                     y += this.getItemSize(i).height;
                 }
 
@@ -284,19 +290,20 @@ zebkit.package("ui", function(pkg, Class) {
              * @param  {Integer} n an index of the second list item to be repainted
              * @method repaintByOffsets
              */
-            this.repaintByOffsets = function(p,n){
+            this.repaintByOffsets = function(p, n) {
                 this.validate();
                 var xx    = this.width - this.getRight(),
+                    l     = 0,
                     count = this.model === null ? 0
                                                 : this.model.count();
 
                 if (p >= 0 && p < count){
-                    var l = this.getItemLocation(p);
+                    l = this.getItemLocation(p);
                     this.repaint(l.x, l.y, xx - l.x, this.getItemSize(p).height);
                 }
 
                 if (n >= 0 && n < count){
-                    var l = this.getItemLocation(n);
+                    l = this.getItemLocation(n);
                     this.repaint(l.x, l.y, xx - l.x, this.getItemSize(n).height);
                 }
             };
@@ -339,7 +346,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.update = function(g) {
-                if (this.isComboMode === true || this.hasFocus())  {
+                if (this.isComboMode === true || this.hasFocus() === true)  {
                     this.drawViewAt(g, "marker", this.position.offset);
                 }
                 this.drawViewAt(g, "select", this.selectedIndex);
@@ -357,7 +364,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method select
              */
             this.select = function(index){
-                if (index == null) {
+                if (index === null || typeof index === 'undefined') {
                     throw new Error("Null index");
                 }
 
@@ -399,7 +406,7 @@ zebkit.package("ui", function(pkg, Class) {
                 if (this.model !== null    &&
                     this.model.count() > 0 &&
                     e.isAction()           &&
-                    this.position.offset != this.selectedIndex)
+                    this.position.offset !== this.selectedIndex)
                 {
                     this.position.setOffset(this.selectedIndex);
                 }
@@ -408,7 +415,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.pointerPressed = function(e){
                 if (e.isAction() && this.model !== null && this.model.count() > 0) {
                     var index = this.getItemIdxAt(e.x, e.y);
-                    if (index >= 0 && this.position.offset != index && this.isItemSelectable(index)) {
+                    if (index >= 0 && this.position.offset !== index && this.isItemSelectable(index)) {
                         this.position.setOffset(index);
                     }
                 }
@@ -528,7 +535,7 @@ zebkit.package("ui", function(pkg, Class) {
                 if (off >= 0) {
                     off = this.findSelectable(off, prevOffset < off ? 1 : -1);
 
-                    if (off != this.position.offset) {
+                    if (off !== this.position.offset) {
                         this.position.setOffset(off);
                         this.repaintByOffsets(prevOffset, off);
                         return;
@@ -618,7 +625,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.notifyScrollMan = function (index){
-                if (index >= 0 && this.scrollManager != null) {
+                if (index >= 0 && this.scrollManager !== null) {
                     this.validate();
                     var is = this.getItemSize(index);
 
@@ -743,7 +750,6 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.firstVisibleY = this.psWidth_ = this.psHeight_ = 0;
 
-
             /**
              * Internal flag to track list items visibility status. It is set
              * to false to trigger list items metrics and visibility recalculation
@@ -753,7 +759,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.visValid = false;
             this.setViewProvider(new this.clazz.ViewProvider());
-            this.$super(m, b);
+            this.$supera(arguments);
         },
 
         function $clazz() {
@@ -775,20 +781,20 @@ zebkit.package("ui", function(pkg, Class) {
                      * @readOnly
                      */
 
-                    this.text = new pkg.StringRender("");
+                    this.render = new pkg.StringRender("");
                     zebkit.properties(this, this.clazz);
-                    if (arguments.length > 0) this.text.setFont(f);
-                    if (arguments.length > 1) this.text.setColor(c);
+                    if (arguments.length > 0) this.render.setFont(f);
+                    if (arguments.length > 1) this.render.setColor(c);
                 },
 
                 function $prototype() {
                     this.setColor = function(c) {
-                        this.text.setColor(c);
+                        this.render.setColor(c);
                         return this;
                     };
 
                     this.setFont = function(f) {
-                        this.text.setFont(f);
+                        this.render.setFont(f);
                         return this;
                     };
 
@@ -803,9 +809,16 @@ zebkit.package("ui", function(pkg, Class) {
                      * @method getView
                      */
                     this.getView = function(target, value, i) {
-                        if (value != null && value.paint != null) return value;
-                        this.text.setValue(value == null ? "<null>" : value.toString());
-                        return this.text;
+                        // TODO: this copy paste from grid caption render. Think it is possible to generalize it
+                        // alone with setFont and setColor methods
+                        if (value !== null) {
+                            if (typeof value.toView !== 'undefined') return value.toView();
+                            if (typeof value.paint  !== 'undefined') return value;
+                            this.render.setValue(value.toString());
+                            return this.render;
+                        } else {
+                            return null;
+                        }
                     };
                 }
             ]);
@@ -834,7 +847,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setItemGap = function(g){
-                if (this.gap != g){
+                if (this.gap !== g){
                     this.gap = g;
                     this.vrp();
                 }
@@ -1035,7 +1048,7 @@ zebkit.package("ui", function(pkg, Class) {
     pkg.CompList = Class(pkg.BaseList, [
         function (m, b) {
             this.model = this;
-            this.max   = null;
+
             this.setViewProvider(new zebkit.Dummy([
                 function $prototype() {
                     this.render = new pkg.CompRender();
@@ -1045,7 +1058,8 @@ zebkit.package("ui", function(pkg, Class) {
                     };
                 }
             ]));
-            this.$super(m, b);
+
+            this.$supera(arguments);
         },
 
         function $clazz() {
@@ -1055,6 +1069,8 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.max = null;
+
             this.get = function(i) {
                 if (i < 0 || i >= this.kids.length) {
                     throw new RangeError(i);
@@ -1134,7 +1150,7 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function setLayout(layout){
-            if (layout != this.layout){
+            if (layout !== this.layout){
                 this.scrollManager = new pkg.ScrollManager(this, [
                     function $prototype() {
                         this.calcPreferredSize = function(t) {

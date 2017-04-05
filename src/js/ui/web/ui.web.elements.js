@@ -208,7 +208,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             };
 
             this.setSize = function(w, h) {
-                if (this.width != w || h != this.height) {
+                if (this.width !== w || h !== this.height) {
                     var pw  = this.width,
                         ph  = this.height;
 
@@ -254,7 +254,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                     this.validate();
                     this.repaint();
 
-                    if (w != pw || h != ph) {
+                    if (w !== pw || h !== ph) {
                         this.resized(pw, ph);
                     }
                 }

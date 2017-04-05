@@ -3,7 +3,7 @@ zebkit.package("io", function(io, Class) {
 
     zebkit.getMethod = function(clazz, name) {
         // map user defined constructor to internal constructor name
-        if (name == CDNAME) name = zebkit.CNAME;
+        if (name === CDNAME) name = zebkit.CNAME;
         var m = clazz.prototype[name];
         return (typeof m === 'function') ?  m : null;
     };
@@ -50,11 +50,11 @@ zebkit.package("io", function(io, Class) {
                 return this.available() > 0 ? this.data[this.pos++] : -1;
             }
 
-            if (off == null) {
+            if (arguments.length < 2) {
                 off = 0;
             }
 
-            if (len == null) {
+            if (arguments.length < 3) {
                 len = buf.length;
             }
 
@@ -86,7 +86,7 @@ zebkit.package("io", function(io, Class) {
             if (this.available() > 0)
             {
                 var line = [], b;
-                while ((b = this.readChar()) != -1 && b != "\n") line.push(b);
+                while ((b = this.readChar()) !== -1 && b !== "\n") line.push(b);
                 var r = line.join('');
                 line.length = 0;
                 return r;
@@ -110,8 +110,8 @@ zebkit.package("io", function(io, Class) {
             if (f !== null)  {
                 if (isBA) r.responseType = "arraybuffer";
                 r.onreadystatechange = function() {
-                    if (r.readyState == 4) {
-                        if (r.status != 200)  throw new Error(url);
+                    if (r.readyState === 4) {
+                        if (r.status !== 200)  throw new Error(url);
                         zebkit.getMethod($this.clazz.$parent, '', 1).call($this, isBA ? r.response : r.responseText); // $this.$super(res);
                         f($this.data, r);
                     }
@@ -120,7 +120,7 @@ zebkit.package("io", function(io, Class) {
             }
             else {
                 r.send(null);
-                if (r.status != 200) throw new Error(url);
+                if (r.status !== 200) throw new Error(url);
                 this.$super(r.responseText);
             }
         },

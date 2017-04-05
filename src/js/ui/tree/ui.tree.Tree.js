@@ -104,7 +104,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
             };
 
             this.paintItem = function(g, root, node, x, y) {
-                if (root != this.editedItem){
+                if (root !== this.editedItem){
                     var v = this.provider.getView(this, root);
                     v.paint(g, x + this.itemGapX, y + this.itemGapY,
                             node.viewWidth, node.viewHeight, this);
@@ -278,7 +278,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
          * @chainable
          */
         function setViewProvider(p){
-            if (this.provider != p) {
+            if (this.provider !== p) {
                 this.stopEditing(false);
                 this.provider = p;
                 delete this.nodes;
@@ -301,7 +301,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
         },
 
         function paintSelectedItem(g, root, node, x, y) {
-            if (root != this.editedItem) {
+            if (root !== this.editedItem) {
                 this.$super(g, root, node, x, y);
             }
         },

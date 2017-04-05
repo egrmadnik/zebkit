@@ -3235,7 +3235,7 @@ if (typeof(zebkit) === "undefined") {
 
             var I = zebkit.Interface();
 
-            I.entire = true;
+            I.mergeable = false;
 
 
 
@@ -3250,10 +3250,6 @@ if (typeof(zebkit) === "undefined") {
 
 
             var dd = new D([ function setAbc(a) {} ]);
-
-
-            console.log("D  " + D.entire);
-            console.log("D  " + DD.entire);
 
             var d = new Date().getTime();
             for (var i = 0; i < 8000000; i++) {

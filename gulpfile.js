@@ -79,6 +79,7 @@ var uiWebFiles = [
     "src/js/ui/web/ui.web.elements.js",
     "src/js/ui/web/ui.web.layers.js",
     "src/js/ui/web/ui.web.canvas.js",
+    "src/js/ui/web/ui.web.VideoPan.js",
     "src/js/ui/web/ui.web.bootstrap.js"
 ];
 
@@ -157,7 +158,7 @@ gulp.task('resources', function() {
     return gulp.src([
         "src/js/rs/**/*.json",
         "src/js/rs/**/*.png"
-    ]).pipe(gulp.dest("build/rs"));
+    ]).pipe(gulp.dest("build/theme"));
 });
 
 //
@@ -247,7 +248,7 @@ gulp.task('clean', function() {
 gulp.task('default', ['zebkit', 'demoscript', 'samplescript', 'runtime']);
 
 gulp.task('watch', function() {
-    gulp.watch(zebkitFiles, ['zebkit']);
+    gulp.watch("src/**/*.js", ['zebkit']);
     gulp.watch(demoFiles,   ['demoscript']);
     gulp.watch("samples/js/uiengine.samples.js", ['samplescript']);
 });

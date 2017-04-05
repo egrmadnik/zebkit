@@ -34,7 +34,7 @@ zebkit.package("ui", function(pkg, Class) {
     pkg.$ViewsSetterMix = zebkit.Interface([
         function $prototype() {
             this.setViews = function(v){
-                if (this.views == null) {
+                if (typeof this.views === 'undefined') {
                     this.views = {};
                 }
 
@@ -49,7 +49,7 @@ zebkit.package("ui", function(pkg, Class) {
                     }
                 }
 
-                if (b) {
+                if (b === true) {
                     this.vrp();
                 }
                 return this;
@@ -78,20 +78,24 @@ zebkit.package("ui", function(pkg, Class) {
             //  @(image-path:wxh) Text
             //  Text
 
-            var m = desc.match(/^(\[[x ]?\])/);
+            var m   = desc.match(/^(\[[x ]?\])/),
+                txt = null;
+
             if (m !== null) {
-                var txt = desc.substring(m[1].length),
-                    ch  = hasInstance && typeof instance.clazz.Checkbox !== 'undefined' ? new instance.clazz.Checkbox(txt)
+                txt = desc.substring(m[1].length);
+                var ch  = hasInstance && typeof instance.clazz.Checkbox !== 'undefined' ? new instance.clazz.Checkbox(txt)
                                                                                         : new pkg.Checkbox(txt);
                 ch.setValue(m[1].indexOf('x') > 0);
                 return ch;
             } else {
-                var m = desc.match(/^@\((.*)\)(\:[0-9]+x[0-9]+)?/);
+                m = desc.match(/^@\((.*)\)(\:[0-9]+x[0-9]+)?/);
                 if (m !== null) {
-                    var path = m[1],
-                        txt  = desc.substring(path.length + 3 + (typeof m[2] !== 'undefined' ? m[2].length : 0)).trim(),
-                        img  = hasInstance && typeof instance.clazz.ImagePan !== 'undefined' ? new instance.clazz.ImagePan(path)
-                                                                                             : new pkg.ImagePan(path);
+                    var path = m[1];
+
+                    txt  = desc.substring(path.length + 3 + (typeof m[2] !== 'undefined' ? m[2].length : 0)).trim();
+
+                    var img = hasInstance && typeof instance.clazz.ImagePan !== 'undefined' ? new instance.clazz.ImagePan(path)
+                                                                                            : new pkg.ImagePan(path);
 
                     if (typeof m[2] !== 'undefined') {
                         var s = m[2].substring(1).split('x'),
@@ -128,11 +132,11 @@ zebkit.package("ui", function(pkg, Class) {
                     selectedIndex = -1;
 
                 for(var i = 0; i < desc.length; i++) {
-                    var s = desc[i];
-                    if (zebkit.isString(s)) {
-                        if (selectedIndex === -1 && s.length > 1 && s[0] === '*') {
+                    var ss = desc[i];
+                    if (zebkit.isString(ss)) {
+                        if (selectedIndex === -1 && ss.length > 1 && ss[0] === '*') {
                             selectedIndex = i;
-                            desc[i] = s.substring(1);
+                            desc[i] = ss.substring(1);
                         }
                     }
                     combo.list.add(pkg.$component(desc[i], combo.list));
@@ -250,9 +254,10 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setImage = function(img) {
+                var $this = this;
+
                 if (img !== null) {
-                    var $this     = this,
-                        isPic     = zebkit.instanceOf(img, pkg.Picture),
+                    var isPic     = zebkit.instanceOf(img, pkg.Picture),
                         imgToLoad = isPic ? img.target : img ;
 
                     this.$runner = zebkit.environment.loadImage(imgToLoad);
@@ -282,7 +287,6 @@ zebkit.package("ui", function(pkg, Class) {
                     if (this.$runner === null) {
                         this.setView(null);
                     } else {
-                        var $this = this;
                         this.$runner.then(function() {
                             $this.setView(null);
                         });
@@ -364,12 +368,11 @@ zebkit.package("ui", function(pkg, Class) {
                     xy     = isHor ? top : left;
 
                 for(var i = 0; i < this.colors.length; i++) {
-                    if (this.colors[i] != null) {
+                    if (this.colors[i] !== null) {
                         g.setColor(this.colors[i]);
                         if (isHor === true) {
                             g.drawLine(this.left, xy, this.width - right - left, xy, this.lineWidth);
-                        }
-                        else {
+                        } else {
                             g.drawLine(xy, top, xy, this.height - top - bottom, this.lineWidth);
                         }
                     }
@@ -480,7 +483,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.setColor = function(c) {
                 var old = this.view.color;
-                if (old != c) {
+                if (old !== c) {
                     this.view.setColor(c);
                     this.repaint();
                 }
@@ -873,7 +876,7 @@ zebkit.package("ui", function(pkg, Class) {
          * @chainable
          */
         function setMaxValue(m){
-            if (m != this.maxValue) {
+            if (m !== this.maxValue) {
                 this.maxValue = m;
                 this.setValue(this.value);
                 this.vrp();
@@ -889,7 +892,7 @@ zebkit.package("ui", function(pkg, Class) {
          */
         function setValue(p){
             p = p % (this.maxValue + 1);
-            if (this.value != p){
+            if (this.value !== p){
                 var old = this.value;
                 this.value = p;
                 this._.fired(this, old);
@@ -905,7 +908,7 @@ zebkit.package("ui", function(pkg, Class) {
          * @chainable
          */
         function setGap(g){
-            if (this.gap != g){
+            if (this.gap !== g){
                 this.gap = g;
                 this.vrp();
             }
@@ -934,7 +937,7 @@ zebkit.package("ui", function(pkg, Class) {
          * @chainable
          */
         function setBundleSize(w, h){
-            if (w != this.bundleWidth && h != this.bundleHeight){
+            if (w !== this.bundleWidth && h !== this.bundleHeight){
                 this.bundleWidth  = w;
                 this.bundleHeight = h;
                 this.vrp();

@@ -8,7 +8,7 @@ zebkit.package("ui", function(pkg, Class) {
      */
     pkg.Manager = Class([
         function() {
-            if (pkg.events != null) {
+            if (pkg.events !== null && typeof pkg.events !== 'undefined') {
                 pkg.events.bind(this);
             }
         }
@@ -471,28 +471,29 @@ zebkit.package("ui", function(pkg, Class) {
              * @protected
              */
             this.fireEvent = function(id, e){
-                var childEvent = $CEM[id],
-                    evHandler  = e.source[id];
+                var childEvent = $CEM[id];
 
                 // assign id that matches method to be called
                 e.id = id;
 
                 // TODO: not stable concept. the idea to suppress event distribution to global
                 // listeners (managers) and child components
-                if (e.source.suppressEvent != null && e.source.suppressEvent(e) === true) {
+                if (typeof e.source.suppressEvent !== 'undefined' && e.source.suppressEvent(e) === true) {
                     return true;
                 }
 
                 // call global listeners
                 if (this._[id](e) === false) {
                     // call target component listener
-                    if (evHandler != null && evHandler.call(e.source, e) === true) {
+                    if (typeof e.source[id] !== 'undefined' && e.source[id].call(e.source, e) === true) {
+
+                        console.log("Leave me .... ");
                         return true;
                     }
 
                     // call parent listeners
                     for(var t = e.source.parent; t !== null; t = t.parent){
-                        if (t[childEvent] != null) {
+                        if (typeof t[childEvent] !== 'undefined') {
                             t[childEvent].call(t, e);
                         }
                     }

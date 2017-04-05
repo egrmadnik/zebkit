@@ -90,8 +90,8 @@ zebkit.package("ui.web", function(pkg, Class) {
             }, false);
 
             this.video.addEventListener("loadedmetadata", function (e) {
-                $this.videoWidth   = this.videoWidth,
-                $this.videoHeight  = this.videoHeight,
+                $this.videoWidth   = this.videoWidth;
+                $this.videoHeight  = this.videoHeight;
                 $this.$aspectRatio = $this.videoHeight > 0 ? $this.videoWidth / $this.videoHeight : 0;
                 $this.vrp();
             }, false);

@@ -1,5 +1,21 @@
 zebkit.package("ui", function(pkg, Class) {
     pkg.Spin = new Class(pkg.Panel, [
+        function(min, max) {
+            this.$super(this);
+
+            this.step     = 1;
+            this.min      = arguments.length === 0 ? 0             : min;
+            this.max      = arguments.length <   2 ? this.min + 10 : max;
+            this.editor   = null;
+            this.isLooped = true;
+
+            this.layoutComponents(new this.clazz.TextField(this, this.min, this.max),
+                                  new this.clazz.IncButton(),
+                                  new this.clazz.DecButton());
+
+            this._ = new zebkit.util.Listeners();
+        },
+
         function $clazz() {
             this.SpinButton = Class(pkg.ArrowButton, [
                 function $prototype() {
@@ -13,7 +29,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.TextField = Class(pkg.TextField, [
                 function isValideValue(v) {
-                    if (/^[-+]?^[0]*[0-9]+$/.test(v)) {
+                    if (/^[-+]?^[0]*[0-9]+$/.test(v) === true) {
                         var iv = parseInt(v);
                         return iv >= this.min && iv <= this.max;
                     }
@@ -28,13 +44,13 @@ zebkit.package("ui", function(pkg, Class) {
                     model.validate = null;
 
                     var pos = this.position.offset;
-                    if (pos >= 0 && pos < prevValue.length && this.hasSelection() == false) {
+                    if (pos >= 0 && pos < prevValue.length && this.hasSelection() === false) {
                         this.select(pos, pos + 1);
                     }
 
                     this.$super(e);
 
-                    if (this.isValideValue(this.getValue()) == false) {
+                    if (this.isValideValue(this.getValue()) === false) {
                         this.setValue(prevValue);
                     }
                     model.validate = validate;
@@ -64,29 +80,12 @@ zebkit.package("ui", function(pkg, Class) {
                 },
 
                 function textUpdated(src, b, off, size, startLine, lines) {
-                    console.log("textUpdated("+b+"," + off + ") " + this.getValue());
                     this.$super(src, b, off, size, startLine, lines);
-                    if (this.getModel().validate != null) {
+                    if (typeof this.getModel().validate !== 'undefined') {
                         this.target._.fired(this.target);
                     }
                 }
             ]);
-        },
-
-        function(min, max) {
-            this.$super(this);
-
-            this.step     = 1;
-            this.min      = min == null ? 0  : min;
-            this.max      = max == null ? this.min + 10 : max;
-            this.editor   = null;
-            this.isLooped = true;
-
-            this.layoutComponents(new this.clazz.TextField(this, this.min, this.max),
-                                  new this.clazz.IncButton(),
-                                  new this.clazz.DecButton());
-
-            this._ = new zebkit.util.Listeners();
         },
 
         function layoutComponents(text, inc, dec) {
@@ -163,7 +162,7 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function setMinMax (min, max) {
-            if (this.min != min && this.max != max) {
+            if (this.min !== min && this.max !== max) {
                 this.min = min;
                 this.max = max;
                 this.setValue(this.getValue());
@@ -195,7 +194,7 @@ zebkit.package("ui", function(pkg, Class) {
             }
 
             var prev = this.getValue();
-            if (prev != v){
+            if (prev !== v){
                 this.prevValue = prev;
                 this.editor.setValue("" + v);
                 this.repaint();
@@ -203,6 +202,6 @@ zebkit.package("ui", function(pkg, Class) {
         }
     ]);
 
-    zebkit.ui.$configWith(pkg, "ui.spin.json");
+    zebkit.ui.$configWith(pkg);
 });
 

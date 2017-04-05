@@ -77,25 +77,25 @@ zebkit.package("ui", function(pkg, Class) {
              * @method stateUpdated
              */
             this.stateUpdated = function(o, n) {
-                var b = false, id = (this.toViewId != null ? this.toViewId(n) : n);
+                var b = false, id = (typeof this.toViewId !== 'undefined' ? this.toViewId(n) : n);
 
                 if (id !== null) {
                     for(var i = 0; i < this.kids.length; i++) {
                         var kid = this.kids[i];
-                        if (kid.setState != null) {
+                        if (typeof kid.setState !== 'undefined') {
                             kid.setState(id);
                         }
                     }
 
-                    if (this.border !== null && this.border.activate != null) {
+                    if (this.border !== null && typeof this.border.activate !== 'undefined') {
                         b = this.border.activate(id) || b;
                     }
 
-                    if (this.view != null && this.view.activate != null) {
+                    if (this.view !== null && typeof this.view.activate !== 'undefined') {
                         b = this.view.activate(id) || b;
                     }
 
-                    if (this.bg != null && this.bg.activate != null) {
+                    if (this.bg !== null && typeof this.bg.activate !== 'undefined') {
                         b = this.bg.activate(id) || b;
                     }
 
@@ -120,7 +120,7 @@ zebkit.package("ui", function(pkg, Class) {
                 this.$super(v);
                 // check if the method called after constructor execution
                 // otherwise sync is not possible
-                if (this.kids != null) this.syncState(this.state, this.state);
+                if (typeof this.kids !== 'undefined') this.syncState(this.state, this.state);
             }
             return this;
         },
@@ -417,7 +417,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.paintOnTop = function(g){
                 var fc = this.focusComponent;
-                if (this.focusMarkerView != null && fc !== null && this.hasFocus()) {
+                if (this.focusMarkerView !== null && fc !== null && this.hasFocus()) {
                     this.focusMarkerView.paint(g, fc.x, fc.y, fc.width, fc.height, this);
                 }
             };
@@ -444,7 +444,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method setCanHaveFocus
              */
             this.setCanHaveFocus = function(b){
-                if (this.canHaveFocus != b) {
+                if (this.canHaveFocus !== b) {
                     var fm = pkg.focusManager;
                     if (b === false && fm.focusOwner === this) {
                         fm.requestFocus(null);

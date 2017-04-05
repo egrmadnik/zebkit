@@ -88,6 +88,13 @@ zebkit.package("web", function(pkg, Class) {
         return false;
     }
 
+    function isIn(t, id) {
+        for(var i = 0; i < t.length; i++) {
+            if (t[i].identifier === id) return true;
+        }
+        return false;
+    }
+
     pkg.PointerEventUnifier = Class([
         function $clazz() {
             // !!!!
@@ -113,7 +120,7 @@ zebkit.package("web", function(pkg, Class) {
                     // before doing releasing, otherwise it brings to error on mobile
                     if ($pointerPressedEvents.hasOwnProperty(id)) {
                         var mp = $pointerPressedEvents[id];
-                        if (mp.$adapter.element != e.target && mp.$adapter.element.contains(e.target) === false) {
+                        if (mp.$adapter.element !== e.target && mp.$adapter.element.contains(e.target) === false) {
                             try {
                                 if ($enteredElement !== null) {
                                     $enteredElement = null;
@@ -369,18 +376,18 @@ zebkit.package("web", function(pkg, Class) {
                             t.group = l; // TODO: temporary solution
 
                             if (this.destination.$pointerPressed(t.stub) === true) {
-                                if (t.stub != null && t.stub.touchCounter > 0) {
+                                if (t.stub.touchCounter > 0) {
                                     t.stub.touchCounter--;
                                 }
                                 delete $pointerPressedEvents[t.identifier];
                             }
                         } catch(ex) {
                             // don't forget to decrease counter
-                            if (t.stub != null && t.stub.touchCounter > 0) {
+                            if (t.stub.touchCounter > 0) {
                                 t.stub.touchCounter--;
                             }
                             delete $pointerPressedEvents[t.identifier];
-                            console.log(ex.stack);
+                            zebkit.dumpError(ex);
                         }
                     }
                     this.$queue.length = 0;
@@ -530,7 +537,9 @@ zebkit.package("web", function(pkg, Class) {
 
                     $this.$UP(id, e, ME_STUB);
 
-                    if (e.stopPropagation != null) e.stopPropagation();
+                    if (typeof e.stopPropagation !== 'undefined') {
+                        e.stopPropagation();
+                    }
                 }
             };
 
@@ -694,19 +703,11 @@ zebkit.package("web", function(pkg, Class) {
                         POINTER_STUB.touch = e;
                         POINTER_STUB.pointerType = e.pointerType;
                         $this.$DRAG(e.pointerId, e, POINTER_STUB);
-                    }
-                    else {
+                    } else {
                         $this.$MMOVE(e);
                     }
                 }, false);
             } else {
-                function isIn(t, id) {
-                    for(var i = 0; i < t.length; i++) {
-                        if (t[i].identifier == id) return true;
-                    }
-                    return false;
-                }
-
                 element.addEventListener("touchstart", function(e) {
                     var allTouches = e.touches,
                         newTouches = e.changedTouches; // list of touch events that become

@@ -168,16 +168,16 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.setArrowDirection = function(d) {
                 this.iterateArrowViews(function(k, v) {
-                    if (v != null) v.direction = d;
+                    if (v !== null) v.direction = d;
                 });
                 this.repaint();
                 return this;
             };
 
             this.setArrowSize = function(w, h) {
-                if (h == null) h = w;
+                if (arguments.length < 2) h = w;
                 this.iterateArrowViews(function(k, v) {
-                    if (v != null) {
+                    if (v !== null) {
                         v.width  = w;
                         v.height = h;
                     }
@@ -244,21 +244,35 @@ zebkit.package("ui", function(pkg, Class) {
      * @param {zebkit.ui.Button} src a button that has been pressed
      */
     pkg.Button = Class(pkg.CompositeEvStatePan, pkg.ButtonRepeatMix, [
+        function(t) {
+            this._ = new zebkit.util.Listeners();
+
+            if (arguments.length > 0 && t !== null) {
+                t = pkg.$component(t, this);
+            }
+
+            this.$super();
+            if (arguments.length > 0 && t !== null) {
+                this.add(t);
+                this.setFocusAnchorComponent(t);
+            }
+        },
+
         function $clazz() {
             this.Label = Class(pkg.Label, []);
 
             this.ViewPan = Class(pkg.ViewPan, [
-                function $prototype() {
-                    this.setState = function(id) {
-                        if (this.view != null && this.view.activate != null) {
-                            this.activate(id);
-                        }
-                    };
-                },
-
                 function(v) {
                     this.$super();
                     this.setView(v);
+                },
+
+                function $prototype() {
+                    this.setState = function(id) {
+                        if (this.view !== null && typeof this.view.activate !== 'undefined') {
+                            this.activate(id);
+                        }
+                    };
                 }
             ]);
 
@@ -273,20 +287,6 @@ zebkit.package("ui", function(pkg, Class) {
              * @default true
              */
             this.canHaveFocus = true;
-        },
-
-        function(t) {
-            this._ = new zebkit.util.Listeners();
-
-            if (t != null) {
-                t = pkg.$component(t, this);
-            }
-
-            this.$super();
-            if (t != null) {
-                this.add(t);
-                this.setFocusAnchorComponent(t);
-            }
         }
     ]);
 
@@ -339,7 +339,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setValue = function(o, b) {
-                if (this.getValue(o) != b){
+                if (this.getValue(o) !== b){
                     this.value = b;
                     this.updated(o, b);
                 }
@@ -493,7 +493,7 @@ zebkit.package("ui", function(pkg, Class) {
                  * @readOnly
                  * @type {zebkit.ui.SwitchManager}
                  */
-                if (m == null) {
+                if (m === null || typeof m === 'undefined') {
                     throw new Error("Null switch manager");
                 }
 
@@ -575,8 +575,10 @@ zebkit.package("ui", function(pkg, Class) {
                 m = new pkg.SwitchManager();
             }
 
-            if (zebkit.isString(c)) {
-                c = new this.clazz.Label(c);
+            if (arguments.length > 0) {
+                if (c !== null && zebkit.isString(c)) {
+                    c = new this.clazz.Label(c);
+                }
             }
 
             this.$super();
@@ -590,7 +592,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.box = new this.clazz.Box();
             this.add(this.box);
 
-            if (c != null) {
+            if (c !== null) {
                 this.add(c);
                 this.setFocusAnchorComponent(c);
             }
@@ -699,7 +701,11 @@ zebkit.package("ui", function(pkg, Class) {
      */
     pkg.Radiobox = Class(pkg.Checkbox, [
         function(c, group) {
-            this.$super(c, group == null ? new pkg.Group() : group);
+            if (arguments.length < 2) {
+                this.$super(c, new pkg.Group());
+            } else {
+                this.$super(c, group);
+            }
         }
     ]);
 
@@ -752,11 +758,11 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setFont = function(f) {
-                var old = this.view != null ? this.view.font
-                                            : null;
+                var old = this.view !== null ? this.view.font
+                                             : null;
 
                 this.view.setFont.apply(this.view, arguments);
-                if (old != this.view.font) {
+                if (old !== this.view.font) {
                     this.vrp();
                 }
                 return this;
@@ -770,7 +776,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setColor = function(state,c){
-                if (this.colors[state] != c){
+                if (this.colors[state] !== c){
                     this.colors[state] = c;
                     this.syncState();
                 }
@@ -796,7 +802,7 @@ zebkit.package("ui", function(pkg, Class) {
             var k = this.toViewId(n),
                 b = false;
 
-            if (this.view != null && this.view.color != this.colors[k] && this.colors[k] != null) {
+            if (this.view !== null && this.view.color !== this.colors[k] && this.colors[k] != null) {
                 this.view.setColor(this.colors[k]);
                 b = true;
             }
@@ -849,6 +855,11 @@ zebkit.package("ui", function(pkg, Class) {
      * @param {zebkit.ui.Panel} src a toolbar element that has been pressed
      */
     pkg.Toolbar = Class(pkg.Panel, [
+        function () {
+            this._ = new zebkit.util.Listeners();
+            this.$super();
+        },
+
         function $clazz() {
             this.ToolPan = Class(pkg.EvStatePan, [
                 function(c) {
@@ -891,62 +902,57 @@ zebkit.package("ui", function(pkg, Class) {
             this.isDecorative = function(c){
                 return zebkit.instanceOf(c, pkg.EvStatePan) === false;
             };
-        },
 
-        function () {
-            this._ = new zebkit.util.Listeners();
-            this.$super();
-        },
+            /**
+             * Add a radio box as the toolbar element that belongs to the
+             * given group and has the specified content component
+             * @param {zebkit.ui.Group} g a radio group the radio box belongs
+             * @param {zebkit.ui.Panel} c a content
+             * @return {zebkit.ui.Panel} a component that has been added
+             * @method addRadio
+             */
+            this.addRadio = function(g,c) {
+                var cbox = new this.clazz.Radiobox(c, g);
+                cbox.setCanHaveFocus(false);
+                return this.add(cbox);
+            };
 
-        /**
-         * Add a radio box as the toolbar element that belongs to the
-         * given group and has the specified content component
-         * @param {zebkit.ui.Group} g a radio group the radio box belongs
-         * @param {zebkit.ui.Panel} c a content
-         * @return {zebkit.ui.Panel} a component that has been added
-         * @method addRadio
-         */
-        function addRadio(g,c) {
-            var cbox = new this.clazz.Radiobox(c, g);
-            cbox.setCanHaveFocus(false);
-            return this.add(cbox);
-        },
+            /**
+             * Add a check box as the toolbar element with the specified content
+             * component
+             * @param {zebkit.ui.Panel} c a content
+             * @return {zebkit.ui.Panel} a component that has been added
+             * @method addSwitcher
+             */
+            this.addSwitcher = function(c){
+                var cbox = new this.clazz.Checkbox(c);
+                cbox.setCanHaveFocus(false);
+                return this.add(cbox);
+            };
 
-        /**
-         * Add a check box as the toolbar element with the specified content
-         * component
-         * @param {zebkit.ui.Panel} c a content
-         * @return {zebkit.ui.Panel} a component that has been added
-         * @method addSwitcher
-         */
-        function addSwitcher(c){
-            var cbox = new this.clazz.Checkbox(c);
-            cbox.setCanHaveFocus(false);
-            return this.add(cbox);
-        },
+            /**
+             * Add an image as the toolbar element
+             * @param {String|Image} img an image or a path to the image
+             * @return {zebkit.ui.Panel} a component that has been added
+             * @method addImage
+             */
+            this.addImage = function(img) {
+                this.validateMetric();
+                return this.add(new this.clazz.ImagePan(img));
+            };
 
-        /**
-         * Add an image as the toolbar element
-         * @param {String|Image} img an image or a path to the image
-         * @return {zebkit.ui.Panel} a component that has been added
-         * @method addImage
-         */
-        function addImage(img) {
-            this.validateMetric();
-            return this.add(new this.clazz.ImagePan(img));
-        },
-
-        /**
-         * Add line to the toolbar component. Line is a decorative ]
-         * element that logically splits toolbar elements. Line as any
-         * other decorative element doesn't fire event
-         * @return {zebkit.ui.Panel} a component that has been added
-         * @method addLine
-         */
-        function addLine(){
-            var line = new this.clazz.Line();
-            line.constraints = "stretch";
-            return this.addDecorative(line);
+            /**
+             * Add line to the toolbar component. Line is a decorative ]
+             * element that logically splits toolbar elements. Line as any
+             * other decorative element doesn't fire event
+             * @return {zebkit.ui.Panel} a component that has been added
+             * @method addLine
+             */
+            this.addLine = function(){
+                var line = new this.clazz.Line();
+                line.constraints = "stretch";
+                return this.addDecorative(line);
+            };
         },
 
         /**

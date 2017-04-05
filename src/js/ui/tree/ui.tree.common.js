@@ -128,7 +128,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
              */
             this.getEditor = function(src, item){
                 var o = item.value;
-                this.tf.setValue((o == null) ? "" : o.toString());
+                this.tf.setValue(o === null ? "" : o.toString());
                 return this.tf;
             };
 
@@ -197,7 +197,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
                 if (item.value && typeof item.value.paint !== 'undefined') {
                     return item.value;
                 }
-                this.render.setValue(item.value == null ? "<null>" : item.value);
+                this.render.setValue(item.value === null ? "<null>" : item.value);
                 return this.render;
             };
 
@@ -315,6 +315,29 @@ zebkit.package("ui.tree", function(pkg, Class) {
       * applied to the given tree item
       */
     pkg.BaseTree = Class(ui.Panel, [
+        function (d, b){
+            if (arguments.length < 2) {
+                b = true;
+            }
+
+            this.maxw = this.maxh = 0;
+
+            this.views     = {};
+            this.viewSizes = {};
+
+            this._isVal = false;
+            this.nodes = {};
+            this._ = new this.clazz.Listeners();
+            this.setLineColor("gray");
+
+            this.isOpenVal = b;
+
+            this.setSelectable(true);
+            this.$super();
+            this.setModel(d);
+            this.scrollManager = new ui.ScrollManager(this);
+        },
+
         function  $clazz() {
             this.Listeners = zebkit.util.ListenersClass("toggled",
                                                         "selected",
@@ -419,11 +442,11 @@ zebkit.package("ui.tree", function(pkg, Class) {
                         this.firstVisible = null;
                     } else {
                         if (this._isVal === false ||
-                            (this.visibleArea === null             ||
-                             this.visibleArea.x != nva.x           ||
-                             this.visibleArea.y != nva.y           ||
-                             this.visibleArea.width != nva.width   ||
-                             this.visibleArea.height != nva.height   ))
+                            (this.visibleArea === null              ||
+                             this.visibleArea.x !== nva.x           ||
+                             this.visibleArea.y !== nva.y           ||
+                             this.visibleArea.width !== nva.width   ||
+                             this.visibleArea.height !== nva.height   ))
                         {
                             this.visibleArea = nva;
                             if (this.firstVisible !== null) {
@@ -591,23 +614,23 @@ zebkit.package("ui.tree", function(pkg, Class) {
             };
 
             this.isOpen_ = function(i) {
-                return i == null || (i.kids.length > 0 && this.getIM(i).isOpen && this.isOpen_(i.parent));
+                return i === null || (i.kids.length > 0 && this.getIM(i).isOpen && this.isOpen_(i.parent));
             };
 
             /**
              * Get a tree node metrics by the given tree model item.
-             * @param  {zebkit.data.Item} i a tree model item
+             * @param  {zebkit.data.Item} item a tree model item
              * @return {zebkit.ui.tree.$IM} a tree node metrics
              * @protected
              * @method getIM
              */
-            this.getIM = function (i) {
-                var node = this.nodes[i];
-                if (typeof node === 'undefined'){
-                    node = new pkg.$IM(this.isOpenVal);
-                    this.nodes[i] = node;
+            this.getIM = function (item) {
+                if (this.nodes.hasOwnProperty(item.$hash$) === false){
+                    var node = new pkg.$IM(this.isOpenVal);
+                    this.nodes[item.$hash$] = node;
+                    return node;
                 }
-                return node;
+                return this.nodes[item.$hash$];
             };
 
             /**
@@ -649,13 +672,13 @@ zebkit.package("ui.tree", function(pkg, Class) {
             };
 
             this.getItemAtInBranch = function(root,x,y){
-                if (root !== null){
+                if (root !== null) {
                     var node = this.getIM(root);
                     if (x >= node.x && y >= node.y && x < node.x + node.width && y < node.y + node.height + this.gapy) {
                         return root;
                     }
 
-                    if (this.isOpen_(root)){
+                    if (this.isOpen_(root)) {
                         for(var i = 0;i < root.kids.length; i++) {
                             var res = this.getItemAtInBranch(root.kids[i], x, y);
                             if (res !== null) return res;
@@ -854,11 +877,11 @@ zebkit.package("ui.tree", function(pkg, Class) {
                                                      image.width, image.height, this);
                     }
 
-                    if (this.selected == root){
+                    if (this.selected === root){
                         this.paintSelectedItem(g, root, node, vx, vy);
                     }
 
-                    if (this.paintItem != null) {
+                    if (typeof this.paintItem !== 'undefined') {
                         this.paintItem(g, root, node, vx, vy);
                     }
 
@@ -914,7 +937,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
                     g.lineTo(xx + 0.5, this.y_(root, false));
                     g.stroke();
                 }
-                if (b && root.kids.length > 0){
+                if (b === true && root.kids.length > 0){
                     var firstChild = root.kids[0];
                     if (firstChild == null) return true;
 
@@ -986,7 +1009,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
              */
             this.select = function(item){
                 if (this.isSelectable === true){
-                    var old = this.selected;
+                    var old = this.selected, m = null;
 
                     this.selected = item;
                     if (this.selected !== null) {
@@ -996,14 +1019,14 @@ zebkit.package("ui.tree", function(pkg, Class) {
                     this._.selected(this, old);
 
                     if (old !== null && this.isVerVisible(old)) {
-                        var m = this.getItemMetrics(old);
+                        m = this.getItemMetrics(old);
                         this.repaint(m.x + this.scrollManager.getSX(),
                                      m.y + this.scrollManager.getSY(),
                                      m.width, m.height);
                     }
 
                     if (this.selected !== null && this.isVerVisible(this.selected)) {
-                        var m = this.getItemMetrics(this.selected);
+                        m = this.getItemMetrics(this.selected);
                         this.repaint(m.x + this.scrollManager.getSX(),
                                      m.y + this.scrollManager.getSY(),
                                      m.width, m.height);
@@ -1035,7 +1058,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
             this.toggleAll = function (root,b){
                 var model = this.model;
                 if (root.kids.length > 0){
-                    if (this.getItemMetrics(root).isOpen != b) this.toggle(root);
+                    if (this.getItemMetrics(root).isOpen !== b) this.toggle(root);
                     for(var i = 0; i < root.kids.length; i++ ){
                         this.toggleAll(root.kids[i], b);
                     }
@@ -1090,7 +1113,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
             this.itemModified = function (model, item, prevValue){
                 var node = this.getIM(item);
                 // invalidate an item metrics
-                if (node != null) {
+                if (node !== null) {
                     node.viewWidth = -1;
                 }
                 this.vrp();
@@ -1100,29 +1123,6 @@ zebkit.package("ui.tree", function(pkg, Class) {
                 return this.model === null ? { width:0, height:0 }
                                            : { width:this.maxw, height:this.maxh };
             };
-        },
-
-        function (d, b){
-            if (arguments.length < 2) {
-                b = true;
-            }
-
-            this.maxw = this.maxh = 0;
-
-            this.views     = {};
-            this.viewSizes = {};
-
-            this._isVal = false;
-            this.nodes = {};
-            this._ = new this.clazz.Listeners();
-            this.setLineColor("gray");
-
-            this.isOpenVal = b;
-
-            this.setSelectable(true);
-            this.$super();
-            this.setModel(d);
-            this.scrollManager = new ui.ScrollManager(this);
         },
 
         function focused(){
@@ -1139,7 +1139,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
          * @method setSelectable
          */
         function setSelectable(b){
-            if (this.isSelectable != b){
+            if (this.isSelectable !== b){
                 if (b === false && this.selected !== null) this.select(null);
                 this.isSelectable = b;
                 this.repaint();
@@ -1168,7 +1168,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
          * @chainable
          */
         function setGaps(gx, gy){
-            if (gx != this.gapx || gy != this.gapy){
+            if (gx !== this.gapx || gy !== this.gapy){
                 this.gapx = gx;
                 this.gapy = gy;
                 this.vrp();
@@ -1235,7 +1235,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
          * @chainable
          */
         function setModel(d){
-            if (this.model != d) {
+            if (this.model !== d) {
                 if (zebkit.instanceOf(d, zebkit.data.TreeModel) === false) {
                     d = new zebkit.data.TreeModel(d);
                 }

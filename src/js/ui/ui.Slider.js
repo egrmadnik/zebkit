@@ -9,7 +9,9 @@ zebkit.package("ui", function(pkg, Class) {
     pkg.Slider = Class(pkg.Panel, pkg.$ViewsSetterMix, [
         function (o) {
             this._ = new zebkit.util.Listeners();
-            this.views = {};
+            this.views = {
+                gauge  : null
+            };
             if (arguments.length > 0) {
                 this.orient = zebkit.util.$validateValue(o, "vertical", "horizontal");
             }
@@ -104,10 +106,12 @@ zebkit.package("ui", function(pkg, Class) {
                 }
             };
 
-            this.paint = function(g){
+            this.paint = function(g) {
+                var i = 0;
+
                 if (this.pl === null){
                     this.pl = Array(this.intervals.length);
-                    for(var i = 0, l = this.min;i < this.pl.length; i ++ ){
+                    for(i = 0, l = this.min;i < this.pl.length; i ++ ){
                         l += this.intervals[i];
                         this.pl[i] = this.value2loc(l);
                     }
@@ -120,14 +124,14 @@ zebkit.package("ui", function(pkg, Class) {
                     bnv    = this.views.bundle,
                     gauge  = this.views.gauge,
                     bs     = bnv == null ? { width: 0, height: 0 } : bnv.getPreferredSize(),
-                    gs     = gauge == null ? { width: 0, height: 0 } : gauge.getPreferredSize(),
+                    gs     = gauge === null ? { width: 0, height: 0 } : gauge.getPreferredSize(),
                     w      = this.width - left - right - 2,
                     h      = this.height - top - bottom - 2;
 
                 if (this.orient === "horizontal"){
                     var topY = top + Math.floor((h - this.psH) / 2) + 1, by = topY;
                     if (this.isEnabled === true) {
-                        if (gauge != null) {
+                        if (gauge !== null) {
                             gauge.paint(g, left + 1,
                                            topY + Math.floor((bs.height - gs.height) / 2),
                                            w, gs.height, this);
@@ -142,13 +146,13 @@ zebkit.package("ui", function(pkg, Class) {
                         topY += this.gap;
                         g.setColor(this.isEnabled === true ? this.scaleColor : "gray");
                         g.beginPath();
-                        for(var i = this.min;i <= this.max; i += this.scaleStep){
+                        for(i = this.min;i <= this.max; i += this.scaleStep){
                             var xx = this.value2loc(i) + 0.5;
                             g.moveTo(xx, topY);
                             g.lineTo(xx, topY + this.netSize);
                         }
 
-                        for(var i = 0;i < this.pl.length; i++) {
+                        for(i = 0; i < this.pl.length; i++) {
                             g.moveTo(this.pl[i] + 0.5, topY);
                             g.lineTo(this.pl[i] + 0.5, topY + 2 * this.netSize);
                         }
@@ -162,7 +166,7 @@ zebkit.package("ui", function(pkg, Class) {
                 } else {
                     var leftX = left + Math.floor((w - this.psW) / 2) + 1, bx = leftX;
                     if (this.isEnabled === true) {
-                        if (gauge != null) {
+                        if (gauge !== null) {
                             gauge.paint(g, leftX + Math.floor((bs.width - gs.width) / 2),
                                            top + 1, gs.width, h, this);
                         }
@@ -177,13 +181,13 @@ zebkit.package("ui", function(pkg, Class) {
                         leftX += this.gap;
                         g.setColor(this.scaleColor);
                         g.beginPath();
-                        for(var i = this.min;i <= this.max; i += this.scaleStep){
+                        for(i = this.min;i <= this.max; i += this.scaleStep){
                             var yy = this.value2loc(i) + 0.5;
                             g.moveTo(leftX, yy);
                             g.lineTo(leftX + this.netSize, yy);
                         }
 
-                        for(var i = 0;i < this.pl.length; i ++ ) {
+                        for(i = 0;i < this.pl.length; i ++ ) {
                             g.moveTo(leftX, this.pl[i] + 0.5);
                             g.lineTo(leftX + 2 * this.netSize, this.pl[i] + 0.5);
                         }
@@ -290,23 +294,25 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.getNeighborPoint = function (v,d){
                 var left  = this.min + this.intervals[0],
-                    right = this.getPointValue(this.intervals.length - 1);
+                    right = this.getPointValue(this.intervals.length - 1),
+                    i     = 0,
+                    start = 0;
+
                 if (v < left) return left;
-                else {
-                    if (v > right) return right;
+                else if (v > right) {
+                    return right;
                 }
 
                 if (d > 0) {
-                    var start = this.min;
-                    for(var i = 0;i < this.intervals.length; i ++ ){
+                    start = this.min;
+                    for(i = 0;i < this.intervals.length; i ++ ){
                         start += this.intervals[i];
                         if(start > v) return start;
                     }
                     return right;
-                }
-                else {
-                    var start = right;
-                    for(var i = this.intervals.length - 1;i >= 0; i--) {
+                } else {
+                    start = right;
+                    for(i = this.intervals.length - 1;i >= 0; i--) {
                         if (start < v) return start;
                         start -= this.intervals[i];
                     }
@@ -348,7 +354,7 @@ zebkit.package("ui", function(pkg, Class) {
                 }
 
                 var prev = this.value;
-                if(this.value != v){
+                if (this.value !== v){
                     this.value = v;
                     this._.fired(this, prev);
                     this.repaint();
@@ -364,16 +370,16 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.keyPressed = function(e){
-                var b = this.isIntervalMode;
+                var b = this.isIntervalMode, v = null;
                 switch(e.code) {
                     case "ArrowDown":
                     case "ArrowLeft":
-                        var v = this.nextValue(this.value, this.exactStep,-1);
+                        v = this.nextValue(this.value, this.exactStep,-1);
                         if (v >= this.min) this.setValue(v);
                         break;
                     case "ArrowUp":
                     case "ArrowRight":
-                        var v = this.nextValue(this.value, this.exactStep, 1);
+                        v = this.nextValue(this.value, this.exactStep, 1);
                         if (v <= this.max) this.setValue(v);
                         break;
                     case "Home": this.setValue(b ? this.getPointValue(0) : this.min);break;
@@ -430,7 +436,7 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function setScaleColor(c) {
-            if (c !==  this.scaleColor) {
+            if (c !== this.scaleColor) {
                 this.scaleColor = c;
                 if (this.provider === this) this.render.setColor(c);
                 this.repaint();
@@ -463,7 +469,7 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function setViewProvider(p){
-            if (p != this.provider){
+            if (p !== this.provider){
                 this.provider = p;
                 this.vrp();
             }
@@ -477,7 +483,9 @@ zebkit.package("ui", function(pkg, Class) {
                 throw new Error("[" + min + "," + max + "], " + roughStep + "," + exactStep);
             }
 
-            for(var i = 0, start = min;i < intervals.length; i ++ ){
+            var i = 0;
+
+            for(i = 0, start = min;i < intervals.length; i ++ ){
                 start += intervals[i];
                 if (start > max || intervals[i] < 0) throw new Error();
             }
@@ -488,7 +496,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.exactStep = exactStep;
             this.intervals = Array(intervals.length);
 
-            for(var i = 0; i < intervals.length; i++){
+            for(i = 0; i < intervals.length; i++){
                 this.intervals[i] = intervals[i];
             }
 

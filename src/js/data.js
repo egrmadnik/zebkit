@@ -10,12 +10,12 @@ zebkit.package("data", function(pkg, Class) {
      */
 
     pkg.descent = function descent(a, b) {
-        if (a == null) return 1;
+        if (typeof a === 'undefined' || a === null) return 1;
         return zebkit.isString(a) ? a.localeCompare(b) : a - b;
     };
 
     pkg.ascent = function ascent(a, b) {
-        if (b == null) return 1;
+        if (b === null || typeof b === 'undefined') return 1;
         return zebkit.isString(b) ? b.localeCompare(a) : b - a;
     };
 
@@ -316,11 +316,7 @@ zebkit.package("data", function(pkg, Class) {
                 return startLine - prevStartLine;
             };
 
-            this.setValue = function(text){
-                if (text == null) {
-                    throw new Error("Invalid null string");
-                }
-
+            this.setValue = function(text) {
                 var old = this.getValue();
                 if (old !== text) {
                     if (old.length > 0) {
@@ -363,7 +359,17 @@ zebkit.package("data", function(pkg, Class) {
      * @extends zebkit.data.TextModel
      */
     pkg.SingleLineTxt = Class(pkg.TextModel, [
+        function (s, max) {
+            if (arguments.length > 1) {
+                this.maxLen = max;
+            }
+
+            this._ = new this.clazz.Listeners();
+            this.setValue(arguments.length === 0 || s === null ? "" : s);
+        },
+
         function $prototype() {
+            this.buf    = "";
             this.extra  =  0;
             this.maxLen = -1;
 
@@ -441,11 +447,7 @@ zebkit.package("data", function(pkg, Class) {
             };
 
             this.setValue = function(text){
-                if (text == null) {
-                    throw new Error("Invalid null string");
-                }
-
-                if (this.validate != null && this.validate(text) === false) {
+                if (typeof this.validate !== 'undefined' && this.validate(text) === false) {
                     return false;
                 }
 
@@ -455,7 +457,7 @@ zebkit.package("data", function(pkg, Class) {
                     text = text.substring(0, i);
                 }
 
-                if ((this.buf == null || this.buf !== text) && (typeof this.validate !== 'function'  || this.validate(text))) {
+                if ((this.buf === null || this.buf !== text) && (typeof this.validate !== 'function'  || this.validate(text))) {
                     if (this.buf != null && this.buf.length > 0) {
                         this._.textUpdated(this, false, 0, this.buf.length, 0, 1);
                     }
@@ -492,16 +494,6 @@ zebkit.package("data", function(pkg, Class) {
              *  @param {String} text a text
              *  @return {Boolean} return true if the text is valid otherwise return false
              */
-        },
-
-        function (s, max) {
-            if (arguments.length > 1) {
-                this.maxLen = max;
-            }
-
-            this.buf = "";
-            this._ = new this.clazz.Listeners();
-            this.setValue(arguments.length === 0 || s === null ? "" : s);
         }
     ]);
 
@@ -715,7 +707,9 @@ zebkit.package("data", function(pkg, Class) {
              * @default null
              * @readOnly
              */
-            this.value = v;
+            if (arguments.length > 0) {
+                this.value = v;
+            }
         },
 
         function $prototype() {
@@ -727,6 +721,8 @@ zebkit.package("data", function(pkg, Class) {
              * @readOnly
              */
              this.parent = null;
+
+             this.value = null;
         }
     ]).hashable();
 
@@ -940,7 +936,7 @@ zebkit.package("data", function(pkg, Class) {
                     if (cb.call(this, root) === true) return true;
                 }
 
-                if (root.kids != null) {
+                if (typeof root.kids !== 'undefined') {
                     for (var i = 0; i < root.kids.length; i++) {
                         if (pkg.TreeModel.find(root.kids[i], value, cb)) {
                             return true;
@@ -1024,10 +1020,10 @@ zebkit.package("data", function(pkg, Class) {
              * @param  {zebkit.data.Item} item an item to be removed from the tree model
              */
             this.remove = function(item){
-                if (item == this.root) {
+                if (item === this.root) {
                     this.root = null;
                 } else {
-                    if (item.kids != null) {
+                    if (typeof item.kids !== 'undefined') {
                         for(var i = item.kids.length - 1; i >= 0; i--) {
                             this.remove(item.kids[i]);
                         }
@@ -1167,6 +1163,43 @@ zebkit.package("data", function(pkg, Class) {
      * contains:
      */
     pkg.Matrix = Class([
+        function() {
+            /**
+             * Number of rows in the matrix model
+             * @attribute rows
+             * @type {Integer}
+             * @readOnly
+             */
+
+            /**
+             * Number of columns in the matrix model
+             * @attribute cols
+             * @type {Integer}
+             * @readOnly
+             */
+
+            /**
+             * The multi-dimensional embedded arrays to host matrix data
+             * @attribute objs
+             * @type {Array}
+             * @readOnly
+             * @private
+             */
+
+            this._ = new this.clazz.Listeners();
+            if (arguments.length === 1) {
+                this.objs = arguments[0];
+                this.cols = (this.objs.length > 0) ? this.objs[0].length : 0;
+                this.rows = this.objs.length;
+            } else {
+                this.objs = [];
+                this.rows = this.cols = 0;
+                if (arguments.length > 1) {
+                    this.setRowsCols(arguments[0], arguments[1]);
+                }
+            }
+        },
+
         function $clazz() {
             this.Listeners = zebkit.util.ListenersClass("matrixResized", "cellModified",
                                                         "matrixSorted",  "matrixRowInserted",
@@ -1220,10 +1253,9 @@ zebkit.package("data", function(pkg, Class) {
 
                 this.setRowsCols(nr, nc);
                 var old = this.objs[row] != null ? this.objs[row][col] : undefined;
-                if (obj != old) {
-
+                if (obj !== old) {
                     // allocate array if no data for the given row exists
-                    if (this.objs[row] == null) this.objs[row] = [];
+                    if (typeof this.objs[row] === 'undefined') this.objs[row] = [];
                     this.objs[row][col] = obj;
                     this._.cellModified(this, row, col, old);
                 }
@@ -1249,7 +1281,7 @@ zebkit.package("data", function(pkg, Class) {
              * @param  {Integer} cols a new number of columns
              */
             this.setRowsCols = function(rows, cols){
-                if (rows != this.rows || cols != this.cols){
+                if (rows !== this.rows || cols !== this.cols){
                     var pc = this.cols,
                         pr = this.rows;
 
@@ -1266,7 +1298,7 @@ zebkit.package("data", function(pkg, Class) {
                         for(var i = 0; i < this.objs.length; i++) {
                             // check if data for columns has been allocated and the size
                             // is greater than set number of columns
-                            if (this.objs[i] != null && this.objs[i].length > cols) {
+                            if (typeof this.objs[i] !== 'undefined' && this.objs[i].length > cols) {
                                 this.objs[i].length = cols;
                             }
                         }
@@ -1415,43 +1447,6 @@ zebkit.package("data", function(pkg, Class) {
                                             func: f,
                                             name: zebkit.$FN(f).toLowerCase() });
             };
-        },
-
-        function() {
-            /**
-             * Number of rows in the matrix model
-             * @attribute rows
-             * @type {Integer}
-             * @readOnly
-             */
-
-            /**
-             * Number of columns in the matrix model
-             * @attribute cols
-             * @type {Integer}
-             * @readOnly
-             */
-
-            /**
-             * The multi-dimensional embedded arrays to host matrix data
-             * @attribute objs
-             * @type {Array}
-             * @readOnly
-             * @private
-             */
-
-            this._ = new this.clazz.Listeners();
-            if (arguments.length === 1) {
-                this.objs = arguments[0];
-                this.cols = (this.objs.length > 0) ? this.objs[0].length : 0;
-                this.rows = this.objs.length;
-            } else {
-                this.objs = [];
-                this.rows = this.cols = 0;
-                if (arguments.length > 1) {
-                    this.setRowsCols(arguments[0], arguments[1]);
-                }
-            }
         }
     ]);
 });

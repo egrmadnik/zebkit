@@ -285,7 +285,7 @@ zebkit.package("ui", function(pkg, Class) {
                     this.pointerDragged = function(e){
                         var x = this.x + e.x, y = this.y + e.y;
                         if (this.target.orient === "vertical"){
-                            if (this.prevLoc != x){
+                            if (this.prevLoc !== x){
                                 x = this.target.normalizeBarLoc(x);
                                 if (x > 0){
                                     this.prevLoc = x;
@@ -293,7 +293,7 @@ zebkit.package("ui", function(pkg, Class) {
                                 }
                             }
                         } else {
-                            if (this.prevLoc != y) {
+                            if (this.prevLoc !== y) {
                                 y = this.target.normalizeBarLoc(y);
                                 if (y > 0){
                                     this.prevLoc = y;
@@ -427,7 +427,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setGripperLoc = function(l){
-                if (l != this.barLocation){
+                if (l !== this.barLocation){
                     this.barLocation = l;
                     this.vrp();
                 }
@@ -519,7 +519,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setGap = function (g){
-                if (this.gap != g){
+                if (this.gap !== g){
                     this.gap = g;
                     this.vrp();
                 }
@@ -533,7 +533,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setLeftMinSize = function (m){
-                if (this.leftMinSize != m){
+                if (this.leftMinSize !== m){
                     this.leftMinSize = m;
                     this.vrp();
                 }
@@ -547,7 +547,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setRightMinSize = function(m){
-                if (this.rightMinSize != m){
+                if (this.rightMinSize !== m){
                     this.rightMinSize = m;
                     this.vrp();
                 }
@@ -560,7 +560,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method setGripperMovable
              */
             this.setGripperMovable = function (b){
-                if (b != this.isMoveable){
+                if (b !== this.isMoveable){
                     this.isMoveable = b;
                     this.vrp();
                 }
@@ -587,8 +587,7 @@ zebkit.package("ui", function(pkg, Class) {
             else {
                 if (c === this.rightComp) {
                     this.rightComp = null;
-                }
-                else {
+                } else {
                     if (c === this.gripper) this.gripper = null;
                 }
             }

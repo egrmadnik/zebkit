@@ -193,12 +193,11 @@ zebkit.package("layout", function(pkg, Class) {
 
     function eq_tree_class(node, name) {
         if (name[0] === '~') {
-            return node.clazz != null && zebkit.instanceOf(node, zebkit.Class.forName(name.substring(1)));
+            return typeof node.clazz !== 'undefined' && node.clazz !== null && zebkit.instanceOf(node, zebkit.Class.forName(name.substring(1)));
         } else {
             return typeof node.clazz.$name !== "undefined" && node.clazz.$name === name;
         }
     }
-
 
     /**
      * Layoutable class defines rectangular component that has elementary metrical properties like width,
@@ -210,6 +209,26 @@ zebkit.package("layout", function(pkg, Class) {
      * @extends {zebkit.layout.Layout}
      */
     pkg.Layoutable = Class(pkg.Layout, [
+        function() {
+            /**
+             *  Reference to children components
+             *  @attribute kids
+             *  @type {Array}
+             *  @default empty array
+             *  @readOnly
+             */
+            this.kids = [];
+
+            /**
+            * Layout manager that is used to order children layoutable components
+            * @attribute layout
+            * @default itself
+            * @readOnly
+            * @type {zebkit.layout.Layout}
+            */
+            this.layout = this;
+        },
+
         function $prototype() {
             /**
              * x coordinate
@@ -500,7 +519,7 @@ zebkit.package("layout", function(pkg, Class) {
                         this.kids[i].validate();
                     }
                     this.isLayoutValid = true;
-                    if (this.laidout != null) this.laidout();
+                    if (typeof this.laidout !== 'undefined') this.laidout();
                 }
             };
 
@@ -596,7 +615,7 @@ zebkit.package("layout", function(pkg, Class) {
                     throw new Error("Null layout");
                 }
 
-                if (this.layout != m){
+                if (this.layout !== m){
                     var pl = this.layout;
                     this.layout = m;
                     this.invalidate();
@@ -656,7 +675,9 @@ zebkit.package("layout", function(pkg, Class) {
 
                 d.setParent(this);
 
-                if (this.kidAdded != null) this.kidAdded(i, constr, d);
+                if (typeof this.kidAdded !== 'undefined') {
+                    this.kidAdded(i, constr, d);
+                }
                 this.invalidate();
                 return d;
             };
@@ -684,7 +705,9 @@ zebkit.package("layout", function(pkg, Class) {
                     var px = this.x, py = this.y;
                     this.x = xx;
                     this.y = yy;
-                    if (this.relocated != null) this.relocated(px, py);
+                    if (typeof this.relocated !== 'undefined') {
+                        this.relocated(px, py);
+                    }
                 }
                 return this;
             };
@@ -726,7 +749,9 @@ zebkit.package("layout", function(pkg, Class) {
                     this.width = w;
                     this.height = h;
                     this.isLayoutValid = false;
-                    if (this.resized != null) this.resized(pw, ph);
+                    if (typeof this.resized !== 'undefined') {
+                        this.resized(pw, ph);
+                    }
                 }
                 return this;
             };
@@ -789,7 +814,11 @@ zebkit.package("layout", function(pkg, Class) {
                 obj.setParent(null);
                 if (obj.constraints !== null) obj.constraints = null;
                 this.kids.splice(i, 1);
-                if (this.kidRemoved != null) this.kidRemoved(i, obj);
+
+                if (typeof this.kidRemoved !== 'undefined') {
+                    this.kidRemoved(i, obj);
+                }
+
                 this.invalidate();
                 return obj;
             };
@@ -800,7 +829,7 @@ zebkit.package("layout", function(pkg, Class) {
              */
             this.removeMe = function() {
                 var i = -1;
-                if (this.parent !== null && (i = this.parent.indexOf(this)) >=0) {
+                if (this.parent !== null && (i = this.parent.indexOf(this)) >= 0) {
                     this.parent.removeAt(i);
                 }
             };
@@ -851,7 +880,7 @@ zebkit.package("layout", function(pkg, Class) {
             this.setAt = function(i, d) {
                 var constr = this.kids[i].constraints,
                     pd     = this.removeAt(i);
-                if (d != null) this.insert(i, constr, d);
+                if (d !== null) this.insert(i, constr, d);
                 return pd;
             };
 
@@ -867,26 +896,6 @@ zebkit.package("layout", function(pkg, Class) {
                 return (arguments.length === 1) ? this.insert(this.kids.length, null, constr)
                                                 : this.insert(this.kids.length, constr, d);
             };
-        },
-
-        function() {
-            /**
-             *  Reference to children components
-             *  @attribute kids
-             *  @type {Array}
-             *  @default empty array
-             *  @readOnly
-             */
-            this.kids = [];
-
-            /**
-            * Layout manager that is used to order children layoutable components
-            * @attribute layout
-            * @default itself
-            * @readOnly
-            * @type {zebkit.layout.Layout}
-            */
-            this.layout = this;
         }
     ]);
 

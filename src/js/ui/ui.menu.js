@@ -336,7 +336,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @chainable
              */
             this.setCheckManager = function(man) {
-                if (this.manager != man) {
+                if (this.manager !== man) {
                     if (this.manager !== null) {
                         this.manager.uninstall(this);
                     }
@@ -406,7 +406,7 @@ zebkit.package("ui", function(pkg, Class) {
                         var sub = d[k];
                         this.add(k);
                         if (sub != null) {
-                            this.setMenuAt(this.kids.length-1, zebkit.instanceOf(sub, pkg.Menu) ? sub : new pkg.Menu(sub));
+                            this.setMenuAt(this.kids.length - 1, zebkit.instanceOf(sub, pkg.Menu) ? sub : new pkg.Menu(sub));
                         }
                     }
                 }
@@ -425,6 +425,8 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function $prototype() {
+            this.$parentMenu = null;
+
             this.canHaveFocus = true;
             this.noSubIfEmpty = false;
 
@@ -448,10 +450,10 @@ zebkit.package("ui", function(pkg, Class) {
             this.childCompEnabled = this.childCompShown = function(e) {
                 var src = e.source;
                 for(var i = 0;i < this.kids.length; i++){
-                    if (this.kids[i] == src) {
+                    if (this.kids[i] === src) {
                         // clear selection if an item becomes not selectable
                         if (this.isItemSelectable(i) === false) {
-                            if (i == this.selectedIndex) this.select(-1);
+                            if (i === this.selectedIndex) this.select(-1);
                         }
                         break;
                     }
@@ -465,7 +467,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method getMenuItem
              */
             this.getMenuItem = function(i) {
-                if (zebkit.isString(i)) {
+                if (zebkit.isString(i) === true) {
                     var item = this.find(i);
                     if (item !== null) return item;
                     for (var k in this.menus) {
@@ -578,7 +580,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @protected
              */
             this.$canceled = function(m) {
-                if (this.$parentMenu != null && this.$canceled != null) {
+                if (this.$parentMenu !== null && typeof this.$canceled !== 'undefined') {
                     this.$parentMenu.$canceled(m);
                 }
             };
@@ -591,9 +593,10 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.$topMenu = function() {
                 if (this.parent !== null) {
-                    var t = this, p = null;
+                    var t = this,
+                        p = null;
 
-                    while ((p = t.$parentMenu) != null) t = p;
+                    while ((p = t.$parentMenu) !== null) t = p;
                     return t;
                 }
                 return null;
@@ -680,7 +683,7 @@ zebkit.package("ui", function(pkg, Class) {
                     var p = this.$parentMenu;
                     this.$canceled(this);
                     this.$hideMenu();
-                    if (p != null) p.requestFocus();
+                    if (p !== null) p.requestFocus();
                 }
             } else {
                 this.$super(e);
@@ -689,8 +692,8 @@ zebkit.package("ui", function(pkg, Class) {
 
         function insert(i, ctr, c) {
             if (zebkit.isString(c)) {
-                return this.$super(i, ctr, (c.match(/^\-+$/) != null) ? new this.clazz.Line()
-                                                                      : new this.clazz.MenuItem(c));
+                return this.$super(i, ctr, (c.match(/^\-+$/) !== null) ? new this.clazz.Line()
+                                                                       : new this.clazz.MenuItem(c));
             }
             return this.$super(i, ctr, c);
         },
@@ -736,7 +739,7 @@ zebkit.package("ui", function(pkg, Class) {
                 var rs = null;
 
                 // hide previously shown sub menu if position has been re-newed
-                if (this.selectedIndex >= 0  && off != this.selectedIndex) {
+                if (this.selectedIndex >= 0  && off !== this.selectedIndex) {
                     var sub = this.getMenuAt(this.selectedIndex);
                     if (sub !== null) {
                         sub.$hideMenu();
@@ -746,7 +749,7 @@ zebkit.package("ui", function(pkg, Class) {
                 }
 
                 // request fire selection if the menu is shown and position has moved to new place
-                if (this.parent !== null && off != this.selectedIndex && this.isItemSelectable(off)) {
+                if (this.parent !== null && off !== this.selectedIndex && this.isItemSelectable(off)) {
                     if (this.triggerSelectionByPos(off)) rs = off;
                 }
 
@@ -946,7 +949,7 @@ zebkit.package("ui", function(pkg, Class) {
 
             this.childFocusGained = function(e) {
                 if (zebkit.instanceOf(e.source, pkg.Menu)) {
-                    if (e.related != null && zebkit.layout.isAncestorOf(this, e.related) === false ) {
+                    if (e.related !== null && zebkit.layout.isAncestorOf(this, e.related) === false ) {
                         this.$prevFocusOwner = e.related;
                     }
                 } else {
@@ -958,7 +961,7 @@ zebkit.package("ui", function(pkg, Class) {
 
 
                 // save the focus owner whose owner was not a pop up layer
-                if (e.related != null && zebkit.layout.isAncestorOf(this, e.related) === false && zebkit.instanceOf(e.source, pkg.Menu)) {
+                if (e.related !== null && zebkit.layout.isAncestorOf(this, e.related) === false && zebkit.instanceOf(e.source, pkg.Menu)) {
                     this.$prevFocusOwner = e.related;
                 }
             };
@@ -1017,15 +1020,16 @@ zebkit.package("ui", function(pkg, Class) {
                     var popup = null;
                     if (e.source.popup != null) {
                         popup = e.source.popup;
-                    } else if (e.source.getPopup != null) {
+                    } else if (typeof e.source.getPopup !== 'undefined') {
                         popup = e.source.getPopup(e.source, e.x, e.y);
                     }
 
-                    if (popup != null) {
+                    if (popup !== null) {
                         popup.setLocation(e.absX, e.absY);
                         this.add(popup);
                         popup.requestFocus();
                     }
+
                     return true;
                 }
                 return false;

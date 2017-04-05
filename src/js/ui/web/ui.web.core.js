@@ -20,9 +20,6 @@ zebkit.package("ui.web", function(pkg, Class) {
 
             if (zebkit.isString(e)) {
                 e = document.createElement(e);
-                if (typeof this.clazz.CLASS_NAME !== 'undefined') {
-                    e.setAttribute("class", this.clazz.CLASS_NAME);
-                }
                 e.style.border   = "0px solid transparent";   // clean up border
                 e.style.fontSize = this.clazz.$bodyFontSize;  // DOM element is wrapped with a container that
                                                               // has zero sized font, so let's set body  font
@@ -860,12 +857,25 @@ zebkit.package("ui.web", function(pkg, Class) {
 
                 var canvas = null;
 
+
                 // when a meta key is pressed a canvas can lose native focus in Window IE/Chrome
                 // to double check the focus will be properly returned the code below is required
                 if (this.focusOwner !== null) {
+
+
+
                     if (this.focusOwner.isDOMElement !== true) {
                         canvas = this.focusOwner.getCanvas();
-                        if (canvas !== null && document.activeElement !== canvas.element) {
+                        if (canvas !== null &&
+                            document.activeElement !== canvas.element &&
+                            document.activeElement !== null           &&
+                            pkg.zCanvas.$getCanvasByElement(document.activeElement) !== null)
+                        {
+
+                            console.log("FocusManager.requestFocus() [WEB]: return focus to DOM focus owner canvas: " +
+                                canvas.element.getAttribute("id") + "," +
+                                canvas.element.getAttribute("class") + "," +
+                                document.activeElement);
                             canvas.element.focus();
                         }
                     }
