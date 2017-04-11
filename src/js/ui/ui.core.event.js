@@ -14,7 +14,6 @@ zebkit.package("ui", function(pkg, Class) {
         }
     ]);
 
-
     /**
      * Component event class. Component event is fired when:
      *
@@ -486,8 +485,6 @@ zebkit.package("ui", function(pkg, Class) {
                 if (this._[id](e) === false) {
                     // call target component listener
                     if (typeof e.source[id] !== 'undefined' && e.source[id].call(e.source, e) === true) {
-
-                        console.log("Leave me .... ");
                         return true;
                     }
 
@@ -497,6 +494,8 @@ zebkit.package("ui", function(pkg, Class) {
                             t[childEvent].call(t, e);
                         }
                     }
+
+                    return false;
                 } else {
                     return true;
                 }
@@ -521,7 +520,6 @@ zebkit.package("ui", function(pkg, Class) {
      */
      this.events = new pkg.EventManager();
 
-
      pkg.Clipboard = Class(pkg.Manager, [
          function $prototype() {
              this.getDestination = function() {
@@ -532,10 +530,18 @@ zebkit.package("ui", function(pkg, Class) {
 
      pkg.CursorManager = Class(pkg.Manager, [
         function $prototype() {
+            /**
+             * Current cursor type
+             * @attribute cursorType
+             * @type {String}
+             * @readOnly
+             * @default "default"
+             */
             this.cursorType = "default";
         }
      ]);
 
+     // TODO: focus manager doesn't have to be overwritten with ui.FocusManager but inherited
      pkg.FocusManager = Class(pkg.Manager, [
         function $prototype() {
             this.focusOwner = null;

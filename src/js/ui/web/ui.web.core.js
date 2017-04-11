@@ -60,7 +60,6 @@ zebkit.package("ui.web", function(pkg, Class) {
             // showing components added to popup layer
             this.$container.style["z-index"] = "0";
 
-
             // coordinates have to be set to initial zero value in CSS
             // otherwise the DOM layout can be wrong !
             this.$container.style.left = this.$container.style.top = "0px";
@@ -142,7 +141,7 @@ zebkit.package("ui.web", function(pkg, Class) {
         },
 
         function $prototype() {
-            this.$container = this.$canvas = null;
+            this.$blockElement = this.$container = this.$canvas = null;
             this.ePsW = this.ePsH = 0;
 
             /**
@@ -156,6 +155,13 @@ zebkit.package("ui.web", function(pkg, Class) {
                                         // and manage its visibility
 
             this.$sizeAdjusted = false;
+
+
+            this.wrap = function(c) {
+                this.setLayout(new zebkit.layout.StackLayout());
+                this.add(c);
+                return this;
+            };
 
             /**
              * Set the CSS font of the wrapped HTML element
@@ -384,7 +390,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                 if (b) {
                     this.$container.removeChild(this.$blockElement);
                 } else {
-                    if (this.$blockElement == null) {
+                    if (this.$blockElement === null) {
                         this.$blockElement = zebkit.web.$createBlockedElement();
                     }
                     this.$container.appendChild(this.$blockElement);
@@ -502,7 +508,7 @@ zebkit.package("ui.web", function(pkg, Class) {
         function focused() {
             this.$super();
 
-            // sync state of native focus and zebkit focus
+            // sync state of zebkit focus with native focus of the HTML Element
             if (this.hasFocus()) {
                 this.$focus();
             } else {
@@ -857,30 +863,23 @@ zebkit.package("ui.web", function(pkg, Class) {
 
                 var canvas = null;
 
-
-                // when a meta key is pressed a canvas can lose native focus in Window IE/Chrome
-                // to double check the focus will be properly returned the code below is required
-                if (this.focusOwner !== null) {
-
-
-
-                    if (this.focusOwner.isDOMElement !== true) {
-                        canvas = this.focusOwner.getCanvas();
-                        if (canvas !== null &&
-                            document.activeElement !== canvas.element &&
-                            document.activeElement !== null           &&
-                            pkg.zCanvas.$getCanvasByElement(document.activeElement) !== null)
-                        {
-
-                            console.log("FocusManager.requestFocus() [WEB]: return focus to DOM focus owner canvas: " +
-                                canvas.element.getAttribute("id") + "," +
-                                canvas.element.getAttribute("class") + "," +
-                                document.activeElement);
-                            canvas.element.focus();
-                        }
-                    }
-                } else if (c !== null && c.isDOMElement !== true) {
+                // if the requested for the focus UI componet doesn't belong to a canvas that holds a native
+                // focus then let's give native focus to the canvas
+                if (c !== null && c !== this.focusOwner && (c.isDOMElement !== true || c.$getElementRootFocus() === null)) {
                     canvas = c.getCanvas();
+                    if (canvas !== null && document.activeElement !== canvas.element) {
+                        canvas.element.focus();
+                    }
+
+                    // if old focus onwer sits on canvas that doesn't hold the native focus
+                    // let's clear it
+                    if (this.focusOwner !== null && this.focusOwner.getCanvas() !== canvas) {
+                        this.requestFocus(null);
+                    }
+                } else if (this.focusOwner !== null && this.focusOwner.isDOMElement !== true) {
+                    // here we check if focus owner belongs to a canvas that has native focus
+                    // and if it is not true we give native focus to the canvas
+                    canvas = this.focusOwner.getCanvas();
                     if (canvas !== null && document.activeElement !== canvas.element) {
                         canvas.element.focus();
                     }

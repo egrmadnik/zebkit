@@ -1309,7 +1309,7 @@ zebkit.package("ui.grid", function(pkg, Class) {
                     if (this.editingRow < 0) {
                         var v = ui.focusManager.focusOwner === this ? this.views.onselection
                                                                     : this.views.offselection;
-                        if (v != null)  {
+                        if (v !== null && typeof v !== 'undefined')  {
                             v.paint(g, x, y, this.colWidths[col], this.rowHeights[row], this);
                         }
                     }

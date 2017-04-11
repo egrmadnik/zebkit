@@ -27,9 +27,10 @@ zebkit.package("ui", function(pkg, Class) {
         }
 
         if (path[0] !== '/') {
-            var root = zebkit.config['ui.theme'];
+            var root = zebkit.config['ui.theme.path'];
             if (typeof root === "undefined") {
-                root = "rs/themes/default";
+                root =  typeof zebkit.config['ui.theme.name'] === 'undefined' ? "rs/themes/dark"
+                                                                              : "rs/themes/" + zebkit.config['ui.theme.name'];
             }
 
             if (root[0] !== '/') {
@@ -46,7 +47,7 @@ zebkit.package("ui", function(pkg, Class) {
         });
     };
 
-    // TODO: prototype pf zClass, too simple to say something
+    // TODO: prototype of zClass, too simple to say something
     pkg.zCanvas = Class([]);
 
     /**
@@ -818,22 +819,6 @@ zebkit.package("ui", function(pkg, Class) {
         function $prototype() {
             this.bg = this.border = null;
 
-            // TODO: not stable api, probably it should be moved to static
-            // this.wrapWithCanvas = function() {
-            //     var c = new pkg.HtmlCanvas();
-            //     c.setLayout(new zebkit.layout.StackLayout());
-            //     c.add(this);
-            //     return c;
-            // };
-
-            // TODO: not stable api, probably it should be moved to static
-            // this.wrapWithHtmlElement = function() {
-            //     var c = new pkg.HtmlElement();
-            //     c.setLayout(new zebkit.layout.StackLayout());
-            //     c.add(this);
-            //     return c;
-            // };
-
             /**
              * Request the whole UI component or part of the UI component to be repainted
              * @param  {Integer} [x] x coordinate of the component area to be repainted
@@ -846,7 +831,7 @@ zebkit.package("ui", function(pkg, Class) {
                 // step I: skip invisible components and components that are not in hierarchy
                 //         don't initiate repainting thread for such sort of the components,
                 //         but don't forget for zCanvas whose parent field is null, but it has $context
-                if (this.isVisible === true && (this.parent !== null || this.$context != null)) {
+                if (this.isVisible === true && (this.parent !== null || typeof this.$context !== 'undefined')) {
                     //!!! find context buffer that holds the given component
 
                     var canvas = this;
@@ -964,7 +949,10 @@ zebkit.package("ui", function(pkg, Class) {
             this.getEventDestination = function() {
                 var c = this, p = this;
                 while ((p = p.parent) !== null) {
-                    if (typeof p.catchInput !== 'undefined' && (p.catchInput === true || (p.catchInput !== false && p.catchInput(c)))) {
+                    if (typeof p.catchInput !== 'undefined' &&
+                        (p.catchInput === true || (p.catchInput    !== false &&
+                                                   p.catchInput(c) === true     )))
+                    {
                         c = p;
                     }
                 }
@@ -995,8 +983,8 @@ zebkit.package("ui", function(pkg, Class) {
                     // differs from parent background try to apply the shape and than build
                     // clip from the applied shape
                     if ( (this.border !== null && typeof this.border.outline !== 'undefined') &&
-                         (b || typeof this.update !== 'undefined')                            &&
-                         this.border.outline(g, 0, 0, this.width, this.height, this))
+                         (b === true || typeof this.update !== 'undefined')                   &&
+                         this.border.outline(g, 0, 0, this.width, this.height, this) === true)
                     {
                         g.save();
                         g.clip();
@@ -1011,7 +999,7 @@ zebkit.package("ui", function(pkg, Class) {
 
                         g.restore();
                     } else {
-                        if (b) {
+                        if (b === true) {
                             this.bg.paint(g, 0, 0, this.width, this.height, this);
                         }
 

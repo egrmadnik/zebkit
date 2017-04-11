@@ -1,6 +1,4 @@
 zebkit.package("data", function(pkg, Class) {
-    'use strict';
-
     /**
      * Collection of various data models. The models are widely used by zebkit UI
      * components as part of model-view-controller approach, but the package doesn't depend on
@@ -18,6 +16,9 @@ zebkit.package("data", function(pkg, Class) {
         if (b === null || typeof b === 'undefined') return 1;
         return zebkit.isString(b) ? b.localeCompare(a) : b - a;
     };
+
+
+    pkg.DataModel = zebkit.Interface();
 
     /**
      * Abstract text model class
@@ -93,7 +94,7 @@ zebkit.package("data", function(pkg, Class) {
      * @param {Integer}  lines a number of lines that has been affected
      * by the text model update
      */
-    pkg.TextModel = Class([
+    pkg.TextModel = Class(pkg.DataModel, [
         function $clazz() {
             this.Listeners = zebkit.util.ListenersClass("textUpdated");
         }
@@ -107,14 +108,27 @@ zebkit.package("data", function(pkg, Class) {
      * @extends zebkit.data.TextModel
      */
     pkg.Text = Class(pkg.TextModel, [
+        function(s) {
+            /**
+             * Array of lines
+             * @attribute lines
+             * @type {zebkit.data.Text.Line[]}
+             * @private
+             * @readOnly
+             */
+            this.$lines = [ new this.clazz.Line("") ];
+            this._ = new this.clazz.Listeners();
+            this.setValue(arguments.length === 0 || s === null ? "" : s);
+        },
+
         function $clazz() {
             this.Line = function(s) {
-                this.s = s;
+                this.$s = s;
             };
 
             //  toString for array.join method
             this.Line.prototype.toString = function() {
-                return this.s;
+                return this.$s;
             };
         },
 
@@ -142,8 +156,8 @@ zebkit.package("data", function(pkg, Class) {
                     startOffset = start = 0;
                 }
 
-                for(; start < this.lines.length; start++){
-                    var line = this.lines[start].s;
+                for(; start < this.$lines.length; start++){
+                    var line = this.$lines[start].$s;
                     if (o >= startOffset && o <= startOffset + line.length){
                         return [start, startOffset];
                     }
@@ -162,26 +176,26 @@ zebkit.package("data", function(pkg, Class) {
             this.calcLineOffset = function(line) {
                 var off = 0;
                 for(var i = 0; i < line; i++){
-                    off += (this.lines[i].s.length + 1);
+                    off += (this.$lines[i].$s.length + 1);
                 }
                 return off;
             };
 
             this.$lineTags = function(i) {
-                return this.lines[i];
+                return this.$lines[i];
             };
 
             this.getLine = function(line) {
-                if (line < 0 || line >= this.lines.length) throw RangeError(line);
-                return this.lines[line].s;
+                if (line < 0 || line >= this.$lines.length) throw RangeError(line);
+                return this.$lines[line].$s;
             };
 
             this.getValue = function() {
-                return this.lines.join("\n");
+                return this.$lines.join("\n");
             };
 
             this.getLines = function () {
-                return this.lines.length;
+                return this.$lines.length;
             };
 
             this.getTextLength = function() {
@@ -196,35 +210,33 @@ zebkit.package("data", function(pkg, Class) {
              * @method removeLines
              */
             this.removeLines = function(start, size) {
-                if (start < 0 || start >= this.lines.length) {
+                if (start < 0 || start >= this.$lines.length) {
                     throw new RangeError(start);
                 }
 
                 if (arguments.length === 1) {
                     size = 1;
-                } else {
-                    if (size <= 0) {
-                        throw new Error("Invalid number of lines : " + size);
-                    }
+                } else if (size <= 0) {
+                    throw new Error("Invalid number of lines : " + size);
                 }
 
                 // normalize number required lines to be removed
-                if ((start + size) > this.lines.length) {
-                    size = this.lines.length - start;
+                if ((start + size) > this.$lines.length) {
+                    size = this.$lines.length - start;
                 }
 
                 var end  = start + size - 1,            // last line to be removed
                     off  = this.calcLineOffset(start),  // offset of the first line to be removed
-                    olen = start !== end ? this.calcLineOffset(end) + this.lines[end].s.length + 1 - off
-                                         : this.lines[start].s.length + 1;
+                    olen = start !== end ? this.calcLineOffset(end) + this.$lines[end].$s.length + 1 - off
+                                         : this.$lines[start].$s.length + 1;
 
 
                 // if this is the last line we have to correct offset to point to "\n" character in text
-                if (start === this.lines.length - 1) {
+                if (start === this.$lines.length - 1) {
                     off--;
                 }
 
-                this.lines.splice(start, size);
+                this.$lines.splice(start, size);
                 this._.textUpdated(this, false, off, olen, start, size);
             };
 
@@ -235,18 +247,18 @@ zebkit.package("data", function(pkg, Class) {
              * @method  insertLines
              */
             this.insertLines = function(startLine) {
-                if (startLine < 0 || startLine > this.lines.length) {
+                if (startLine < 0 || startLine > this.$lines.length) {
                     throw new RangeError(startLine);
                 }
 
                 var off = this.calcLineOffset(startLine), offlen = 0;
-                if (startLine === this.lines.length) {
+                if (startLine === this.$lines.length) {
                     off--;
                 }
 
                 for(var i = 1; i < arguments.length; i++) {
                     offlen += arguments[i].length + 1;
-                    this.lines.splice(startLine + i - 1, 0, new this.clazz.Line(arguments[i]));
+                    this.$lines.splice(startLine + i - 1, 0, new this.clazz.Line(arguments[i]));
                 }
                 this._.textUpdated(this, true, off, offlen, startLine, arguments.length - 1);
             };
@@ -255,7 +267,7 @@ zebkit.package("data", function(pkg, Class) {
                 if (s.length > 0) {
                     var slen    = s.length,
                         info    = this.calcLineByOffset(0,0,offset),
-                        line    = this.lines[info[0]].s,
+                        line    = this.$lines[info[0]].$s,
                         j       = 0,
                         lineOff = offset - info[1],
                         tmp     = line.substring(0, lineOff) + s + line.substring(lineOff);
@@ -263,11 +275,11 @@ zebkit.package("data", function(pkg, Class) {
                     for(; j < slen && s[j] !== '\n'; j++);
 
                     if (j >= slen) {
-                        this.lines[info[0]].s = tmp;
+                        this.$lines[info[0]].$s = tmp;
                         j = 1;
                     } else {
-                        this.lines.splice(info[0], 1);
-                        j = this.parse(info[0], tmp, this.lines);
+                        this.$lines.splice(info[0], 1);
+                        j = this.parse(info[0], tmp, this.$lines);
                     }
 
                     if (slen > 0) {
@@ -283,17 +295,16 @@ zebkit.package("data", function(pkg, Class) {
                 if (size > 0) {
                     var i1   = this.calcLineByOffset(0, 0, offset),
                         i2   = this.calcLineByOffset(i1[0], i1[1], offset + size),
-                        l1   = this.lines[i1[0]].s,
-                        l2   = this.lines[i2[0]].s,
+                        l1   = this.$lines[i1[0]].$s,
+                        l2   = this.$lines[i2[0]].$s,
                         off1 = offset - i1[1], off2 = offset + size - i2[1],
                         buf  = l1.substring(0, off1) + l2.substring(off2);
 
                     if (i2[0] === i1[0]) {
-                        this.lines.splice(i1[0], 1, new this.clazz.Line(buf));
-                    }
-                    else {
-                        this.lines.splice(i1[0], i2[0] - i1[0] + 1);
-                        this.lines.splice(i1[0], 0, new this.clazz.Line(buf));
+                        this.$lines.splice(i1[0], 1, new this.clazz.Line(buf));
+                    } else {
+                        this.$lines.splice(i1[0], i2[0] - i1[0] + 1);
+                        this.$lines.splice(i1[0], 0, new this.clazz.Line(buf));
                     }
 
                     if (size > 0) {
@@ -310,7 +321,7 @@ zebkit.package("data", function(pkg, Class) {
                 for(var index = 0; index <= size; prevIndex = index, startLine++){
                     var fi = text.indexOf("\n", index);
                     index = (fi < 0 ? size : fi);
-                    this.lines.splice(startLine, 0, new this.clazz.Line(text.substring(prevIndex, index)));
+                    this.$lines.splice(startLine, 0, new this.clazz.Line(text.substring(prevIndex, index)));
                     index++;
                 }
                 return startLine - prevStartLine;
@@ -321,32 +332,19 @@ zebkit.package("data", function(pkg, Class) {
                 if (old !== text) {
                     if (old.length > 0) {
                         var numLines = this.getLines(), txtLen = this.getTextLength();
-                        this.lines.length = 0;
-                        this.lines = [ new this.clazz.Line("") ];
+                        this.$lines.length = 0;
+                        this.$lines = [ new this.clazz.Line("") ];
                         this._.textUpdated(this, false, 0, txtLen, 0, numLines);
                     }
 
-                    this.lines = [];
-                    this.parse(0, text, this.lines);
+                    this.$lines = [];
+                    this.parse(0, text, this.$lines);
                     this.textLength = text.length;
                     this._.textUpdated(this, true, 0, this.textLength, 0, this.getLines());
                     return true;
                 }
                 return false;
             };
-        },
-
-        function(s) {
-            /**
-             * Array of lines
-             * @attribute lines
-             * @type {zebkit.data.Text.Line[]}
-             * @private
-             * @readOnly
-             */
-            this.lines = [ new this.clazz.Line("") ];
-            this._ = new this.clazz.Listeners();
-            this.setValue(arguments.length === 0 || s === null ? "" : s);
         }
     ]);
 
@@ -458,7 +456,7 @@ zebkit.package("data", function(pkg, Class) {
                 }
 
                 if ((this.buf === null || this.buf !== text) && (typeof this.validate !== 'function'  || this.validate(text))) {
-                    if (this.buf != null && this.buf.length > 0) {
+                    if (this.buf !== null && this.buf.length > 0) {
                         this._.textUpdated(this, false, 0, this.buf.length, 0, 1);
                     }
 
@@ -555,7 +553,12 @@ zebkit.package("data", function(pkg, Class) {
       * @param {Integer} i an index at that the element has been re-set
       */
 
-    pkg.ListModel = Class([
+    pkg.ListModel = Class(pkg.DataModel, [
+        function() {
+            this._ = new this.clazz.Listeners();
+            this.$data = (arguments.length === 0) ? [] : arguments[0];
+        },
+
         function $clazz () {
             this.Listeners = zebkit.util.ListenersClass("elementInserted", "elementRemoved", "elementSet");
         },
@@ -568,10 +571,10 @@ zebkit.package("data", function(pkg, Class) {
              * @return {object}  a list item
              */
             this.get = function(i) {
-                if (i < 0 || i >= this.d.length) {
+                if (i < 0 || i >= this.$data.length) {
                     throw new RangeError(i);
                 }
-                return this.d[i];
+                return this.$data[i];
             };
 
             /**
@@ -580,8 +583,8 @@ zebkit.package("data", function(pkg, Class) {
              * @param  {Object} o an item to be added
              */
             this.add = function(o) {
-                this.d.push(o);
-                this._.elementInserted(this, o, this.d.length - 1);
+                this.$data.push(o);
+                this._.elementInserted(this, o, this.$data.length - 1);
             };
 
             /**
@@ -589,7 +592,7 @@ zebkit.package("data", function(pkg, Class) {
              * @method removeAll
              */
             this.removeAll = function() {
-                var size = this.d.length;
+                var size = this.$data.length;
                 for(var i = size - 1; i >= 0; i--) this.removeAt(i);
             };
 
@@ -599,8 +602,8 @@ zebkit.package("data", function(pkg, Class) {
              * @param {Integer} i a location of an element to be removed from the list
              */
             this.removeAt = function(i) {
-                var re = this.d[i];
-                this.d.splice(i, 1);
+                var re = this.$data[i];
+                this.$data.splice(i, 1);
                 this._.elementRemoved(this, re, i);
             };
 
@@ -610,8 +613,8 @@ zebkit.package("data", function(pkg, Class) {
              * @param {Object} o an element to be removed from the list
              */
             this.remove = function(o) {
-                for(var i = 0;i < this.d.length; i++ ){
-                    if (this.d[i] === o) this.removeAt(i);
+                for(var i = 0;i < this.$data.length; i++ ){
+                    if (this.$data[i] === o) this.removeAt(i);
                 }
             };
 
@@ -622,10 +625,10 @@ zebkit.package("data", function(pkg, Class) {
              * @param {Object} o an element to be inserted into the list
              */
             this.insert = function(i, o){
-                if (i < 0 || i > this.d.length) {
+                if (i < 0 || i > this.$data.length) {
                     throw new RangeError(i);
                 }
-                this.d.splice(i, 0, o);
+                this.$data.splice(i, 0, o);
                 this._.elementInserted(this, o, i);
             };
 
@@ -635,7 +638,7 @@ zebkit.package("data", function(pkg, Class) {
              * @return {Integer} a number of element in the list
              */
             this.count = function () {
-                return this.d.length;
+                return this.$data.length;
             };
 
             /**
@@ -646,11 +649,11 @@ zebkit.package("data", function(pkg, Class) {
              * @return {Object}  previous element that was stored at the given position
              */
             this.setAt = function(i, o) {
-                if (i < 0 || i >= this.d.length) {
+                if (i < 0 || i >= this.$data.length) {
                     throw new RangeError(i);
                 }
-                var pe = this.d[i];
-                this.d[i] = o;
+                var pe = this.$data[i];
+                this.$data[i] = o;
                 this._.elementSet(this, o, pe, i);
                 return pe;
             };
@@ -672,13 +675,8 @@ zebkit.package("data", function(pkg, Class) {
              * @return {Integer} the element position. -1 if the element cannot be found in the list
              */
             this.indexOf = function(o){
-                return this.d.indexOf(o);
+                return this.$data.indexOf(o);
             };
-        },
-
-        function() {
-            this._ = new this.clazz.Listeners();
-            this.d = (arguments.length === 0) ? [] : arguments[0];
         }
     ]);
 
@@ -802,7 +800,7 @@ zebkit.package("data", function(pkg, Class) {
      * @param {zebkit.data.TreeModel} src a tree model that triggers the event
      * @param {zebkit.data.Item}  item an item that has been inserted into the tree model
      */
-    pkg.TreeModel = Class([
+    pkg.TreeModel = Class(pkg.DataModel, [
         function(r) {
             if (arguments.length === 0) {
                 this.root = new pkg.Item();
@@ -813,7 +811,7 @@ zebkit.package("data", function(pkg, Class) {
                  * @type {zebkit.data.Item}
                  * @readOnly
                  */
-                this.root = zebkit.instanceOf(r, pkg.Item) ? r : pkg.TreeModel.create(r);
+                this.root = zebkit.instanceOf(r, pkg.Item) ? r : this.clazz.create(r);
             }
 
             this._ = new this.clazz.Listeners();
@@ -864,9 +862,9 @@ zebkit.package("data", function(pkg, Class) {
             this.create = function(r, p) {
                 var item = new pkg.Item(r.hasOwnProperty("value")? r.value : r);
                 item.parent = arguments.length < 2 ? null : p;
-                if (r.hasOwnProperty("kids")) {
+                if (typeof r.kids !== 'undefined' && r.kids !== null) {
                     for(var i = 0; i < r.kids.length; i++) {
-                        item.kids[i] = pkg.TreeModel.create(r.kids[i], item);
+                        item.kids[i] = this.create(r.kids[i], item);
                     }
                 }
                 return item;
@@ -882,7 +880,7 @@ zebkit.package("data", function(pkg, Class) {
              */
             this.findOne = function(root, value) {
                 var res = null;
-                pkg.TreeModel.find(root, value, function(item) {
+                this.find(root, value, function(item) {
                     res = item;
                     return true;
                 });
@@ -925,7 +923,7 @@ zebkit.package("data", function(pkg, Class) {
             this.find = function(root, value, cb) {
                 if (arguments.length < 3) {
                     var res = [];
-                    pkg.TreeModel.find(root, value, function(item) {
+                    this.find(root, value, function(item) {
                         res.push(item);
                         return false;
                     });
@@ -933,17 +931,50 @@ zebkit.package("data", function(pkg, Class) {
                 }
 
                 if (root.value === value) {
-                    if (cb.call(this, root) === true) return true;
+                    if (cb.call(this, root) === true) {
+                        return true;
+                    }
                 }
 
-                if (typeof root.kids !== 'undefined') {
+                if (typeof root.kids !== 'undefined' && root.kids !== null) {
                     for (var i = 0; i < root.kids.length; i++) {
-                        if (pkg.TreeModel.find(root.kids[i], value, cb)) {
+                        if (this.find(root.kids[i], value, cb)) {
                             return true;
                         }
                     }
                 }
                 return false;
+            };
+
+            this.print = function(root, render, shift) {
+                if (zebkit.instanceOf(root, pkg.TreeModel)) {
+                    root = root.root;
+                }
+
+                if (arguments.length < 2) {
+                    shift  = "";
+                    render = null;
+                } else if (arguments.length === 2) {
+                    if (zebkit.isString(render)) {
+                        shift  = render;
+                        render = null;
+                    } else {
+                        shift = "";
+                    }
+                }
+
+                var b = typeof root.kids !== 'undefined' && root.kids !== null,
+                    v = render !== null ? render(root)
+                                        : (root.value === null ? "<null>" : root.value) + " {" + (b?root.kids.length:0) + "}";
+
+                console.log(shift + v);
+
+                if (b) {
+                    shift = shift + "    ";
+                    for (var i = 0; i < root.kids.length; i++) {
+                        this.print(root.kids[i], render, shift);
+                    }
+                }
             };
         },
 
@@ -1162,7 +1193,7 @@ zebkit.package("data", function(pkg, Class) {
      * @param {Integer}  colIndex a column that has been inserted
      * contains:
      */
-    pkg.Matrix = Class([
+    pkg.Matrix = Class(pkg.DataModel, [
         function() {
             /**
              * Number of rows in the matrix model
@@ -1188,11 +1219,11 @@ zebkit.package("data", function(pkg, Class) {
 
             this._ = new this.clazz.Listeners();
             if (arguments.length === 1) {
-                this.objs = arguments[0];
-                this.cols = (this.objs.length > 0) ? this.objs[0].length : 0;
-                this.rows = this.objs.length;
+                this.$objs = arguments[0];
+                this.cols = (this.$objs.length > 0) ? this.$objs[0].length : 0;
+                this.rows = this.$objs.length;
             } else {
-                this.objs = [];
+                this.$objs = [];
                 this.rows = this.cols = 0;
                 if (arguments.length > 1) {
                     this.setRowsCols(arguments[0], arguments[1]);
@@ -1223,7 +1254,7 @@ zebkit.package("data", function(pkg, Class) {
                     throw new RangeError(col);
                 }
 
-                return this.objs[row] == null ? undefined : this.objs[row][col];
+                return this.$objs[row] == null ? undefined : this.$objs[row][col];
             };
 
             /**
@@ -1252,11 +1283,11 @@ zebkit.package("data", function(pkg, Class) {
                 if (col >= nc) nc += (col - nc + 1);
 
                 this.setRowsCols(nr, nc);
-                var old = this.objs[row] != null ? this.objs[row][col] : undefined;
+                var old = this.$objs[row] != null ? this.$objs[row][col] : undefined;
                 if (obj !== old) {
                     // allocate array if no data for the given row exists
-                    if (typeof this.objs[row] === 'undefined') this.objs[row] = [];
-                    this.objs[row][col] = obj;
+                    if (typeof this.$objs[row] === 'undefined') this.$objs[row] = [];
+                    this.$objs[row][col] = obj;
                     this._.cellModified(this, row, col, old);
                 }
             };
@@ -1289,17 +1320,17 @@ zebkit.package("data", function(pkg, Class) {
                     this.rows = rows;
 
                     // re-locate matrix space
-                    if (this.objs.length > rows) {
-                        this.objs.length = rows;   // shrink number of rows
+                    if (this.$objs.length > rows) {
+                        this.$objs.length = rows;   // shrink number of rows
                     }
 
                     // shrink columns
                     if (pc > cols) {
-                        for(var i = 0; i < this.objs.length; i++) {
+                        for(var i = 0; i < this.$objs.length; i++) {
                             // check if data for columns has been allocated and the size
                             // is greater than set number of columns
-                            if (typeof this.objs[i] !== 'undefined' && this.objs[i].length > cols) {
-                                this.objs[i].length = cols;
+                            if (typeof this.$objs[i] !== 'undefined' && this.$objs[i].length > cols) {
+                                this.$objs[i].length = cols;
                             }
                         }
                     }
@@ -1342,7 +1373,7 @@ zebkit.package("data", function(pkg, Class) {
                     throw new RangeError(begrow);
                 }
 
-                this.objs.splice(begrow, count);
+                this.$objs.splice(begrow, count);
                 this.rows -= count;
                 this._.matrixResized(this, this.rows + count, this.cols);
             };
@@ -1363,9 +1394,9 @@ zebkit.package("data", function(pkg, Class) {
                     throw new RangeError(begcol);
                 }
 
-                for(var i = 0; i < this.objs.length; i++) {
-                    if (this.objs[i] != null && this.objs[i].length > 0) {
-                        this.objs[i].splice(begcol, count);
+                for(var i = 0; i < this.$objs.length; i++) {
+                    if (this.$objs[i] != null && this.$objs[i].length > 0) {
+                        this.$objs[i].splice(begcol, count);
                     }
                 }
 
@@ -1385,9 +1416,9 @@ zebkit.package("data", function(pkg, Class) {
                 }
 
                 var i = 0;
-                if (row <= this.objs.length - 1) {
+                if (row <= this.$objs.length - 1) {
                     for(i = 0; i < count; i++) {
-                        this.objs.splice(row, 0, undefined);
+                        this.$objs.splice(row, 0, undefined);
                         this._.matrixRowInserted(this, row + i);
                     }
                 } else {
@@ -1411,11 +1442,11 @@ zebkit.package("data", function(pkg, Class) {
                     count = 1;
                 }
 
-                if (this.objs.length  > 0) {
+                if (this.$objs.length  > 0) {
                     for(var j = 0; j < count; j++) {
                         for(var i = 0; i < this.rows; i++) {
-                            if (this.objs[i] != null && j <= this.objs[i].length) {
-                                this.objs[i].splice(col, 0, undefined);
+                            if (this.$objs[i] != null && j <= this.$objs[i].length) {
+                                this.$objs[i].splice(col, 0, undefined);
                             }
                         }
                         this._.matrixColInserted(this, col + j);
@@ -1439,7 +1470,7 @@ zebkit.package("data", function(pkg, Class) {
                     f = pkg.descent;
                 }
 
-                this.objs.sort(function(a, b) {
+                this.$objs.sort(function(a, b) {
                     return f(a[col], b[col]);
                 });
 

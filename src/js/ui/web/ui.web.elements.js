@@ -30,7 +30,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             this.$container.style["pointer-events"] = "none";
 
             // add class to canvas if this element has been created
-            if (e == null) {
+            if (arguments.length === 0 || e === null) {
                 // prevent canvas selection
                 this.element.onselectstart = function() { return false; };
             }

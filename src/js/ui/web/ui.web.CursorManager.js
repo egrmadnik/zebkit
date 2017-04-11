@@ -27,14 +27,6 @@ zebkit.package("ui.web", function(pkg, Class) {
      */
     pkg.CursorManager = Class(zebkit.ui.CursorManager, [
         function $prototype() {
-            /**
-             * Current cursor type
-             * @attribute cursorType
-             * @type {String}
-             * @readOnly
-             * @default "default"
-             */
-            this.cursorType = "default";
             this.$isFunc = false;
             this.source = this.target = null;
 
@@ -46,8 +38,8 @@ zebkit.package("ui.web", function(pkg, Class) {
             this.pointerMoved = function(e) {
                 if (this.$isFunc === true) {
                     this.cursorType = this.source.getCursorType(this.source, e.x, e.y);
-                    this.target.style.cursor = (this.cursorType == null) ? "default"
-                                                                         : this.cursorType;
+                    this.target.style.cursor = (this.cursorType === null) ? "default"
+                                                                          : this.cursorType;
                 }
             };
 
@@ -57,7 +49,9 @@ zebkit.package("ui.web", function(pkg, Class) {
              * @method pointerEntered
              */
             this.pointerEntered = function(e) {
-                if (e.source.cursorType !== null || typeof e.source.getCursorType !== 'undefined') {
+                if ((typeof e.source.cursorType !== 'undefined' && e.source.cursorType !== null) ||
+                     typeof e.source.getCursorType !== 'undefined')
+                {
                     this.$isFunc = (typeof e.source.getCursorType === 'function');
                     this.target = e.target;
                     this.source = e.source;
@@ -94,7 +88,7 @@ zebkit.package("ui.web", function(pkg, Class) {
             this.pointerDragged = function(e) {
                 if (this.$isFunc === true) {
                     this.cursorType = this.source.getCursorType(this.source, e.x, e.y);
-                    this.target.style.cursor = (this.cursorType == null) ? "default"
+                    this.target.style.cursor = (this.cursorType === null) ? "default"
                                                                           : this.cursorType;
                 }
             };

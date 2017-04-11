@@ -390,7 +390,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
              */
             this.isOpen = function(i){
                 this.validate();
-                return this.isOpen_(i);
+                return this.$isOpen(i);
             };
 
             /**
@@ -466,7 +466,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
             this.recalc = function() {
                 this.maxh = this.maxw = 0;
                 if (this.model !== null && this.model.root !== null) {
-                    this.recalc_(this.getLeft(), this.getTop(), null, this.model.root, true);
+                    this.$recalc(this.getLeft(), this.getTop(), null, this.model.root, true);
                     this.maxw -= this.getLeft();
                     this.maxh -= this.gapy;
                 }
@@ -567,7 +567,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
              * @method paintItem
              * @protected
              */
-            this.recalc_ = function (x,y,parent,root,isVis){
+            this.$recalc = function (x,y,parent,root,isVis){
                 var node = this.getIM(root);
                 if (isVis === true) {
                     if (node.viewWidth < 0) {
@@ -607,14 +607,14 @@ zebkit.package("ui.tree", function(pkg, Class) {
                 if (b) {
                     var count = root.kids.length;
                     for(var i = 0; i < count; i++) {
-                        y = this.recalc_(x, y, root, root.kids[i], b);
+                        y = this.$recalc(x, y, root, root.kids[i], b);
                     }
                 }
                 return y;
             };
 
-            this.isOpen_ = function(i) {
-                return i === null || (i.kids.length > 0 && this.getIM(i).isOpen && this.isOpen_(i.parent));
+            this.$isOpen = function(i) {
+                return i === null || (i.kids.length > 0 && this.getIM(i).isOpen && this.$isOpen(i.parent));
             };
 
             /**
@@ -678,7 +678,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
                         return root;
                     }
 
-                    if (this.isOpen_(root)) {
+                    if (this.$isOpen(root)) {
                         for(var i = 0;i < root.kids.length; i++) {
                             var res = this.getItemAtInBranch(root.kids[i], x, y);
                             if (res !== null) return res;
@@ -727,7 +727,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
             };
 
             this.getToggleSize = function(i) {
-                return this.isOpen_(i) ? this.viewSizes.on : this.viewSizes.off;
+                return this.$isOpen(i) ? this.viewSizes.on : this.viewSizes.off;
             };
 
             this.isOverVisibleArea = function (i) {
@@ -737,12 +737,12 @@ zebkit.package("ui.tree", function(pkg, Class) {
 
             this.findOpened = function(item) {
                 var parent = item.parent;
-                return (parent === null || this.isOpen_(parent)) ? item : this.findOpened(parent);
+                return (parent === null || this.$isOpen(parent)) ? item : this.findOpened(parent);
             };
 
             this.findNext = function(item) {
                 if (item !== null){
-                    if (item.kids.length > 0 && this.isOpen_(item)){
+                    if (item.kids.length > 0 && this.$isOpen(item)){
                         return item.kids[0];
                     }
                     var parent = null;
@@ -767,7 +767,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
             };
 
             this.findLast = function (item){
-                return this.isOpen_(item) && item.kids.length > 0 ? this.findLast(item.kids[item.kids.length - 1])
+                return this.$isOpen(item) && item.kids.length > 0 ? this.findLast(item.kids[item.kids.length - 1])
                                                                   : item;
             };
 
@@ -803,7 +803,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
             };
 
             this.nextVisible = function(item){
-                if (item === null || this.isVerVisible(item)) {
+                if (item === null || this.isVerVisible(item) === true) {
                     return item;
                 }
 
@@ -825,7 +825,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
 
             this.nextVisibleInBranch = function (item){
                 if (this.isVerVisible(item)) return item;
-                if (this.isOpen_(item)){
+                if (this.$isOpen(item)){
                     for(var i = 0;i < item.kids.length; i++){
                         var res = this.nextVisibleInBranch(item.kids[i]);
                         if (res !== null) return res;
@@ -905,7 +905,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
                 return this.paintChild(g, root, 0);
             };
 
-            this.y_ = function (item, isStart){
+            this.$y = function (item, isStart){
                 var node = this.getIM(item),
                     th = this.getToggleSize(item).height,
                     ty = node.y + Math.floor((node.height - th) / 2),
@@ -927,26 +927,26 @@ zebkit.package("ui.tree", function(pkg, Class) {
              * @method paintChild
              */
             this.paintChild = function (g, root, index){
-                var b = this.isOpen_(root);
+                var b = this.$isOpen(root);
                 if (root === this.firstVisible && this.lnColor !== null) {
                     g.setColor(this.lnColor);
                     var xx = this.getIM(root).x + Math.floor((b ? this.viewSizes.on.width
                                                                 : this.viewSizes.off.width) / 2);
                     g.beginPath();
                     g.moveTo(xx + 0.5, this.getTop());
-                    g.lineTo(xx + 0.5, this.y_(root, false));
+                    g.lineTo(xx + 0.5, this.$y(root, false));
                     g.stroke();
                 }
                 if (b === true && root.kids.length > 0){
                     var firstChild = root.kids[0];
                     if (firstChild == null) return true;
 
-                    var x = this.getIM(firstChild).x + Math.floor((this.isOpen_(firstChild) ? this.viewSizes.on.width
+                    var x = this.getIM(firstChild).x + Math.floor((this.$isOpen(firstChild) ? this.viewSizes.on.width
                                                                                             : this.viewSizes.off.width) / 2),
                     count = root.kids.length;
                     if (index < count) {
                         var  node = this.getIM(root),
-                             y    = (index > 0) ? this.y_(root.kids[index - 1], true)
+                             y    = (index > 0) ? this.$y(root.kids[index - 1], true)
                                                 : node.y + Math.floor((node.height + this.getIconSize(root).height) / 2);
 
                         for(var i = index;i < count; i ++ ){
@@ -955,9 +955,9 @@ zebkit.package("ui.tree", function(pkg, Class) {
                                 g.setColor(this.lnColor);
                                 g.beginPath();
                                 g.moveTo(x + 0.5, y);
-                                g.lineTo(x + 0.5, this.y_(child, false));
+                                g.lineTo(x + 0.5, this.$y(child, false));
                                 g.stroke();
-                                y = this.y_(child, true);
+                                y = this.$y(child, true);
                             }
                             if (this.paintBranch(g, child) === false){
                                 if (this.lnColor !== null && i + 1 !== count){

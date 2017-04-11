@@ -1,6 +1,6 @@
 {
     "DefViews": {
-        "cellBackground": "orange",
+        "cellBackground": null,
         "font": "13px 'Lucida Grande', 'Lucida Sans', Arial, sans-serif",
         "color": "rgb(74,74,74)"
     },
@@ -8,6 +8,7 @@
     "DefEditors" : {
         "TextField": {
             "inheritProperties" : true,
+            "border": {"$zebkit.ui.Border":  "blue" },
             "background": null
         },
 
@@ -24,13 +25,13 @@
     },
 
     "BaseCaption": {
-        "border": { "$zebkit.ui.Border":"white" },
-        "background" : { "$zebkit.ui.Gradient": [ "red", "orange" ] },
-        "lineColor" : "white"
+        "border"     : { "$zebkit.ui.Border"   : "gray" },
+        "background" : { "$zebkit.ui.Gradient" : [ "white", "lightGray" ] }
     },
 
     "CompGridCaption" :{
         "inheritProperties" : true,
+
         "StatusPan": {
             "view" : {
                 "*"       : { "$zebkit.ui.ArrowView" : [ "left", "rgb(255, 153, 0)" ], "width" : 9, "height" : 9  },
@@ -44,28 +45,28 @@
         },
 
         "Link": {
-            "inheritProperties" : true,
-            "font2": "bold",
-            "colors": {
+            "font"  : "bold",
+            "colors"      : {
                 "pressed.over" : "orange",
-                "out"          : "white",
-                "over"         : "orange",
-                "pressed.out"  : "white",
+                "out"          : "red",
+                "over"         : "black",
+                "pressed.out"  : "black",
                 "disabled"     : "gray"
             }
         }
     },
 
     "LeftCompGridCaption" :{
-        "inheritProperties" : true,
-        "background": { "$zebkit.ui.Gradient" : [ "red", "orange", "horizontal"] }
+        "inheritProperties" : true
     },
+
 
     "GridCaption" :{
         "inheritProperties" : true,
+
         "padding"  : 4,
         "font"     : "%{zebkit.ui.boldFont}",
-        "fontColor": "white"
+        "fontColor": "rgb(65, 131, 215)"
     },
 
     "LeftGridCaption" :{
@@ -73,20 +74,15 @@
     },
 
     "Grid": {
-        "DefViews" : {
-            "color": "white"
-        },
-
         "CornerPan" : {
-            "inheritProperties" : true,
-            "background": { "$zebkit.ui.Gradient": [ "red", "orange", "horizontal"] }
+            "inheritProperties" : true
         },
 
         "views" : {
-            "onselection"  : "red",
-            "offselection" : "red"
+            "onselection" :"#D0EAFF",
+            "offselection":"#ADC1D6"
         },
 
-        "lineColor": "white"
+        "lineColor": "rgb(65, 131, 215)"
     }
 }

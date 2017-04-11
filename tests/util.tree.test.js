@@ -87,7 +87,7 @@ zebkit.runTests("Util",
             value : "Root",
             kids : [
                 { value: "Item 1", a:12 },
-                { value: "Item 1", a:11 },
+                { value: "Item 1", a:11, kids: null },
                 {
                     value: "Item 2",
                     kids: [

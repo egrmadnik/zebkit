@@ -76,6 +76,32 @@ zebkit.package("ui.grid", function(pkg, Class) {
              */
             var clazz = this;
             this.TitlePan = Class(ui.Panel, [
+                function(title) {
+                    this.$super();
+
+                    /**
+                     * Image panel to keep grtid caption title
+                     * @attribute iconPan
+                     * @type {zebkit.ui.ImagePan}
+                     * @readOnly
+                     */
+                    this.iconPan = new ui.ImagePan(null);
+
+                    /**
+                     * Title link
+                     * @attribute link
+                     * @type {zebkit.ui.Link}
+                     * @readOnly
+                     */
+                    this.link = new clazz.Link(title);
+                    this.statusPan = new clazz.StatusPan();
+                    this.statusPan.setVisible(this.isSortable);
+
+                    this.add(this.iconPan);
+                    this.add(this.link);
+                    this.add(this.statusPan);
+                },
+
                 function $clazz() {
                     this.layout = new zebkit.layout.FlowLayout("center", "center", "horizontal", 8);
                 },
@@ -156,32 +182,6 @@ zebkit.package("ui.grid", function(pkg, Class) {
                         kid.bind(this);
                     }
                     this.$super(index, constr, kid);
-                },
-
-                function(title) {
-                    this.$super();
-
-                    /**
-                     * Image panel to keep grtid caption title
-                     * @attribute iconPan
-                     * @type {zebkit.ui.ImagePan}
-                     * @readOnly
-                     */
-                    this.iconPan = new ui.ImagePan(null);
-
-                    /**
-                     * Title link
-                     * @attribute link
-                     * @type {zebkit.ui.Link}
-                     * @readOnly
-                     */
-                    this.link = new clazz.Link(title);
-                    this.statusPan = new clazz.StatusPan();
-                    this.statusPan.setVisible(this.isSortable);
-
-                    this.add(this.iconPan);
-                    this.add(this.link);
-                    this.add(this.statusPan);
                 }
             ]);
         },

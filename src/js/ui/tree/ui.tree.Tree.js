@@ -228,8 +228,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
                             this.model.setValue(this.editedItem,
                                                 this.editors.fetchEditedValue(this.editedItem, this.kids[0]));
                         }
-                    }
-                    finally {
+                    } finally {
                         this.editedItem = null;
                         this.removeAt(0);
                         this.requestFocus();
@@ -278,7 +277,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
          * @chainable
          */
         function setViewProvider(p){
-            if (this.provider !== p) {
+            if (this.provider != p) {
                 this.stopEditing(false);
                 this.provider = p;
                 delete this.nodes;

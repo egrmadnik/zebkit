@@ -88,15 +88,15 @@ zebkit.package("ui", function(pkg, Class) {
                     }
 
                     if (this.border !== null && typeof this.border.activate !== 'undefined') {
-                        b = this.border.activate(id) || b;
+                        b = this.border.activate(id) === true || b;
                     }
 
                     if (this.view !== null && typeof this.view.activate !== 'undefined') {
-                        b = this.view.activate(id) || b;
+                        b = this.view.activate(id) === true || b;
                     }
 
                     if (this.bg !== null && typeof this.bg.activate !== 'undefined') {
-                        b = this.bg.activate(id) || b;
+                        b = this.bg.activate(id) === true|| b;
                     }
 
                     if (b) {
@@ -415,10 +415,16 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.focusMarkerView = null;
 
+            this.focusMarkerGaps = 2;
+
             this.paintOnTop = function(g){
                 var fc = this.focusComponent;
                 if (this.focusMarkerView !== null && fc !== null && this.hasFocus()) {
-                    this.focusMarkerView.paint(g, fc.x, fc.y, fc.width, fc.height, this);
+                    this.focusMarkerView.paint(g, fc.x - this.focusMarkerGaps,
+                                                  fc.y - this.focusMarkerGaps,
+                                                  this.focusMarkerGaps * 2 + fc.width,
+                                                  this.focusMarkerGaps * 2 + fc.height,
+                                                  this);
                 }
             };
 

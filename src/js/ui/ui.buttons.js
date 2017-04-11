@@ -206,7 +206,6 @@ zebkit.package("ui", function(pkg, Class) {
         }
     ]);
 
-
     /**
      *  Button UI component. Button is composite component whose look and feel can
      *  be easily customized:
@@ -247,12 +246,10 @@ zebkit.package("ui", function(pkg, Class) {
         function(t) {
             this._ = new zebkit.util.Listeners();
 
+            this.$super();
+
             if (arguments.length > 0 && t !== null) {
                 t = pkg.$component(t, this);
-            }
-
-            this.$super();
-            if (arguments.length > 0 && t !== null) {
                 this.add(t);
                 this.setFocusAnchorComponent(t);
             }
@@ -616,7 +613,6 @@ zebkit.package("ui", function(pkg, Class) {
         },
 
         function $prototype() {
-
             /**
              * Callback method that is called whenever a state of switch
              * manager has been updated.
@@ -722,7 +718,6 @@ zebkit.package("ui", function(pkg, Class) {
             this.view = new pkg.DecoratedTextRender(s);
             this.overDecoration = "underline";
 
-
             this.$super(null);
 
             // if colors have not been set with default property set it here
@@ -796,7 +791,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
         },
 
-        function stateUpdated(o,n){
+        function stateUpdated(o, n){
             this.$super(o, n);
 
             var k = this.toViewId(n),

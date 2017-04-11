@@ -38,7 +38,6 @@ zebkit.package("util", function(pkg, Class) {
         throw new Error("Invalid value '" + value + "',the following values are expected: " + values.join(','));
     };
 
-
     pkg.format = function(s, obj, ph) {
         if (arguments.length < 3) ph = '';
 
@@ -111,9 +110,8 @@ zebkit.package("util", function(pkg, Class) {
         }
     ]);
 
-
     function _ls_child(r, name, deep, eq, cb) {
-        if (typeof r.kids !== 'undefined') {
+        if (typeof r.kids !== 'undefined' && r.kids !== null) {
             for (var i = 0; i < r.kids.length; i++) {
                 var kid = r.kids[i];
                 if (name === '*' || eq(kid, name)) {
@@ -243,8 +241,8 @@ zebkit.package("util", function(pkg, Class) {
                 throw new Error("Invalid path: '" + path + "'," + c);
             }
 
-            if (typeof root.kids !== "undefined" && root.kids.length > 0) {
-                _find( root, res, 0, eq, cb);
+            if (typeof root.kids !== "undefined" && root.kids !== null && root.kids.length > 0) {
+                _find(root, res, 0, eq, cb);
             }
         }
     };
@@ -1767,17 +1765,18 @@ zebkit.package("util", function(pkg, Class) {
              * @return {Object} a method execution result
              * @method callMethod
              */
-            this.callMethod = function(name, o, d) {
-                var m   = this[name.substring(1).trim()],
-                    ts  = this.$runner.$tasks.length,
-                    bs  = this.$runner.$busy;
+            this.callMethod = function(name, d) {
+                var m  = this[name.substring(1).trim()],
+                    ts = this.$runner.$tasks.length,
+                    bs = this.$runner.$busy;
 
                 if (typeof m !== 'function') {
                     throw new Error("Method '" + name + "' cannot be found");
                 }
 
                 var args = this.buildValue(Array.isArray(d) ? d
-                                                            : [ d ]);
+                                                            : [ d ]),
+                    $this = this;
 
                 if (this.$runner.$tasks.length === ts &&
                     this.$runner.$busy === bs           )
@@ -1792,12 +1791,13 @@ zebkit.package("util", function(pkg, Class) {
                             }).then(function(res) {
                                 return res;
                             });
+                        }).catch(function(e) {
+                            $this.$runner.error(e);
                         });
                     } else {
                         return res;
                     }
                 } else {
-                    var $this = this;
                     return new zebkit.DoIt().till(this.$runner).then(function() {
                         if (args instanceof zebkit.DoIt) {
                             var jn = this.join();
@@ -1821,6 +1821,8 @@ zebkit.package("util", function(pkg, Class) {
                         }
                     }).then(function(res) {
                         return res;
+                    }).catch(function(e) {
+                        $this.$runner.error(e);
                     });
                 }
             };
@@ -1972,18 +1974,26 @@ zebkit.package("util", function(pkg, Class) {
             this.$buildRef = function(d) {
                 var idx = -1;
 
-                if (d[2] === "<") {
-                    // if the referenced path is not absolute path and the bag has been also
-                    // loaded by an URL than build the full URL as a relative path from
-                    // BAG URL
-                    idx = d.indexOf('>');
-                    if (idx <= 4) {
-                        throw new Error("Invalid content type in URL '" + d + "'");
-                    }
-
-                    var path  = d.substring(idx + 1, d.length - 1).trim(),
-                        type  = d.substring(3, idx).trim(),
+                if (d[2] === "<" || d[2] === '.' || d[2] === '/') { //TODO: not complete solution that cannot detect URLs
+                    var path  = null,
+                        type  = null,
                         $this = this;
+
+                    if (d[2] === '<') {
+                        // if the referenced path is not absolute path and the bag has been also
+                        // loaded by an URL than build the full URL as a relative path from
+                        // BAG URL
+                        idx = d.indexOf('>');
+                        if (idx <= 4) {
+                            throw new Error("Invalid content type in URL '" + d + "'");
+                        }
+
+                        path = d.substring(idx + 1, d.length - 1).trim();
+                        type = d.substring(3, idx).trim();
+                    } else {
+                        path = d.substring(2, d.length - 1).trim();
+                        type = "json";
+                    }
 
                     if (type === 'js') {
                         return this.expr(path);
@@ -2018,7 +2028,7 @@ zebkit.package("util", function(pkg, Class) {
                     }
 
                 } else {
-                    // don't throw exception if reference cannot be resolved
+                    // ? means don't throw exception if reference cannot be resolved
                     idx = 2;
                     if (d[2] === '?') {
                         idx ++;
@@ -2098,10 +2108,13 @@ zebkit.package("util", function(pkg, Class) {
                         if (k[0] === "." || k[0] === '#') {
                             delete d[k];
                             if (k[0] === '#') {
-                                this.callMethod(k, d, v);
+                                this.callMethod(k, v, d);
                             } else {
-                                return this.callMethod(k, d, v);
+                                return this.callMethod(k, v, d);
                             }
+                        } else if (k[0] === '%') {
+                            delete d[k];
+                            this.mixin(d, this.$buildRef(k));
                         } else {
                             this.$assignValue(d, k, this.buildValue(v));
                         }
@@ -2153,8 +2166,10 @@ zebkit.package("util", function(pkg, Class) {
                             }
                         }
 
+
                         if (this.$isAtomic(dv) || Array.isArray(dv) ||
-                            this.$isAtomic(sv) || Array.isArray(sv)   )
+                            this.$isAtomic(sv) || Array.isArray(sv) ||
+                            typeof sv.clazz !== 'undefined'            )
                         {
                             this.$assignValue(dest, k, sv);
                         } else if (recursively === true) {
@@ -2170,9 +2185,18 @@ zebkit.package("util", function(pkg, Class) {
             };
 
             this.mixin = function(dest, src) {
-                for (var k in src) {
-                    if (src.hasOwnProperty(k)) {
-                        if (typeof dest[k] === 'undefined') {
+                if (src instanceof zebkit.DoIt) {
+                    var $this = this;
+                    this.$runner.then(src.then(function(src) {
+                        for (var k in src) {
+                            if (src.hasOwnProperty(k) && (typeof dest[k] === 'undefined' || dest[k] === null)) {
+                                $this.$assignValue(dest, k, src[k]);
+                            }
+                        }
+                    }));
+                } else {
+                    for (var k in src) {
+                        if (src.hasOwnProperty(k) && (typeof dest[k] === 'undefined' || dest[k] === null)) {
                             this.$assignValue(dest, k, src[k]);
                         }
                     }

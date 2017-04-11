@@ -42,10 +42,8 @@ zebkit.package("ui.web", function(pkg, Class) {
                         if (target.$container.style["pointer-events"] !== "auto") {
                             target.$container.style["pointer-events"] = "auto";
                         }
-                    } else {
-                        if (target.$container.style["pointer-events"] !== "none") {
-                            target.$container.style["pointer-events"] = "none";  // make the layer transparent for pointer events
-                        }
+                    } else if (target.$container.style["pointer-events"] !== "none") {
+                        target.$container.style["pointer-events"] = "none";  // make the layer transparent for pointer events
                     }
 
                     this.$super(target);

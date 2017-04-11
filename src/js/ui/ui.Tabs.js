@@ -63,40 +63,18 @@ zebkit.package("ui", function(pkg, Class) {
      */
     pkg.Tabs = Class(pkg.Panel, pkg.$ViewsSetterMix, [
         function(o) {
-            if (arguments.length === 0) {
-                o = "top";
-            }
-
             /**
              * Selected tab page index
              * @attribute selectedIndex
              * @type {Integer}
              * @readOnly
              */
-
-
-            /**
-             * Tab orientation
-             * @attribute orient
-             * @type {String}
-             * @readOnly
-             */
-
-            /**
-             * Sides gap
-             * @attribute sideSpace
-             * @type {Integer}
-             * @readOnly
-             * @default 1
-             */
-
             this.vgap = this.hgap = this.tabAreaX = 0;
             this.repaintWidth = this.repaintHeight = this.repaintX = this.repaintY = 0;
-            this.sideSpace = 1;
 
             this.tabAreaY = this.tabAreaWidth = this.tabAreaHeight = 0;
             this.overTab = this.selectedIndex = -1;
-            this.orient = o;
+
             this._ = new zebkit.util.Listeners();
             this.pages = [];
             this.views = {};
@@ -108,7 +86,10 @@ zebkit.package("ui", function(pkg, Class) {
 
             // since alignment pass as the constructor argument the setter has to be called after $super
             // because $super can re-set title alignment
-            this.setAlignment(o);
+
+            if (arguments.length > 0) {
+                this.setAlignment(o);
+            }
         },
 
         function $clazz() {
@@ -121,26 +102,6 @@ zebkit.package("ui", function(pkg, Class) {
              * @constructor
              */
             this.TabView = Class(pkg.CompRender, [
-                function $clazz() {
-                    this.font = pkg.font;
-
-                    this.TabPan = Class(pkg.Panel, [
-                        function() {
-                            this.$super();
-                            this.add(new pkg.ImagePan(null));
-                            this.add(new pkg.ViewPan());
-                        },
-
-                        function getImagePan() {
-                            return this.kids[0];
-                        },
-
-                        function getViewPan() {
-                            return this.kids[1];
-                        }
-                    ]);
-                },
-
                 function(icon, caption) {
                     if (arguments.length === 0) {
                         caption = "";
@@ -151,7 +112,6 @@ zebkit.package("ui", function(pkg, Class) {
 
                     var tp = new this.clazz.TabPan();
                     this.$super(tp);
-                    this.owner = null;
 
                     var $this = this;
                     tp.getImagePan().imageLoaded = function(img) {
@@ -209,112 +169,138 @@ zebkit.package("ui", function(pkg, Class) {
                     this.setIcon(icon);
                 },
 
-                function ownerChanged(v) {
-                    this.owner = v;
+                function $clazz() {
+                    this.captionRender = pkg.StringRender;
+
+                    this.font = pkg.font;
+
+                    this.TabPan = Class(pkg.Panel, [
+                        function() {
+                            this.$super();
+                            this.add(new pkg.ImagePan(null));
+                            this.add(new pkg.ViewPan());
+                        },
+
+                        function getImagePan() {
+                            return this.kids[0];
+                        },
+
+                        function getViewPan() {
+                            return this.kids[1];
+                        }
+                    ]);
                 },
 
-                function vrp() {
-                    if (this.owner !== null) this.owner.vrp();
-                },
+                function $prototype() {
+                    this.owner = null;
 
-                /**
-                 * Set the given tab caption for the specified tab or both - selected and not selected - states.
-                 * @param {Boolean} [b] the tab state. true means selected state.
-                 * @param {String} s the tab caption
-                 * @method setCaption
-                 * @chainable
-                 */
-                function setCaption(b, s) {
-                    if (arguments.length === 1) {
-                        this.setCaption(true, b);
-                        this.setCaption(false, b);
-                    } else {
-                        this.getCaptionPan().view.setCaption(this.$toId(b), s);
-                        this.vrp();
-                    }
-                    return this;
-                },
+                    this.ownerChanged = function(v) {
+                        this.owner = v;
+                    };
 
-                /**
-                 * Get the tab caption for the specified tab state
-                 * @param {Boolean} b the tab state. true means selected state.
-                 * @return {String} the tab caption
-                 * @method getCaption
-                 */
-                function getCaption(b) {
-                    return this.getCaptionPan().view.getCaption(this.$toId(b));
-                },
+                    this.vrp = function() {
+                        if (this.owner !== null) this.owner.vrp();
+                    };
 
-                /**
-                 * Set the given tab caption text color for the specified tab or both
-                 * selected and not selected states.
-                 * @param {Boolean} [b] the tab state. true means selected state.
-                 * @param {String} c the tab caption
-                 * @method setColor
-                 * @chainable
-                 */
-                function setColor(b, c) {
-                    if (arguments.length === 1) {
-                        this.setColor(true, b);
-                        this.setColor(false, b);
-                    } else {
-                        var v = this.getCaptionPan().view.views[this.$toId(b)];
-                        if (v != null) {
-                            v.setColor(c);
+                    /**
+                     * Set the given tab caption for the specified tab or both - selected and not selected - states.
+                     * @param {Boolean} [b] the tab state. true means selected state.
+                     * @param {String} s the tab caption
+                     * @method setCaption
+                     * @chainable
+                     */
+                    this.setCaption = function(b, s) {
+                        if (arguments.length === 1) {
+                            this.setCaption(true, b);
+                            this.setCaption(false, b);
+                        } else {
+                            this.getCaptionPan().view.setCaption(this.$toId(b), s);
                             this.vrp();
                         }
-                    }
-                    return this;
-                },
+                        return this;
+                    };
 
-                /**
-                 * Set the given tab caption text font for the specified or both
-                 * selected not slected states.
-                 * @param {Boolean} [b] the tab state. true means selected state.
-                 * @param {zebkit.ui.Font} f the tab text font
-                 * @method setFont
-                 * @chainable
-                 */
-                function setFont(b, f) {
-                    if (arguments.length === 1) {
-                        this.setFont(true, b);
-                        this.setFont(false, b);
-                    } else {
-                        this.getCaptionPan().view.setFont(this.$toId(b), f);
-                        this.vrp();
-                    }
-                    return this;
-                },
+                    /**
+                     * Get the tab caption for the specified tab state
+                     * @param {Boolean} b the tab state. true means selected state.
+                     * @return {String} the tab caption
+                     * @method getCaption
+                     */
+                    this.getCaption = function (b) {
+                        return this.getCaptionPan().view.getCaption(this.$toId(b));
+                    };
 
-                function getCaptionPan() {
-                    return this.target.getViewPan();
-                },
+                    /**
+                     * Set the given tab caption text color for the specified tab or both
+                     * selected and not selected states.
+                     * @param {Boolean} [b] the tab state. true means selected state.
+                     * @param {String} c the tab caption
+                     * @method setColor
+                     * @chainable
+                     */
+                    this.setColor = function(b, c) {
+                        if (arguments.length === 1) {
+                            this.setColor(true, b);
+                            this.setColor(false, b);
+                        } else {
+                            var v = this.getCaptionPan().view.views[this.$toId(b)];
+                            if (v != null) {
+                                v.setColor(c);
+                                this.vrp();
+                            }
+                        }
+                        return this;
+                    };
 
-                /**
-                 * Set the tab icon.
-                 * @param {String|Image} c an icon path or image object
-                 * @method setIcon
-                 * @chainable
-                 */
-                function setIcon(c) {
-                    this.target.getImagePan().setImage(c);
-                    this.target.getImagePan().setVisible(c !== null);
-                    return this;
-                },
+                    /**
+                     * Set the given tab caption text font for the specified or both
+                     * selected not slected states.
+                     * @param {Boolean} [b] the tab state. true means selected state.
+                     * @param {zebkit.ui.Font} f the tab text font
+                     * @method setFont
+                     * @chainable
+                     */
+                    this.setFont = function(b, f) {
+                        if (arguments.length === 1) {
+                            this.setFont(true, b);
+                            this.setFont(false, b);
+                        } else {
+                            this.getCaptionPan().view.setFont(this.$toId(b), f);
+                            this.vrp();
+                        }
+                        return this;
+                    };
 
-                /**
-                 * The method is invoked every time the tab selection state has been updated
-                 * @param {zebkit.ui.Tabs} tabs the tabs component the tab belongs
-                 * @param {Integer} i an index of the tab
-                 * @param {Boolean} b a new state of the tab
-                 * @method selected
-                 */
-                function selected(tabs, i, b) {
-                    this.getCaptionPan().view.activate(this.$toId(b));
-                },
+                    this.getCaptionPan = function () {
+                        return this.target.getViewPan();
+                    };
 
-                function $toId(b) {
-                    return b ? "selected" : "*";
+                    /**
+                     * Set the tab icon.
+                     * @param {String|Image} c an icon path or image object
+                     * @method setIcon
+                     * @chainable
+                     */
+                    this.setIcon = function (c) {
+                        this.target.getImagePan().setImage(c);
+                        this.target.getImagePan().setVisible(c !== null);
+                        return this;
+                    };
+
+                    /**
+                     * The method is invoked every time the tab selection state has been updated
+                     * @param {zebkit.ui.Tabs} tabs the tabs component the tab belongs
+                     * @param {Integer} i an index of the tab
+                     * @param {Boolean} b a new state of the tab
+                     * @method selected
+                     */
+                    this.selected = function(tabs, i, b) {
+                        this.getCaptionPan().view.activate(this.$toId(b));
+                    };
+
+                    this.$toId = function(b) {
+                        return b ? "selected" : "*";
+                    };
                 }
             ]);
         },
@@ -323,6 +309,23 @@ zebkit.package("ui", function(pkg, Class) {
          * @for zebkit.ui.Tabs
          */
         function $prototype() {
+            /**
+             * Tab orientation
+             * @attribute orient
+             * @type {String}
+             * @readOnly
+             */
+            this.orient = "top";
+
+            /**
+             * Sides gap
+             * @attribute sideSpace
+             * @type {Integer}
+             * @readOnly
+             * @default 1
+             */
+            this.sideSpace = 1;
+
             /**
              * Declare can have focus attribute to make the component focusable
              * @type {Boolean}

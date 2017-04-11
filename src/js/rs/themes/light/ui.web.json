@@ -37,6 +37,7 @@
             "content-zooming"            : "none",
             "touch-callout"              : "none",
             "user-drag"                  : "none",
+            "background"                 : "white",
             "tap-highlight-color"        : "rgba(0,0,0,0)"
         },
 

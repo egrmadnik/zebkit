@@ -2,6 +2,8 @@ zebkit.package("ui.web", function(pkg, Class) {
     // TODO: dependencies to remove
     //     -- taskSets (util.js)
 
+    pkg.CanvasEvent = Class(zebkit.util.Event, []);
+
     var ui = pkg.cd(".."),
         COMP_EVENT = new ui.CompEvent();
 
@@ -93,6 +95,12 @@ zebkit.package("ui.web", function(pkg, Class) {
                 }
             }
 
+            /**
+             * Dictionary to track layers by its ids.
+             * @attribute $layers
+             * @private
+             * @type {Object}
+             */
             this.$layers = {};
 
             this.$super(element);
@@ -142,23 +150,22 @@ zebkit.package("ui.web", function(pkg, Class) {
             // this method should clean focus if
             // one of of a child DOM element gets focus
             zebkit.web.$focusin(this.$container, function(e) {
-                // TODO: uncomment
-                if (e.target !== $this.$container &&
-                    e.target.parentNode !== null &&
-                    e.target.parentNode.getAttribute("data-zebcont") === null)
-                {
-                    ui.focusManager.requestFocus(null);
-                } else {
-                    // clear focus if a focus owner component is hosted with another zCanvas
-                    if (e.target === $this.$container &&
-                        ui.focusManager.focusOwner !== null &&
-                        ui.focusManager.focusOwner.getCanvas() !== $this)
-                    {
-                        ui.focusManager.requestFocus(null);
-                    }
-                }
+                // TODO: fix and uncomment
+                // if (e.target !== $this.$container &&
+                //     e.target.parentNode !== null &&
+                //     e.target.parentNode.getAttribute("data-zebcont") === null) // TODO: BUG, data-zebcont is not set anymore, use $canvases instead
+                // {
+                //     ui.focusManager.requestFocus(null);
+                // } else {
+                //     // clear focus if a focus owner component is hosted with another zCanvas
+                //     if (e.target === $this.$container &&
+                //         ui.focusManager.focusOwner !== null &&
+                //         ui.focusManager.focusOwner.getCanvas() !== $this)
+                //     {
+                //         ui.focusManager.requestFocus(null);
+                //     }
+                // }
             }, true);
-
         },
 
         function $clazz () {
@@ -454,9 +461,6 @@ zebkit.package("ui.web", function(pkg, Class) {
                     if (typeof layer[method] !== 'undefined') {
                         e.id = id;
                         if (layer[method](e) === true) {
-
-                            console.log("zCanvas.$isBlockedByLayer() '" + method + "' blocked by " + layer.clazz.$name);
-
                             return true;
                         }
                     }
@@ -551,12 +555,9 @@ zebkit.package("ui.web", function(pkg, Class) {
                     pp = pkg.$pointerPressedOwner[e.identifier];
 
 
-                console.log("zCanvas.$pointerPressed() " + e.identifier);
-
                 // free pointer prev pressed if any
                 if (pp != null) {
                     try {
-                        console.log("zCanvas.$pointerPressed() 3");
                         ui.events.fireEvent("pointerReleased", e.update(pp, x, y));
                     } finally {
                         delete pkg.$pointerPressedOwner[e.identifier];
@@ -571,10 +572,6 @@ zebkit.package("ui.web", function(pkg, Class) {
                 }
 
                 var d = this.getComponentAt(x, y);
-
-                console.log("zCanvas.$pointerPressed() getComponentAt() : " + d);
-
-
                 if (d !== null && d.isEnabled === true) {
                     if (pkg.$pointerOwner[e.identifier] !== d) {
                         pkg.$pointerOwner[e.identifier] = d;
@@ -789,9 +786,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                             $wrt = null;
                         }
                         $winSizeUpdated = false;
-                    },
-                    200,
-                    150
+                    }, 200, 150
                 );
             }
         }

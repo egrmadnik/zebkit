@@ -2,9 +2,8 @@
     "version"   : "03.2017",
     "themeName" : "dark",
 
-    "doubleClickDelta" : 280,
+    "%{../ui.common.json}": null,
 
-    "focusManager"   : { "$ ? zebkit.ui.FocusManager"  :[] },
 
     "font"          : { "$zebkit.ui.Font" : ["Arial", 16] },
     "boldFont"      : { "$zebkit.ui.Font" : ["Arial", "bold", 14] },
@@ -14,13 +13,7 @@
         "white"      : "#FFFFFF",
         "black"      : "#000000",
         "fontColor"  : "#808080",
-        "gray1"      : "#A1A1A1",
-        "gray2"      : "#AAAAAA",
-        "gray3"      : "#C7C7C7",
-        "gray4"      : "#CECECE",
-        "gray5"      : "#D9D9D9",
-        "gray6"      : "#E4E4E4",
-        "gray7"      : "#F3F3F3"
+        "gray"       : "#A1A1A1"
     },
 
     "borders" : {
@@ -29,37 +22,6 @@
         "etched" : { "$zebkit.ui.Etched":[] },
         "plain"  : { "$zebkit.ui.Border": [ "red", 1, 6 ] },
         "dot"    : { "$zebkit.ui.Dotted" : []  }
-    },
-
-    "shortcuts" : {
-        "$ ? zebkit.ui.ShortcutManager" :{
-            "common": {
-                "UNDO"          : "Control + KeyZ",
-                "REDO"          : "Control + Shift + KeyZ",
-                "SELECTALL"     : "Control + KeyA",
-                "NEXTWORD"      : "Control + ArrowRight",
-                "PREVWORD"      : "Control + ArrowLeft",
-                "NEXTWORDSELECT": "Control + Shift + ArrowRight",
-                "PREVWORDSELECT": "Control + Shift + ArrowLeft",
-                "PREVPAGE"      : "Control + ArrowUp",
-                "NEXTPAGE"      : "Control + ArrowDown",
-                "PREVPAGESELECT": "Control + ArrowUp + Shift",
-                "NEXTPAGESELECT": "Control + ArrowDown + Shift"
-            },
-            "osx" : {
-                "UNDO"          : "MetaLeft + KeyZ",
-                "REDO"          : "MetaLeft + Shift + KeyZ",
-                "SELECTALL"     : "MetaLeft + KeyA",
-                "NEXTWORD"      : "MetaLeft + ArrowRight",
-                "PREVWORD"      : "MetaLeft + ArrowLeft",
-                "NEXTWORDSELECT": "MetaLeft + Shift + ArrowRight",
-                "PREVWORDSELECT": "MetaLeft + Shift + ArrowLeft"
-            }
-         }
-    },
-
-    "popup" : {
-        "$ ? zebkit.ui.TooltipManager": []
     },
 
     "CompositeEvStatePan": {

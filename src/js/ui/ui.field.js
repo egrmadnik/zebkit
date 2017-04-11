@@ -1054,7 +1054,7 @@ zebkit.package("ui", function(pkg, Class) {
 
         function setView(v){
             if (v != this.view) {
-                if (this.view !== null && this.view.target != null && typeof this.view.target.bind !== 'undefined') {
+                if (this.view !== null && this.view.target !== null && typeof this.view.target.bind !== 'undefined') {
                     this.view.target.unbind(this);
                 }
 
@@ -1065,7 +1065,7 @@ zebkit.package("ui", function(pkg, Class) {
                     this.position.setMetric(this.view);
                 }
 
-                if (this.view !== null && this.view.target != null && typeof this.view.target.bind !== 'undefined') {
+                if (this.view !== null && this.view.target !== null && typeof this.view.target.bind !== 'undefined') {
                     this.view.target.bind(this);
                 }
             }

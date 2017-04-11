@@ -1,6 +1,6 @@
 {
     "DefViews": {
-        "color" : "@palette.gray1",
+        "color" : "%{zebkit.ui.palette.gray}",
         "font"  : "12px 'Lucida Grande', 'Lucida Sans', Arial, sans-serif"
     },
 

@@ -21,35 +21,69 @@
      */
     function Path(url) {}
 
-    Path.parseURL = function(url) {
-        var m = url.match(/^([a-zA-Z]+\:)\/\/([^\/]*)(\/[^?]*)(\?[^?\/]*)?/);
+    var $urlRE = /^([a-zA-Z]+\:\/\/([^\/]+)?)?(\/[^?]*)?(\?[^?\/]*)?/;
+
+    Path.parseURL = function(url, pqs) {
+        var m = url.match($urlRE);
         if (m === null) {
             return null;
         }
 
-        var path = m[3];
-        if (path !== null) {
-            path = path.replace(/\/\/*/g, '/');
-            path = path.substring(1);
-            if (path.length > 1 && path[path.length - 1] === '/') {
-                path = path.substring(0, path.length - 1);
+        var parsed = {
+            protocol : "file",
+            host     : null,
+            path     : "",
+            qs       : null,
+            parsedQS : null
+        };
+
+        if (typeof m[1] !== 'undefined') {
+            if (typeof m[2] !== 'undefined') {
+                parsed.host = m[2];
+            } else {
+                throw new Error("Invalid host name : '" + url + "'");
+            }
+
+            parsed.protocol = m[1].substring(0, m[1].length - 3 - m[2].length);
+        }
+
+        if (typeof m[3] !== 'undefined') {
+            parsed.path = m[3];
+            parsed.path = parsed.path.replace(/\/\/*/g, '/').substring(1);
+
+            var l = parsed.path.length;
+            if (l > 1 && parsed.path[l - 1] === '/') {
+                parsed.path = parsed.path.substring(0, l - 1);
+            }
+        } else if (typeof m[1] !== 'undefined') {
+            throw new Error("Invalid URL '" + url + "'");
+        }
+
+        if (typeof m[4] !== 'undefined' && m[4].length > 1) {
+            parsed.qs = m[4].substring(1);
+
+            if (arguments.length > 1 && pqs === true) {
+                var mqs = parsed.qs.match(/[a-zA-Z0-9_.]+=[^?&=]+/g);
+
+                parsed.parsedQS = {};
+
+                if (mqs !== null) {
+                    for(var i = 0; i < mqs.length; i++) {
+                        var q = mqs[i].split('=');
+                        parsed.parsedQS[q[0].substring(1)] = q[1];
+                    }
+                }
             }
         }
 
-        return  {
-            protocol: m[1].substring(0, m[1].length - 1),
-            host    : m[2],
-            path    : path.length === 0 ? null : path,
-            qs      : m[4] !== null && typeof m[4] !== 'undefined' && m[4].length > 1 ? m[4].substring(1) : null
-        };
+        return parsed;
     };
 
     Path.toURL = function(protocol, host, path, qs) {
-        var res = protocol + "://" + (host === null ? '' : host) + "/" + path;
-        if (arguments.length > 3 && qs !== null) {
-            res = res + '?' + qs;
-        }
-        return res;
+        return protocol + "://" +
+                (host === null ? '' : host) + "/" +
+                (arguments.length < 3 || path === null ? '' : path) +
+                (arguments.length > 3 && qs !== null  ? ("?" + qs) : '')      ;
     };
 
     /**
@@ -400,9 +434,11 @@
         },
 
         /**
-         * Returns join callback for asynchronous parts of the runner. The callback has to be requested and called by
+         * Returns join callback for asynchronous parts of the runner. The callback
+         * has to be requested and called by
          * an asynchronous method to inform the runner the given method is completed.
-         * @return {Function} a method to notify runner the given asynchronous part has been completed. The passed
+         * @return {Function} a method to notify runner the given asynchronous part
+         * has been completed. The passed
          * to the method arguments will be passed to the next step of the runner.
          * @method join
          */
@@ -2438,3 +2474,4 @@
 
     return zebkit;
 })();
+

@@ -8,6 +8,14 @@ zebkit.package("ui", function(pkg, Class) {
      * @extends {zebkit.ui.Panel}
      */
     pkg.Tooltip = Class(pkg.Panel, [
+        function(content) {
+            this.$super();
+            if (arguments.length > 0) {
+                this.add(pkg.$component(content, this));
+                this.toPreferredSize();
+            }
+        },
+
         function $clazz() {
             this.Label = Class(pkg.Label, []);
 
@@ -60,22 +68,6 @@ zebkit.package("ui", function(pkg, Class) {
             ]);
         },
 
-        function setColor() {
-            // TODO: BUG, stack overflow
-            this.properties("//*", {
-                color: arguments
-            });
-            return this;
-        },
-
-        function setFont() {
-            // TODO: BUG, stack overflow
-            this.properties("//*", {
-                font: arguments
-            });
-            return this;
-        },
-
         function recalc() {
             this.$contentPs = (this.kids.length === 0 ? this.$super()
                                                       : this.kids[0].getPreferredSize());
@@ -95,12 +87,6 @@ zebkit.package("ui", function(pkg, Class) {
 
         function getRight() {
             return this.$super() + ((this.$contentPs.height/6 + 0.5) | 0);
-        },
-
-        function(content) {
-            this.$super();
-            this.add(pkg.$component(content, this));
-            this.toPreferredSize();
         }
     ]);
 
@@ -264,7 +250,9 @@ zebkit.package("ui", function(pkg, Class) {
              * @method pointerEntered
              */
             this.pointerEntered = function(e) {
-                if (this.$target === null && (e.source.tooltip != null || typeof e.source.getTooltip !== 'undefined')) {
+                if (this.$target === null &&
+                    ((typeof e.source.tooltip !== 'undefined' && e.source.tooltip !== null) || typeof e.source.getTooltip !== 'undefined'))
+                {
                     var  $this = this;
 
                     this.$target = e.source;
@@ -321,10 +309,10 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.run = function(t) {
                 if (this.$target !== null) {
-                    var ntooltip = this.$target.tooltip != null ? this.$target.tooltip
-                                                                : this.$target.getTooltip(this.$target,
-                                                                                          this.$tooltipX,
-                                                                                          this.$tooltipY),
+                    var ntooltip = (typeof this.$target.tooltip !== 'undefined' && this.$target.tooltip !== null) ? this.$target.tooltip
+                                                                                                                  : this.$target.getTooltip(this.$target,
+                                                                                                                                            this.$tooltipX,
+                                                                                                                                            this.$tooltipY),
                         p = null,
                         tx = 0,
                         ty = 0;

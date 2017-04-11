@@ -60,7 +60,7 @@ zebkit.package("web", function(pkg, Class) {
                     }
                 },
                 mousewheel: {
-                    dy  : "wheelDelta", // TODO: check if it was not a typo
+                    dy  : "wheelDelta",
                     dx  : "wheelDeltaX",
                     dir : -1,
                     test: function() {

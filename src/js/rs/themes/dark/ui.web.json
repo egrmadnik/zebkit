@@ -21,7 +21,7 @@
 
     "zCanvas": {
         "//"    :  "IT IS IMPORTANT TO HAVE CANVAS CSS PADDING = 0 TO FIX IE9 PROBLEM",
-        "background2": "white",
+        "background2": "black",
         "layout"    : { "$zebkit.layout.StackLayout":[] },
 
         "styles": {
@@ -37,6 +37,7 @@
             "content-zooming"            : "none",
             "touch-callout"              : "none",
             "user-drag"                  : "none",
+            "background"                 : "black",
             "tap-highlight-color"        : "rgba(0,0,0,0)"
         },
 

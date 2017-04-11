@@ -746,7 +746,7 @@ zebkit.package("ui", function(pkg, Class) {
              */
             this.setButtons = function(buttons) {
                 // remove previously added buttons
-                for(var i=0; i< this.buttons.length; i++) {
+                for(var i = 0; i < this.buttons.length; i++) {
                     var kid = this.buttons.kids[i];
                     if (typeof kid._ !== 'undefined') kid.unbind();
                 }
@@ -756,8 +756,9 @@ zebkit.package("ui", function(pkg, Class) {
                 for(var k in buttons) {
                     if (buttons.hasOwnProperty(k)) {
                         var b = new this.clazz.Button();
-                        b.setView(buttons[k]);
+                        b.properties(buttons[k]);
                         this.buttons.add(b);
+
                         (function(t, f) {
                             b.bind(function() { f.call(t); });
                         })(this, this[k]);

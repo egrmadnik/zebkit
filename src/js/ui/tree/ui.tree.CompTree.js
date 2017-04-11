@@ -64,14 +64,14 @@ zebkit.package("ui.tree", function(pkg, Class) {
                 var mi = new zebkit.data.Item();
 
                 if (typeof item.value !== "undefined") {
-                    mi.value = item.value != null ? item.value : "";
+                    mi.value = item.value !== null ? item.value : "";
                 } else {
                     mi.value = item;
                 }
 
                 mi.value = ui.$component(mi.value, tree);
                 mi.parent = root;
-                if (item.kids != null && item.kids.length > 0 && zebkit.instanceOf(item, ui.Panel) === false) {
+                if (typeof item.kids !== 'undefined' && item.kids.length > 0 && zebkit.instanceOf(item, ui.Panel) === false) {
                     for (var i = 0; i < item.kids.length; i++) {
                         mi.kids[i] = this.createModel(item.kids[i], mi, tree);
                     }
@@ -167,7 +167,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
                             if (node.y + sy < $this.height) {
                                 var image = $this.getIconBounds(item),
                                     x = image.x + image.width +
-                                               (image.width > 0 || $this.getToggleSize().width > 0 ? $this.gapx : 0) +
+                                               (image.width > 0 || $this.getToggleSize(item).width > 0 ? $this.gapx : 0) +
                                                $this.scrollManager.getSX(),
                                     y = node.y + Math.floor((node.height - node.viewHeight) / 2) + sy;
 
@@ -224,7 +224,7 @@ zebkit.package("ui.tree", function(pkg, Class) {
             // if a node size has been changed we have to force calling
             // repaint method for the whole tree component to render
             // tree lines properly
-            if (this.$isMetricUpdated) {
+            if (this.$isMetricUpdated === true) {
                 this.repaint();
             }
         },

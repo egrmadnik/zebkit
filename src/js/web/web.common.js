@@ -58,8 +58,8 @@ zebkit.package("web", function(pkg, Class) {
 
     pkg.$measure = function(e, cssprop) {
         var value = window.getComputedStyle(e, null).getPropertyValue(cssprop);
-        return (value == null || value === '') ? 0
-                                               : parseInt(/(^[0-9\.]+)([a-z]+)?/.exec(value)[1], 10);
+        return (value === null || value === '') ? 0
+                                                : parseInt(/(^[0-9\.]+)([a-z]+)?/.exec(value)[1], 10);
     };
 
 

@@ -1,0 +1,49 @@
+{
+    "DefViews": {
+        "color" : "%{zebkit.ui.palette.gray}",
+        "font"  : "12px 'Lucida Grande', 'Lucida Sans', Arial, sans-serif"
+    },
+
+    "BaseTree" : {
+        "lineColor" : "rgb(65, 131, 215)",
+        "views": {
+            "close"   : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 61 ,20 ,16,14, true ] },
+            "open"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 49 ,34,16,14, true ] },
+            "leaf"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 49 ,20 ,16,14, true ] },
+            "off"     : { "$zebkit.ui.ToggleView": [] },
+            "on"      : { "$zebkit.ui.ToggleView": false },
+            "aselect" : [ [ "rgb(228, 244, 252)", { "$zebkit.ui.Border": "rgb(200,180,200)" } ] ]
+        }
+    },
+
+    "Tree": {
+        "inheritProperties" : true
+    },
+
+    "CompTree": {
+        "Checkbox" : {
+            "inheritProperties" : true
+        },
+
+        "Combo" : {
+            "inheritProperties" : true
+        },
+
+        "Label" : {
+            "inheritProperties" : true,
+            "padding"  : 4
+        },
+
+        "inheritProperties" : true,
+        "views": {
+            "close"   : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 61 ,20 ,16,14, true ] },
+            "open"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 49 ,34,16,14, true ] },
+            "leaf"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 49 ,20 ,16,14, true ] },
+
+            "off"     : { "$zebkit.ui.ToggleView": [] },
+            "on"      : { "$zebkit.ui.ToggleView": false },
+            "iselect" : "#A0D9EA",
+            "aselect" : "#A0D9EA"
+        }
+    }
+}

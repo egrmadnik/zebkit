@@ -667,7 +667,7 @@ zebkit.package("ui", function(pkg, Class) {
             };
 
             this.triggerSelectionByPos = function(i) {
-                return this.getMenuAt(i) !== null && this.$triggeredByPointer;
+                return this.getMenuAt(i) !== null && this.$triggeredByPointer === true;
             };
         },
 
@@ -931,7 +931,7 @@ zebkit.package("ui", function(pkg, Class) {
     /**
      * UI popup layer class. Special layer implementation to show
      * context menu. Normally the layer is not used directly.
-     * @class zebkit.ui.PopupLayer
+     * @class zebkit.ui.PopupLayerMix
      * @constructor
      * @extends {zebkit.ui.HtmlCanvas}
      */
@@ -1010,6 +1010,8 @@ zebkit.package("ui", function(pkg, Class) {
                 // if last component has been removed and the component is a menu
                 // than try to restore focus owner
                 if (this.$prevFocusOwner !== null && this.kids.length === 0 && zebkit.instanceOf(e.kid, pkg.Menu)) {
+
+                    console.log(">>>> return focus back : " + (this.$prevFocusOwner===null?"null":this.$prevFocusOwner.clazz.$name) + "," + document.activeElement + "," + document.activeElement.id);
                     this.$prevFocusOwner.requestFocus();
                     this.$prevFocusOwner = null;
                 }
@@ -1018,7 +1020,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.layerPointerClicked = function (e) {
                 if (this.kids.length === 0 && this.isTriggeredWith(e)) {
                     var popup = null;
-                    if (e.source.popup != null) {
+                    if (typeof e.source.popup !== 'undefined' && e.source.popup !== null) {
                         popup = e.source.popup;
                     } else if (typeof e.source.getPopup !== 'undefined') {
                         popup = e.source.getPopup(e.source, e.x, e.y);

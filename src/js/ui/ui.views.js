@@ -521,6 +521,7 @@ zebkit.package("ui", function(pkg, Class) {
             this.color  = "gray";
             this.gap    = this.width = 1;
             this.radius = 0;
+            this.sides  = 15;
 
             this.setSides = function(top, left, bottom, right) {
                 this.sides = 0;
@@ -546,7 +547,7 @@ zebkit.package("ui", function(pkg, Class) {
                         this.outline(g,x,y,w,h, d);
                         g.setColor(this.color);
                         g.stroke();
-                    } else if (typeof this.sides !== "undefined" && this.sides !== 15) {
+                    } else if (this.sides !== 15) {
                         g.setColor(this.color);
                         // top
                         if ((this.sides & 1) > 0) {
@@ -2166,7 +2167,24 @@ zebkit.package("ui", function(pkg, Class) {
     ]);
 
     pkg.TabBorder = Class(pkg.View, [
+        function(t, w) {
+            if (arguments.length === 1) w = 1;
+
+            this.type  = t;
+            this.left  = this.top = this.bottom = this.right = 6 + w;
+            this.width = w;
+        },
+
         function $prototype() {
+            this.fillColor1 = "#DCF0F7";
+            this.fillColor2 = "white";
+            this.fillColor3 = "#F3F3F3";
+
+            this.onColor1 = "black";
+            this.onColor2 = "#D9D9D9";
+            this.offColor = "#A1A1A1";
+
+
             this.paint = function(g,x,y,w,h,d){
                 var xx = x + w - 1,
                     yy = y + h - 1,
@@ -2309,22 +2327,6 @@ zebkit.package("ui", function(pkg, Class) {
             this.getBottom = function () { return this.bottom;};
             this.getLeft   = function () { return this.left;  };
             this.getRight  = function () { return this.right; };
-        },
-
-        function(t, w) {
-            if (arguments.length === 1) w = 1;
-
-            this.type  = t;
-            this.left  = this.top = this.bottom = this.right = 6 + w;
-            this.width = w;
-
-            this.onColor1 = pkg.palette.black;
-            this.onColor2 = pkg.palette.gray5;
-            this.offColor = pkg.palette.gray1;
-
-            this.fillColor1 = "#DCF0F7";
-            this.fillColor2 = pkg.palette.white;
-            this.fillColor3 = pkg.palette.gray7;
         }
     ]);
 
@@ -2431,9 +2433,11 @@ zebkit.package("ui", function(pkg, Class) {
                     }
                 }
 
-                if (this.target !== null && typeof this.target.outline !== 'undefined') {
-                   b = this.target.outline(g, x, y, xx - x, yy - y, d);
-                   if (b === true) return b;
+                if (this.target !== null &&
+                    typeof this.target.outline !== 'undefined' &&
+                    this.target.outline(g, x, y, xx - x, yy - y, d) === true)
+                {
+                    return true;
                 }
 
                 g.beginPath();
