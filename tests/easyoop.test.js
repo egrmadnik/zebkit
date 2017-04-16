@@ -10,7 +10,8 @@ if (typeof(zebkit) === "undefined") {
 
 (function() {
     var assertException = zebkit.assertException, assert = zebkit.assert, assume = zebkit.assume,
-        Class = zebkit.Class, Interface = zebkit.Interface, assertObjEqual = zebkit.assertObjEqual;
+        Class = zebkit.Class, Interface = zebkit.Interface, assertObjEqual = zebkit.assertObjEqual,
+        Path = zebkit.Path;
 
     function test_a_map(Map, b) {
         var m = new Map();
@@ -3164,6 +3165,111 @@ if (typeof(zebkit) === "undefined") {
             assert(zebkit.instanceOf(naa, NAA), true);
             assert(zebkit.instanceOf(naa, A), false);
             assert(zebkit.instanceOf(naa, I1), false);
+        },
+
+        function test_Path() {
+            var paths = {
+                "" : {
+                    host: null,
+                    port: -1,
+                    path: null,
+                    scheme: null,
+                    qs    : null,
+                    parent: null
+                },
+
+                "abcd": {
+                    host: null,
+                    port: -1,
+                    path: "abcd",
+                    scheme: null,
+                    qs    : null,
+                    parent: null
+                },
+
+                "ftp://com.net/test": {
+                    host: "com.net",
+                    port: -1,
+                    path: "/test",
+                    scheme: "ftp",
+                    qs    : null,
+                    parent: "ftp://com.net/"
+                },
+
+                "http://com.net:9089/test/aaa/": {
+                    host: "com.net",
+                    port: 9089,
+                    path: "/test/aaa",
+                    scheme: "http",
+                    qs    : null,
+                    parent: "http://com.net:9089/test"
+                },
+
+                "/com/test1": {
+                    host: null,
+                    port: -1,
+                    path: "/com/test1",
+                    scheme: null,
+                    qs    : null,
+                    parent: "/com"
+                },
+
+                "com/test1": {
+                    host: null,
+                    port: -1,
+                    path: "com/test1",
+                    scheme: null,
+                    qs    : null,
+                    parent: "com"
+                },
+
+                "file:///com/test1": {
+                    host: null,
+                    port: -1,
+                    path: "/com/test1",
+                    scheme: "file",
+                    qs    : null,
+                    parent: "file:///com"
+                },
+                "file:///com/test1?a=10": {
+                    host: null,
+                    port: -1,
+                    path: "/com/test1",
+                    scheme: "file",
+                    qs    : "a=10",
+                    parent: "file:///com?a=10"
+                },
+
+                "file:///com/test1?aaa": {
+                    host: null,
+                    port: -1,
+                    path: "/com/test1",
+                    scheme: "file",
+                    qs    : "aaa",
+                    parent: "file:///com?aaa"
+                },
+
+                "http://test.com/test1?aaa=3": {
+                    host: "test.com",
+                    port: -1,
+                    path: "/test1",
+                    scheme: "http",
+                    qs    : "aaa=3",
+                    parent: "http://test.com/?aaa=3"
+                }
+            };
+
+            for(var k in paths) {
+                var r = paths[k],
+                    u = new zebkit.URI(k);
+                assert(r.host, u.host, "URI assert 1 '" + k + "'");
+                assert(r.scheme, u.scheme, "URI assert 2 '" + k + "'");
+                assert(r.port, u.port, "URI assert 3 '" + k + "'");
+                assert(r.qs, u.qs, "URI assert 4 '" + k + "'");
+                assert(r.path, u.path, "URI assert 5 '" + k + "'");
+                assert(r.parent, u.getParent() === null ? null : u.getParent().toString(), "URI assert 6 '" + k + "'");
+            }
+
         },
 
         function _test_perf() {

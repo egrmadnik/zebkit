@@ -201,6 +201,9 @@ zebkit.package("ui.web", function(pkg, Class) {
              */
             this.isSizeFull = false;
 
+
+            this.offx = this.offy = 0;
+
             /**
              * Transforms the pageX coordinate into relatively to the canvas origin
              * coordinate taking in account the canvas transformation
@@ -211,8 +214,10 @@ zebkit.package("ui.web", function(pkg, Class) {
              * @protected
              */
             this.$toElementX = function(pageX, pageY) {
-                pageX -= this.offx;
-                pageY -= this.offy;
+                // offset has to be added here since "calcOffset" can called (for instance page reloading)
+                // to early
+                pageX -= (this.offx);
+                pageY -= (this.offy);
 
                 var c = this.$context.$states[this.$context.$curState];
                 return ((c.sx !== 1 || c.sy !== 1 || c.rotateVal !== 0) ? Math.round((c.crot * pageX + pageY * c.srot)/c.sx)
@@ -229,8 +234,10 @@ zebkit.package("ui.web", function(pkg, Class) {
              * @protected
              */
             this.$toElementY = function(pageX, pageY) {
-                pageX -= this.offx;
-                pageY -= this.offy;
+                // offset has to be added here since "calcOffset" can called (for instance page reloading)
+                // to early
+                pageX -= (this.offx);
+                pageY -= (this.offy);
 
                 var c = this.$context.$states[this.$context.$curState];
                 return ((c.sx !== 1 || c.sy !== 1 || c.rotateVal !== 0) ? Math.round((pageY * c.crot - c.srot * pageX)/c.sy)
@@ -253,6 +260,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                         return owner.doScroll(dx, dy, src);
                     }
                 }
+                return false;
             };
 
             /**
@@ -266,8 +274,9 @@ zebkit.package("ui.web", function(pkg, Class) {
                 if (ui.focusManager.focusOwner !== null) {
                     e.source = ui.focusManager.focusOwner;
                     return ui.events.fireEvent("keyTyped", e);
+                } else {
+                    return false;
                 }
-                return false;
             };
 
             /**
@@ -292,8 +301,6 @@ zebkit.package("ui.web", function(pkg, Class) {
                     e.source = this;
                     return ui.events.fireEvent("keyPressed", e);
                 }
-
-                return false;
             };
 
             /**
@@ -307,8 +314,9 @@ zebkit.package("ui.web", function(pkg, Class) {
                 if (ui.focusManager.focusOwner !== null) {
                     e.source = ui.focusManager.focusOwner;
                     return ui.events.fireEvent("keyReleased", e);
+                } else {
+                    return false;
                 }
-                return false;
             };
 
             /**
@@ -554,7 +562,6 @@ zebkit.package("ui.web", function(pkg, Class) {
                     y  = this.$toElementY(e.pageX, e.pageY),
                     pp = pkg.$pointerPressedOwner[e.identifier];
 
-
                 // free pointer prev pressed if any
                 if (pp != null) {
                     try {
@@ -590,7 +597,7 @@ zebkit.package("ui.web", function(pkg, Class) {
                 return false;
             };
 
-            this.getComponentAt = function(x, y){
+            this.getComponentAt = function(x, y) {
                 for(var i = this.kids.length; --i >= 0; ){
                     var c = this.kids[i].getComponentAt(x, y);
                     if (c !== null) {
@@ -607,18 +614,19 @@ zebkit.package("ui.web", function(pkg, Class) {
             };
 
             this.recalcOffset = function() {
-                // calculate the DOM element offset relative to window taking in account
-                // scrolling
+                // calculate the DOM element offset relative to window taking in account scrolling
                 var poffx = this.offx,
                     poffy = this.offy,
                     ba    = this.$container.getBoundingClientRect();
 
                 this.offx = Math.round(ba.left) + zebkit.web.$measure(this.$container, "border-left-width") +
-                                                  zebkit.web.$measure(this.$container, "padding-left") +
-                                                  window.pageXOffset;
+                                                  zebkit.web.$measure(this.$container, "padding-left") + window.pageXOffset;
                 this.offy = Math.round(ba.top) +  zebkit.web.$measure(this.$container, "padding-top" ) +
-                                                  zebkit.web.$measure(this.$container, "border-top-width") +
-                                                  window.pageYOffset;
+                                                  zebkit.web.$measure(this.$container, "border-top-width") + window.pageYOffset;
+
+
+                console.log("recalcOffset() this.offx = " + this.offx + ", this.offy = " + this.offy + ", ba = " + ba);
+
 
                 if (this.offx !== poffx || this.offy !== poffy) {
                     // force to fire component re-located event

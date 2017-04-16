@@ -71,7 +71,7 @@ zebkit.package("ui", function(pkg, Class) {
         function $prototype() {
             this.$blinkTask = null;
 
-            this.hint = null;
+            this.selectionView = this.hint = null;
 
             this.vkMode    = "indirect";
             this.startLine = this.startCol = this.endLine = this.endCol = this.curX = 0;

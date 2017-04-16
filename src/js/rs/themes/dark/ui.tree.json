@@ -10,10 +10,11 @@
         "itemGapX"  : 4,
         "itemGapY"  : 4,
         "views": {
-            "off"     : { "$zebkit.ui.ToggleView": [ true, "white", "red", 14 ], "br" : { "$zebkit.ui.RoundBorder": [ "orange" ] }  },
-            "on"      : { "$zebkit.ui.ToggleView": [ false, "lightGray", "red", 14 ], "br" : { "$zebkit.ui.RoundBorder": [ "orange" ] }  },
+            "off"     : { "$zebkit.ui.ArrowView":  [  "right", "red", 10 , 14] },
+            "on"      : { "$zebkit.ui.ArrowView":  [ "bottom", "red", 14, 10 ] },
+
             "aselect" : { "$zebkit.ui.Border" : [ "orange", 2, 6 ] },
-            "iselect" : { "$zebkit.ui.Border" : [ "gray", 2, 6 ] }
+            "iselect" : { "$zebkit.ui.Border" : [ "gray", 2, 6 ]   }
         }
     },
 
@@ -60,17 +61,6 @@
             "padding" : 4
         },
 
-        "inheritProperties" : true,
-
-        "views": {
-            "close"   : null,
-            "open"    : null,
-            "leaf"    : null,
-
-            "off"     : { "$zebkit.ui.ToggleView": [ false, "white", "red", 14  ] },
-            "on"      : { "$zebkit.ui.ToggleView": [ "true", "white", "red", 14 ] },
-            "iselect" : { "$zebkit.ui.Border" : [ "lightGray", 1, 6 ]  },
-            "aselect" : { "$zebkit.ui.Border" : [ "white", 1, 6 ]  }
-        }
+        "inheritProperties" : true
     }
 }

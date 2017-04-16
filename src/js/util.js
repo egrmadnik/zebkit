@@ -92,6 +92,26 @@ zebkit.package("util", function(pkg, Class) {
         return s;
     };
 
+    pkg.image = function(ph, fireErr) {
+        if (arguments.length < 2) {
+            fireErr = false;
+        }
+
+        var d = new zebkit.DoIt(), jn = d.join();
+        zebkit.environment.loadImage(ph,
+                                    function(img) {
+                                        jn(img);
+                                    },
+                                    function(img, e) {
+                                        if (fireErr === true) {
+                                            d.error(e);
+                                        } else {
+                                            jn(img);
+                                        }
+                                    });
+        return d;
+    };
+
     /**
      * Abstract event class.
      * @class zebkit.util.Event
@@ -1999,10 +2019,10 @@ zebkit.package("util", function(pkg, Class) {
                         return this.expr(path);
                     }
 
-                    if (this.url !== null && zebkit.Path.isAbsolute(path) === false) {
-                        var pURL = zebkit.Path.getParent(this.url);
+                    if (this.url !== null && zebkit.URI.isAbsolute(path) === false) {
+                        var pURL = new zebkit.URI(this.url).getParent();
                         if (pURL !== null) {
-                            path = zebkit.Path.join(pURL, path);
+                            path = zebkit.URI.join(pURL, path);
                         }
                     }
 
@@ -2016,7 +2036,11 @@ zebkit.package("util", function(pkg, Class) {
                         }));
                         return bg;
                     } else if (type === 'img') {
-                        return this.loadImage(path);
+                        if (this.url !== null && zebkit.URI.isAbsolute(path) === false) {
+                            path = zebkit.URI.join(new zebkit.URI(this.url).getParent(),
+                                                   path);
+                        }
+                        return pkg.image(path, false);
                     } else if (type === 'txt') {
                         return new zebkit.io.GET(path).then(function(r) {
                             return r.responseText;
@@ -2235,14 +2259,6 @@ zebkit.package("util", function(pkg, Class) {
                 }
 
                 return eval("'use strict';" + expr);
-            };
-
-            this.loadImage = function(path) {
-                if (this.url !== null && zebkit.Path.isAbsolute(path) === false) {
-                    path = zebkit.Path.join(zebkit.Path.getParent(this.url),
-                                            path);
-                }
-                return zebkit.environment.loadImage(path, false);
             };
 
             /**

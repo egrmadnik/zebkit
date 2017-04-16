@@ -34,9 +34,9 @@ zebkit.package("ui", function(pkg, Class) {
             }
 
             if (root[0] !== '/') {
-                path = zebkit.Path.join(zebkit.ui.$url, root, path);
+                path = zebkit.URI.join(zebkit.ui.$url, root, path);
             } else {
-                path = zebkit.Path.join(root, path);
+                path = zebkit.URI.join(root, path);
             }
         }
 
@@ -855,6 +855,7 @@ zebkit.package("ui", function(pkg, Class) {
                         var r = pkg.$cvp(this, temporary);
                         if (r !== null) {
                             zebkit.util.intersection(r.x, r.y, r.width, r.height, x, y, w, h, r);
+
                             if (r.width > 0 && r.height > 0) {
                                 x = r.x;
                                 y = r.y;
@@ -874,10 +875,12 @@ zebkit.package("ui", function(pkg, Class) {
                                     w += x;
                                     x = 0;
                                 }
+
                                 if (y < 0) {
                                     h += y;
                                     y = 0;
                                 }
+
                                 if (w + x > canvas.width ) w = canvas.width - x;
                                 if (h + y > canvas.height) h = canvas.height - y;
 

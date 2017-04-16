@@ -397,6 +397,7 @@ zebkit.package("web", function(pkg, Class) {
             this.$DOWN = function(id, e, stub) {
                 $cleanDragFix();
 
+
                 // remove not fired pointer pressed from queue if necessary
                 var i = this.$indexOfQ(id);
                 if (i >= 0) {
@@ -413,12 +414,7 @@ zebkit.package("web", function(pkg, Class) {
                 stub.touchCounter++;
 
                 try {
-                    // put pointer pressed in queue
-                    this.$queue.push({
-                        pageX       : Math.floor(e.pageX),
-                        pageY       : Math.floor(e.pageY),
-                        pressPageX  : Math.floor(e.pageX),
-                        pressPageY  : Math.floor(e.pageY),
+                    var q = {
                         target      : e.target,
                         direction   : null,
                         identifier  : id,
@@ -432,7 +428,13 @@ zebkit.package("web", function(pkg, Class) {
                         $ady        : 0,
                         isDragged   : false,
                         stub        : stub
-                    });
+                    };
+
+                    q.pageX = q.pressPageX = Math.floor(e.pageX);
+                    q.pageY = q.pressPageY = Math.floor(e.pageY);
+
+                    // put pointer pressed in queue
+                    this.$queue.push(q);
 
                     // initiate timer to send collected new touch events
                     // if any new has appeared. the timer helps to collect

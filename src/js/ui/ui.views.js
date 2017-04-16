@@ -1303,18 +1303,19 @@ zebkit.package("ui", function(pkg, Class) {
     ]);
 
     pkg.ArrowView = Class(pkg.View, [
-        function (d, col, w) {
+        function (d, col, w, h) {
             if (arguments.length > 0) this.direction = d;
             if (arguments.length > 1) this.color = col;
             if (arguments.length > 2) this.width = this.height = w;
+            if (arguments.length > 3) this.height = h;
         },
 
         function $prototype() {
             this.lineWidth = 1;
-            this.fill = true;
-            this.gap  = 0;
-            this.color  = "black";
-            this.width = this.height = 6;
+            this.fill      = true;
+            this.gap       = 0;
+            this.color     = "black";
+            this.width     = this.height = 8;
             this.direction = "bottom";
 
             this.outline = function(g, x, y, w, h, d) {
@@ -1468,7 +1469,7 @@ zebkit.package("ui", function(pkg, Class) {
              * @method setColor
              * @chainable
              */
-            this.setColor = function(c){
+            this.setColor = function(c) {
                 if (c != this.color) {
                     this.color = c.toString();
                 }
@@ -2061,13 +2062,24 @@ zebkit.package("ui", function(pkg, Class) {
             this.lineWidth = 1;
 
             this.setDecoration = function(id, color) {
-                if (id === null || typeof id === 'undefined') throw new Error();
+                if (id === null || typeof id === 'undefined') {
+                    throw new Error();
+                }
                 this.decorations[id] = color;
                 return this;
             };
 
             this.setDecorations = function(d) {
                 this.decorations = zebkit.clone(d);
+                // TODO: the method has to be replaced with addDecoration/clearDecoration
+                if (typeof this.decorations.underline === 'undefined') {
+                    this.decorations.underline = null;
+                }
+
+                if (typeof this.decorations.strike === 'undefined') {
+                    this.decorations.strike = null;
+                }
+
                 return this;
             };
         },
@@ -2159,7 +2171,7 @@ zebkit.package("ui", function(pkg, Class) {
             }
 
             if (this.showLast && ln.length > 0) {
-                buf[ln.length-1] = ln[ln.length-1];
+                buf[ln.length - 1] = ln[ln.length - 1];
             }
 
             return buf.join('');

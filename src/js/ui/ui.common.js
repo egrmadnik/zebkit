@@ -260,10 +260,13 @@ zebkit.package("ui", function(pkg, Class) {
                     var isPic     = zebkit.instanceOf(img, pkg.Picture),
                         imgToLoad = isPic ? img.target : img ;
 
-                    this.$runner = zebkit.environment.loadImage(imgToLoad);
-                    this.$runner.then(function(i) {
+                    this.setView(isPic ? img : new pkg.Picture(img));
+
+
+                    this.$runner = zebkit.util.image(imgToLoad);
+                    this.$runner.then(function(img) {
                         $this.$runner = null;
-                        $this.setView(isPic ? img : new pkg.Picture(i));
+                        $this.setView(isPic ? img : new pkg.Picture(img));
                         $this.vrp();
 
                         if (typeof $this.imageLoaded !== 'undefined') {

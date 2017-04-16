@@ -1,6 +1,9 @@
 (function() {
     var zebkitEnvironment = function() {
-        var pkg = {};
+        var pkg    = {},
+            hostRe = /([a-zA-Z]+)\:\/\/([^/:]+)/,
+            isFF   = typeof navigator !== 'undefined' &&
+                     navigator.userAgent.toLowerCase().indexOf('firefox') >= 0;
 
         function $sleep() {
             var r = new XMLHttpRequest(),
@@ -17,9 +20,11 @@
         }
 
         $Request.prototype.open = function(method, url, async, user, password) {
-            var pu = zebkit.Path.parseURL(url);
-            if (location.protocol.toLowerCase() === "file:" ||
-                (pu !== null && pu.host !== null && pu.host.toLowerCase() === location.host.toLowerCase()))
+            var m = url.match(hostRe);
+            if (location.scheme.toLowerCase() === "file:" ||
+                  (m           !== null &&
+                   typeof m[2] !== 'undefined' &&
+                   m[2].toLowerCase() === location.host.toLowerCase()))
             {
                 this._request = new XMLHttpRequest();
                 this._xdomain = false;
@@ -30,8 +35,8 @@
                     if ($this._request.readyState === 4) {
                         $this.responseText = $this._request.responseText;
                         $this.responseXml  = $this._request.responseXml;
-                        $this.status     = $this._request.status;
-                        $this.statusText = $this._request.statusText;
+                        $this.status       = $this._request.status;
+                        $this.statusText   = $this._request.statusText;
                     }
 
                     if ($this.onreadystatechange) {
@@ -94,8 +99,7 @@
                        originalReq.send(data);
                     }, 10);
                 }
-            }
-            else  {
+            } else  {
                 return this._request.send(data);
             }
         };
@@ -140,7 +144,7 @@
             if (typeof XMLHttpRequest !== "undefined") {
                 var r = new XMLHttpRequest();
 
-                if (zebkit.isFF) {
+                if (isFF) {
                     r.__send = r.send;
                     r.send = function(data) {
                         // !!! FF can throw NS_ERROR_FAILURE exception instead of
@@ -222,11 +226,7 @@
          * @for  zebkit.web
          * @method  loadImage
          */
-        pkg.loadImage = function(ph, fireError) {
-            if (arguments.length < 2) {
-                fireError = true;
-            }
-
+        pkg.loadImage = function(ph, success, error) {
             var img = null;
             if (ph instanceof Image) {
                 img = ph;
@@ -237,43 +237,41 @@
                 img.src = ph;
             }
 
-            return new zebkit.DoIt(function() {
-                if (img.complete === true && img.naturalWidth !== 0) {
-                    return img;
-                } else {
-                    var pErr  = img.onerror,
-                        pLoad = img.onload,
-                        $this = this,
-                        join  = this.join();
+            if (img.complete === true && img.naturalWidth !== 0) {
+                success.call(this, img);
+            } else {
+                var pErr  = img.onerror,
+                    pLoad = img.onload,
+                    $this = this;
 
-                    img.onerror = function(e) {
-                        img.onerror = null;
-
-                        if (fireError === true) {
-                            var err = new Error("Image '" + ph + "' cannot be loaded " + e);
-                            $this.error(err);
-                        } else {
-                            join.call($this, img, false);
+                img.onerror = function(e) {
+                    img.onerror = null;
+                    try {
+                        if (typeof error !== 'undefined') {
+                            error.call($this, img, new Error("Image '" + ph + "' cannot be loaded " + e));
                         }
-
+                    } finally {
                         if (typeof pErr === 'function') {
                             img.onerror = pErr;
                             pErr.call(this, e);
                         }
-                    };
+                    }
+                };
 
-                    img.onload  = function(e) {
-                        img.onload = null;
-                        join.call($this, img);
+                img.onload  = function(e) {
+                    img.onload = null;
+                    try {
+                        success.call($this, img);
+                    } finally {
                         if (typeof pLoad === 'function') {
                             img.onload = pLoad;
                             pLoad.call(this, e);
                         }
-                    };
+                    }
+                };
+            }
 
-                    return img;
-                }
-            });
+            return img;
         };
 
         pkg.parseJSON = JSON.parse;

@@ -5,13 +5,15 @@
     },
 
     "BaseTree" : {
-        "lineColor" : "rgb(65, 131, 215)",
+        "lineColor" : null,
         "views": {
-            "close"   : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 61 ,20 ,16,14, true ] },
-            "open"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 49 ,34,16,14, true ] },
-            "leaf"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 49 ,20 ,16,14, true ] },
-            "off"     : { "$zebkit.ui.ToggleView": [] },
-            "on"      : { "$zebkit.ui.ToggleView": false },
+            "close"   : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 61 ,20 ,16, 14, true ] },
+            "open"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 49 ,34, 16, 14, true ] },
+            "leaf"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 49 ,20 ,16, 14, true ] },
+
+            "off"     : { "$zebkit.ui.ArrowView":  [  "right", "#aeb0b4", 14, 10] },
+            "on"      : { "$zebkit.ui.ArrowView":  [ "bottom", "#aeb0b4", 10, 14] },
+
             "aselect" : [ [ "rgb(228, 244, 252)", { "$zebkit.ui.Border": "rgb(200,180,200)" } ] ]
         }
     },
@@ -34,16 +36,6 @@
             "padding"  : 4
         },
 
-        "inheritProperties" : true,
-        "views": {
-            "close"   : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 61 ,20 ,16,14, true ] },
-            "open"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 49 ,34,16,14, true ] },
-            "leaf"    : { "$zebkit.ui.Picture": [ "%{zebkit.ui.pictures.zebkit}", 49 ,20 ,16,14, true ] },
-
-            "off"     : { "$zebkit.ui.ToggleView": [] },
-            "on"      : { "$zebkit.ui.ToggleView": false },
-            "iselect" : "#A0D9EA",
-            "aselect" : "#A0D9EA"
-        }
+        "inheritProperties" : true
     }
 }

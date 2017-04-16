@@ -1,5 +1,5 @@
 {
-    "version"   : "03.2017",
+    "version"   : "04.2017",
     "themeName" : "dark",
 
     "%{../ui.common.json}": null,
@@ -65,7 +65,7 @@
         "background"   : {
             "pressed.over": { "$zebkit.ui.Gradient": [ "red", "orange" ] },
             "disabled" : "lightGray",
-            "*": { "$zebkit.ui.Gradient": [ "orange", "red"  ] }
+            "*"        : { "$zebkit.ui.Gradient": [ "orange", "red"  ] }
         },
 
         "border": {

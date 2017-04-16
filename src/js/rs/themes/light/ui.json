@@ -238,7 +238,7 @@
         },
 
         "background"    : "rgb(248, 250, 255)",
-        "selectionColor": "#d3edad",
+        "selectionView" : "#d3edad",
         "color"         : "#515151",
         "curW"          : 1,
         "cursorView"    : "%{palette.black}",

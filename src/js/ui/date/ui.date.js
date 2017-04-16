@@ -7,7 +7,6 @@ zebkit.package("ui.date", function(pkg, Class) {
      * @class ui.date
      * @access package
      */
-
     pkg.compareDates = function(d1, d2) {
         if (arguments.length === 2 && d1 === d2) {
             return 0;
@@ -81,6 +80,7 @@ zebkit.package("ui.date", function(pkg, Class) {
     };
 
     Date.prototype.getMonthName = function() {
+
         return pkg.MONTHS[this.getMonth()].name;
     };
 
@@ -115,6 +115,23 @@ zebkit.package("ui.date", function(pkg, Class) {
      *  @extends {zebkit.ui.grid.Grid}
      */
     pkg.DaysGrid = Class(ui.grid.Grid, [
+        function () {
+            this.tags    = {};
+            this.view    = new ui.CompRender(null);
+            this.itemPan = new this.clazz.ItemPan();
+
+            this.$super(6, 7);
+
+            //  pre-fill model with data
+            for(var i = 0; i < this.model.rows * this.model.cols; i++) {
+                this.model.puti(i, new this.clazz.Item());
+            }
+
+            this.setViewProvider(this);
+            this.caption = new this.clazz.GridCaption();
+            this.add("top", this.caption);
+        },
+
         function $clazz() {
             this.Item = function() {
                 this.tags    = [];
@@ -194,6 +211,8 @@ zebkit.package("ui.date", function(pkg, Class) {
                     };
 
                     this.setTextDecorations = function(d) {
+                        console.log(">>>");
+                        console.log(d);
                         this.label.view.setDecorations(d);
                     };
                 },
@@ -240,12 +259,10 @@ zebkit.package("ui.date", function(pkg, Class) {
 
                     if (item.year < this.year || (item.year === this.year && item.month < this.month)) {
                         item.tag("prevMonth");
-                    }
-                    else {
+                    } else {
                         if (item.year > this.year || (item.year === this.year && item.month > this.month)) {
                             item.tag("nextMonth");
-                        }
-                        else {
+                        } else {
                             item.tag("shownMonth");
                         }
                     }
@@ -490,27 +507,115 @@ zebkit.package("ui.date", function(pkg, Class) {
             if (this.position.offset >= 0) {
                 this.selectCell(this.position.offset, true);
             }
-        },
-
-        function () {
-            this.tags    = {};
-            this.view    = new ui.CompRender(null);
-            this.itemPan = new this.clazz.ItemPan();
-
-            this.$super(6, 7);
-
-            //  pre-fill model with data
-            for(var i = 0; i < this.model.rows * this.model.cols; i++) {
-                this.model.puti(i, new this.clazz.Item());
-            }
-
-            this.setViewProvider(this);
-            this.caption = new this.clazz.GridCaption();
-            this.add("top", this.caption);
         }
     ]);
 
     pkg.Calendar = new Class(ui.Panel, [
+        function(date) {
+            if (arguments.length === 0) {
+                date = new Date();
+            }
+
+            var $this = this;
+
+            this.$super(new zebkit.layout.BorderLayout());
+            this.monthDaysGrid = new pkg.DaysGrid([
+                function isItemSelectable(item) {
+                    return (item.tags.length > 0 && item.hasTag("shownMonth") === null) ||
+                           $this.canDateBeSet(new Date(item.year, item.month, item.day));
+                }
+
+            ]);
+            this.monthDaysGrid.bind(this);
+
+            this._ = new this.clazz.Listeners();
+
+            this.comboMonth = new this.clazz.MonthsCombo();
+            this.comboMonth.content.setCalcPsByContent(true);
+            this.comboMonth.winpad.adjustToComboSize = false;
+            this.comboMonth.bind(function(src) {
+                $this.showMonth(src.list.selectedIndex, $this.monthDaysGrid.year);
+            });
+
+            this.yearText = new this.clazz.YearField("", [
+                function fireNextYear() {
+                    $this.showNextYear();
+                },
+
+                function firePrevYear() {
+                    $this.showPrevYear();
+                }
+            ]);
+
+            var topPan = new this.clazz.InfoPan({
+                layout: new zebkit.layout.BorderLayout(),
+                kids  : {
+                    center: new ui.Panel({
+                        layout : new zebkit.layout.FlowLayout("center", "center"),
+                        kids   : [
+                            this.comboMonth,
+                            new ui.Panel({
+                                layout : new zebkit.layout.BorderLayout(),
+                                kids   : {
+                                    center : this.yearText,
+                                    right  : new ui.Panel({
+                                        layout: new zebkit.layout.FlowLayout("center", "center", "vertical", 1),
+                                        kids  : [
+                                            new this.clazz.TopArrowButton(),
+                                            new this.clazz.BottomArrowButton()
+                                        ]
+                                    })
+                                }
+                            })
+                        ]
+                    }),
+
+                    left: new ui.Panel({
+                        layout : new zebkit.layout.FlowLayout("center", "center", "horizontal", 3),
+                        kids   : [
+                            new this.clazz.LeftArrowButton(),
+                            new this.clazz.DotButton(),
+                            new this.clazz.RightArrowButton()
+                        ]
+                    }),
+
+                    right: new ui.Panel({
+                        layout : new zebkit.layout.FlowLayout("center", "bottom"),
+                        kids   : new this.clazz.Link("today"),
+                        padding: [0,8,4,0]
+                    })
+                }
+            });
+
+            this.add("top", topPan);
+            this.add("center", this.monthDaysGrid);
+            this.setValue(date);
+
+            this.find("#dotButton").bind(function() {
+                $this.showSelectedMonth();
+            });
+
+            this.find("#leftButton").bind(function() {
+                $this.showPrevMonth();
+            });
+
+            this.find("#rightButton").bind(function() {
+                $this.showNextMonth();
+            });
+
+            this.find("#topButton").bind(function() {
+                $this.showNextYear();
+            });
+
+            this.find("#bottomButton").bind(function() {
+                $this.showPrevYear();
+            });
+
+            this.find("#nowLink").bind(function() {
+                $this.setValue(new Date());
+            });
+        },
+
         function $clazz() {
             this.Listeners = zebkit.util.ListenersClass("dateSet");
 
@@ -734,123 +839,35 @@ zebkit.package("ui.date", function(pkg, Class) {
                     }
                 }
             }
-        },
-
-        function(date) {
-            if (arguments.length === 0) date = new Date();
-
-            var $this = this;
-
-            this.$super(new zebkit.layout.BorderLayout());
-            this.monthDaysGrid = new pkg.DaysGrid([
-                function isItemSelectable(item) {
-                    return (item.tags.length > 0 && item.hasTag("shownMonth") === null) ||
-                           $this.canDateBeSet(new Date(item.year, item.month, item.day));
-                }
-
-            ]);
-            this.monthDaysGrid.bind(this);
-
-            this._ = new this.clazz.Listeners();
-
-            this.comboMonth = new this.clazz.MonthsCombo();
-            this.comboMonth.content.setCalcPsByContent(true);
-            this.comboMonth.winpad.adjustToComboSize = false;
-            this.comboMonth.bind(function(src) {
-                $this.showMonth(src.list.selectedIndex, $this.monthDaysGrid.year);
-            });
-
-            this.yearText = new this.clazz.YearField("", [
-                function fireNextYear() {
-                    $this.showNextYear();
-                },
-
-                function firePrevYear() {
-                    $this.showPrevYear();
-                }
-            ]);
-
-            var topPan = new this.clazz.InfoPan({
-                layout: new zebkit.layout.BorderLayout(),
-                kids  : {
-                    center: new ui.Panel({
-                        layout : new zebkit.layout.FlowLayout("center", "center"),
-                        kids   : [
-                            this.comboMonth,
-                            new ui.Panel({
-                                layout : new zebkit.layout.BorderLayout(),
-                                kids   : {
-                                    center : this.yearText,
-                                    right  : new ui.Panel({
-                                        layout: new zebkit.layout.FlowLayout("center", "center", "vertical", 1),
-                                        kids  : [
-                                            new this.clazz.TopArrowButton(),
-                                            new this.clazz.BottomArrowButton()
-                                        ]
-                                    })
-                                }
-                            })
-                        ]
-                    }),
-
-                    left: new ui.Panel({
-                        layout : new zebkit.layout.FlowLayout("center", "center", "horizontal", 3),
-                        kids   : [
-                            new this.clazz.LeftArrowButton(),
-                            new this.clazz.DotButton(),
-                            new this.clazz.RightArrowButton()
-                        ]
-                    }),
-
-                    right: new ui.Panel({
-                        layout : new zebkit.layout.FlowLayout("center", "bottom"),
-                        kids   : new this.clazz.Link("today"),
-                        padding: [0,8,4,0]
-                    })
-                }
-            });
-
-            this.add("top", topPan);
-            this.add("center", this.monthDaysGrid);
-            this.setValue(date);
-
-            this.find("#dotButton").bind(function() {
-                $this.showSelectedMonth();
-            });
-
-            this.find("#leftButton").bind(function() {
-                $this.showPrevMonth();
-            });
-
-            this.find("#rightButton").bind(function() {
-                $this.showNextMonth();
-            });
-
-            this.find("#topButton").bind(function() {
-                $this.showNextYear();
-            });
-
-            this.find("#bottomButton").bind(function() {
-                $this.showPrevYear();
-            });
-
-            this.find("#nowLink").bind(function() {
-                $this.setValue(new Date());
-            });
         }
     ]);
 
     pkg.DateTextField = Class(ui.TextField, [
+        function(format) {
+            if (arguments.length === 0) {
+                format = "${2,0,date}/${2,0,month2}/${4,0,fullYear}";
+            }
+
+            this.$super();
+            this.setFormat(format);
+            this.maxWidth = 0;
+        },
+
         function $prototype() {
             this.notDefined = "-";
             this.date = null;
 
             this.$format = function(d) {
+                console.log("$format() : " + this.format + "," + this.clazz.$name);
                 return zebkit.util.format(this.format, d !== null ? d :{}, this.notDefined);
             };
         },
 
         function setFormat(format) {
+            if (format === null || typeof format === 'undefined') {
+                throw new Error("Format is not defined " + this.clazz.$name);
+            }
+
             if (this.format !== format) {
                 this.format = format;
                 this.$getSuper("setValue").call(this, this.$format(this.date));
@@ -884,18 +901,11 @@ zebkit.package("ui.date", function(pkg, Class) {
         function recalc() {
             this.$super();
             var s = this.$format(new Date());
+
+            console.log("s = " + s);
+
             this.maxWidth = this.getFont().stringWidth(s);
             this.maxWidth += Math.floor(this.maxWidth / 10);
-        },
-
-        function(format) {
-            if (arguments.length === 0) {
-                format = "${2,0,date}/${2,0,month2}/${4,0,fullYear}";
-            }
-
-            this.$super();
-            this.setFormat(format);
-            this.maxWidth = 0;
         }
     ]);
 
@@ -988,6 +998,23 @@ zebkit.package("ui.date", function(pkg, Class) {
     ]);
 
     pkg.DateInputField = Class(ui.Panel, PopupCalendarMix, [
+        function (format) {
+            this.$super(new zebkit.layout.FlowLayout());
+
+            var $this = this;
+            this.dateField = arguments.length === 0 ? new this.clazz.DateTextField()
+                                                    : new this.clazz.DateTextField(format);
+            this.add(this.dateField);
+            this.add(new this.clazz.Button("..."));
+
+            // sync calendar and input field dates
+            this.dateField.setValue(this.getValue());
+
+            this.find("~zebkit.ui.Button").bind(function(src) {
+                $this.showCalendar($this.dateField);
+            });
+        },
+
         function $clazz() {
             this.Button = Class(ui.Button, []);
 
@@ -1010,87 +1037,11 @@ zebkit.package("ui.date", function(pkg, Class) {
 
         function getValue(d) {
             return this.getCalendar().selectedDate;
-        },
-
-        function (format) {
-            this.$super(new zebkit.layout.FlowLayout());
-
-            var $this = this;
-            this.dateField = new this.clazz.DateTextField(format);
-            this.add(this.dateField);
-            this.add(new this.clazz.Button("..."));
-
-            // sync calendar and input field dates
-            this.dateField.setValue(this.getValue());
-
-            this.find(".zebkit.ui.Button").bind(function(src) {
-                $this.showCalendar($this.dateField);
-            });
         }
     ]);
 
     pkg.DateRangeInput = Class(ui.Panel, PopupCalendarMix, [
-        function $clazz() {
-            this.MinDateTextField  = Class(pkg.DateTextField, []);
-            this.MaxDateTextField  = Class(pkg.DateTextField, []);
-            this.LeftArrowButton   = Class(ui.ArrowButton, []);
-            this.RightArrowButton  = Class(ui.ArrowButton, []);
-
-            this.DateInputPan = Class(ui.Panel, [
-                function() {
-                    this.$super();
-                    for(var i = 0; i < arguments.length; i++) {
-                        this.add(arguments[i]);
-                    }
-                }
-            ]);
-
-            this.Line = Class(ui.Line, []);
-        },
-
-        function calendarShown(calendar) {
-            if (this.anchor === this.minDateField) {
-                calendar.setValue(this.minDateField.date);
-                calendar.setMaxValue(this.maxDateField.date);
-                calendar.setMinValue(null);
-            } else {
-                calendar.setValue(this.maxDateField.date);
-                calendar.setMaxValue(null);
-                calendar.setMinValue(this.minDateField.date);
-            }
-        },
-
-        function calendarDateSet(src) {
-            this.setValue(this.anchor === this.minDateField ? src.selectedDate : this.minDateField.date,
-                          this.anchor === this.maxDateField ? src.selectedDate : this.maxDateField.date);
-        },
-
-        function setValue(d1, d2) {
-            if (pkg.compareDates(d1, d2) === 1) {
-                throw new RangeError();
-            }
-
-            if (pkg.compareDates(d1, this.minDateField.date) !== 0 ||
-                pkg.compareDates(d2, this.maxDateField.date) !== 0   )
-            {
-                var prev = this.getValue();
-                this.minDateField.setValue(d1);
-                this.maxDateField.setValue(d2);
-
-                this.getCalendar().monthDaysGrid.retagModel();
-
-                this._.fired(this, prev);
-            }
-        },
-
-        function getValue() {
-            return  {
-                min : this.minDateField.date,
-                max : this.maxDateField.date
-            };
-        },
-
-        function  () {
+        function() {
             this.$super();
 
             var $this = this,
@@ -1149,6 +1100,66 @@ zebkit.package("ui.date", function(pkg, Class) {
                 $this.getCalendar().setMinValue($this.minDateField.date);
                 $this.showCalendar($this.maxDateField);
             });
+        },
+
+        function $clazz() {
+            this.MinDateTextField  = Class(pkg.DateTextField, []);
+            this.MaxDateTextField  = Class(pkg.DateTextField, []);
+            this.LeftArrowButton   = Class(ui.ArrowButton, []);
+            this.RightArrowButton  = Class(ui.ArrowButton, []);
+
+            this.DateInputPan = Class(ui.Panel, [
+                function() {
+                    this.$super();
+                    for(var i = 0; i < arguments.length; i++) {
+                        this.add(arguments[i]);
+                    }
+                }
+            ]);
+
+            this.Line = Class(ui.Line, []);
+        },
+
+        function calendarShown(calendar) {
+            if (this.anchor === this.minDateField) {
+                calendar.setValue(this.minDateField.date);
+                calendar.setMaxValue(this.maxDateField.date);
+                calendar.setMinValue(null);
+            } else {
+                calendar.setValue(this.maxDateField.date);
+                calendar.setMaxValue(null);
+                calendar.setMinValue(this.minDateField.date);
+            }
+        },
+
+        function calendarDateSet(src) {
+            this.setValue(this.anchor === this.minDateField ? src.selectedDate : this.minDateField.date,
+                          this.anchor === this.maxDateField ? src.selectedDate : this.maxDateField.date);
+        },
+
+        function setValue(d1, d2) {
+            if (pkg.compareDates(d1, d2) === 1) {
+                throw new RangeError();
+            }
+
+            if (pkg.compareDates(d1, this.minDateField.date) !== 0 ||
+                pkg.compareDates(d2, this.maxDateField.date) !== 0   )
+            {
+                var prev = this.getValue();
+                this.minDateField.setValue(d1);
+                this.maxDateField.setValue(d2);
+
+                this.getCalendar().monthDaysGrid.retagModel();
+
+                this._.fired(this, prev);
+            }
+        },
+
+        function getValue() {
+            return  {
+                min : this.minDateField.date,
+                max : this.maxDateField.date
+            };
         }
     ]);
 

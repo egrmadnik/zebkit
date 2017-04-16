@@ -14,105 +14,151 @@
         }
     }
 
+    //    ( (http) :// (host)? (:port)? (/)? )? (path)? (?query_string)?
+    //
+    //      [1] scheme://host/
+    //      [2] scheme
+    //      [3] host
+    //      [4]  port
+    //      [5] /
+    //      [6] path
+    //      [7] ?query_string
+    //
+    var $uriRE = /^(([a-zA-Z]+)\:\/\/([^\/:]+)?(\:[0-9]+)?(\/)?)?([^?]+)?(\?.+)?/;
+
     /**
      * Path utility static class
      * @constructor
-     * @class zebkit.Path
+     * @class zebkit.URI
      */
-    function Path(url) {}
-
-    var $urlRE = /^([a-zA-Z]+\:\/\/([^\/]+)?)?(\/[^?]*)?(\?[^?\/]*)?/;
-
-    Path.parseURL = function(url, pqs) {
-        var m = url.match($urlRE);
-        if (m === null) {
-            return null;
-        }
-
-        var parsed = {
-            protocol : "file",
-            host     : null,
-            path     : "",
-            qs       : null,
-            parsedQS : null
-        };
-
-        if (typeof m[1] !== 'undefined') {
-            if (typeof m[2] !== 'undefined') {
-                parsed.host = m[2];
-            } else {
-                throw new Error("Invalid host name : '" + url + "'");
+    function URI(uri) {
+        if (arguments.length > 1) {
+            if (arguments[0] !== null) {
+                this.scheme = arguments[0].toLowerCase();
             }
 
-            parsed.protocol = m[1].substring(0, m[1].length - 3 - m[2].length);
-        }
-
-        if (typeof m[3] !== 'undefined') {
-            parsed.path = m[3];
-            parsed.path = parsed.path.replace(/\/\/*/g, '/').substring(1);
-
-            var l = parsed.path.length;
-            if (l > 1 && parsed.path[l - 1] === '/') {
-                parsed.path = parsed.path.substring(0, l - 1);
+            if (arguments[1] !== null) {
+                this.host = arguments[1];
             }
-        } else if (typeof m[1] !== 'undefined') {
-            throw new Error("Invalid URL '" + url + "'");
-        }
 
-        if (typeof m[4] !== 'undefined' && m[4].length > 1) {
-            parsed.qs = m[4].substring(1);
-
-            if (arguments.length > 1 && pqs === true) {
-                var mqs = parsed.qs.match(/[a-zA-Z0-9_.]+=[^?&=]+/g);
-
-                parsed.parsedQS = {};
-
-                if (mqs !== null) {
-                    for(var i = 0; i < mqs.length; i++) {
-                        var q = mqs[i].split('=');
-                        parsed.parsedQS[q[0].substring(1)] = q[1];
-                    }
+            var ps = false;
+            if (arguments.length > 2) {
+                if (isNumber(arguments[2])) {
+                    this.port = arguments[2];
+                } else if (arguments[2] !== null) {
+                    this.path = arguments[2];
+                    ps = true;
                 }
             }
-        }
 
-        return parsed;
-    };
+            if (arguments.length > 3) {
+                if (ps === true) {
+                    this.qs = arguments[3];
+                } else {
+                    this.path = arguments[3];
+                }
+            }
 
-    Path.toURL = function(protocol, host, path, qs) {
-        return protocol + "://" +
-                (host === null ? '' : host) + "/" +
-                (arguments.length < 3 || path === null ? '' : path) +
-                (arguments.length > 3 && qs !== null  ? ("?" + qs) : '')      ;
-    };
+            if (arguments.length > 4) {
+                this.qs = arguments[4];
+            }
+        } else if (uri instanceof URI) {
+            this.host   = uri.host;
+            this.path   = uri.path;
+            this.qs     = uri.qs;
+            this.port   = uri.port;
+            this.scheme = uri.scheme;
+        } else {
+            var m = uri.match($uriRE);
+            if (m === null) {
+                throw new Error("Invalid URI '" + uri + "'");
+            }
 
-    /**
-     * Get a parent URL of the URL
-     * @return  {zebkit.URL} a parent URL
-     * @method getParentURL
-     */
-    Path.getParent = function(path) {
-        var url = Path.parseURL(path),
-            i   = -1;
+            // fetch scheme
+            if (typeof m[1] !== 'undefined') {
+                this.scheme = m[2].toLowerCase();
 
-        if (url !== null) {
-            if (url.path === null) {
-                return null;
-            } else {
-                i = url.path.lastIndexOf('/');
-                return (i < 0) ? null
-                               : Path.toURL(url.protocol, url.host, url.path.substring(0, i), url.qs);
+                if (typeof m[3] === 'undefined') {
+                    if (this.scheme !== "file") {
+                        throw new Error("Invalid host name : '" + url + "'");
+                    }
+                } else {
+                    this.host = m[3];
+                }
+
+                if (typeof m[4] !== 'undefined') {
+                    this.port = parseInt(m[4].substring(1), 10);
+                }
+            }
+
+            // fetch path
+            if (typeof m[6] !== 'undefined') {
+                this.path = m[6];
+            } else if (typeof m[1] !== 'undefined') {
+                throw new Error("Invalid URL '" + url + "'");
+            }
+
+            if (typeof m[7] !== 'undefined' && m[7].length > 1) {
+                this.qs = m[7].substring(1).trim();
             }
         }
 
-        path = path.replace(/\/\/*/g, '/');
-        if (path.length > 0 && path[path.length - 1] === '/') {
-            path = path.substring(0, path.length - 1);
-        }
+        if (this.path !== null) {
+            this.path = this.path.replace(/\/\/*/g, '/');
 
-        i = path.lastIndexOf("/");
-        return (i <= 0) ? null
-                        : path.substring(0, i);
+            var l = this.path.length;
+            if (l > 1 && this.path[l - 1] === '/') {
+                this.path = this.path.substring(0, l - 1);
+            }
+
+            if ((this.host !== null || this.scheme !== null) && this.path[0] !== '/') {
+                this.path = "/" + this.path;
+            }
+        }
+    }
+
+    URI.prototype = {
+        scheme   : null,
+        host     : null,
+        port     : -1,
+        path     : null,
+        qs       : null,
+
+        toString : function() {
+            return (this.scheme !== null ? this.scheme + "://" : '') +
+                   (this.host !== null ? this.host : '' ) +
+                   (this.port !== -1   ? ":" + this.port : '' ) +
+                   (this.path !== null ? this.path : '' ) +
+                   (this.qs   !== null ? "?" + this.qs : '' );
+        },
+
+        parsedQS : function() {
+            var mqs      = this.qs.match(/[a-zA-Z0-9_.]+=[^?&=]+/g),
+                parsedQS = {};
+
+            if (mqs !== null) {
+                for(var i = 0; i < mqs.length; i++) {
+                    var q = mqs[i].split('=');
+                    this.parsedQS[q[0].substring(1)] = q[1];
+                }
+            }
+
+            return parsedQS;
+        },
+
+        getParent : function() {
+            if (this.path === null) {
+                return null;
+            } else {
+                var i = this.path.lastIndexOf('/');
+                return (i < 0 || this.path === '/') ? null
+                                                    : new zebkit.URI(this.scheme,
+                                                                     this.host,
+                                                                     this.port,
+                                                                     this.path.substring(0, i),
+                                                                     this.qs);
+            }
+        }
     };
 
     /**
@@ -122,11 +168,11 @@
      * @method isAbsolute
      * @static
      */
-    Path.isAbsolute = function(u) {
+    URI.isAbsolute = function(u) {
         return u[0] === '/' || /^[a-zA-Z]+\:\/\//i.test(u);
     };
 
-    Path.isURL = function(u) {
+    URI.isURL = function(u) {
         return /^[a-zA-Z]+\:\/\//i.test(u);
     };
 
@@ -137,29 +183,31 @@
      * @return {String} an absolute URL
      * @method join
      */
-    Path.join = function() {
-        var base = arguments[0],
-            bu   = Path.parseURL(base);
-
-        if (bu !== null) {
-            base = bu.path === null ? '' : bu.path;
-        }
+    URI.join = function() {
+        var pu = new URI(arguments[0]);
 
         for(var i = 1; i < arguments.length; i++) {
-            if (base.length > 1 && base[base.length - 1] !== '/') {
-                base = base + "/";
+            var p = arguments[i].toString().trim();
+            if (p.length === 0 || URI.isAbsolute(p)) {
+                throw new Error("Absolute path '" + p + "' cannot be joined");
             }
 
-            var path = arguments[i];
-            if (Path.isAbsolute(path)) {
-                throw new Error("Absolute path '" + path + "' cannot be joined");
+            p = p.replace(/\/\/*/g, '/');
+            if (p[p.length - 1] === '/' ) {
+                p = p.substring(0, p.length - 1);
+            }
+
+            if (pu.path === null) {
+                pu.path = p;
+                if ((pu.host !== null || pu.scheme !== null) && pu.path[0] !== '/') {
+                    pu.path = "/" + pu.path;
+                }
             } else {
-                base = base + path;
+                pu.path = pu.path + "/" + p;
             }
         }
 
-        return bu !== null ? Path.toURL(bu.protocol, bu.host, base, bu.qs)
-                           : base;
+        return pu.toString();
     };
 
     /**
@@ -247,7 +295,6 @@
                                       // to be used to compute correct the level inside the
                                       // method below
             if (body instanceof DoIt) {
-
                 if (body.$error !== null) {
                     this.error(body.$error);
                 } else {
@@ -916,6 +963,30 @@
         });
     };
 
+    Package.prototype.resources = function(p) {
+        var args  = Array.prototype.slice.call(arguments),
+            $this = this,
+            fn    = args.pop();
+
+        if (typeof fn !== 'function') {
+            throw new Error("Invalid callback function");
+        }
+
+        this.then(function() {
+            for(var i = 0; i < args.length ; i++) {
+                (function(p, jn) {
+                    zebkit.environment.loadImage(p, function(img) {
+                        jn(img);
+                    }, function(img, e) {
+                        jn(img);
+                    });
+                })(args[i], this.join());
+            }
+        }).then(function() {
+            fn.apply($this, arguments);
+        });
+    };
+
     Package.prototype.then = function(f) {
         this.$ready.then(f).catch(function(e) {
             zebkit.dumpError(e);
@@ -1190,7 +1261,7 @@
             }
         };
 
-        pkg.Path = Path;
+        pkg.URI = URI;
 
         pkg.CNAME = '$';
         pkg.CDNAME = '';

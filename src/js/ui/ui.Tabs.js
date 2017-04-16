@@ -540,7 +540,7 @@ zebkit.package("ui", function(pkg, Class) {
                 return max;
             };
 
-            this.doLayout = function(target){
+            this.doLayout = function(target) {
                 var right  = this.orient === "right"  ? this.right  : this.getRight(),
                     top    = this.orient === "top"    ? this.top    : this.getTop(),
                     bottom = this.orient === "bottom" ? this.bottom : this.getBottom(),
@@ -920,10 +920,10 @@ zebkit.package("ui", function(pkg, Class) {
                 this.select(this.next(0, 1));
             }
 
-            return this.$super(index,constr,c);
+            return this.$super(index, constr, c);
         },
 
-        function insert(index,constr,c) {
+        function insert(index, constr, c) {
             var render = null;
             if (zebkit.instanceOf(constr, this.clazz.TabView)) {
                 render = constr;
@@ -935,19 +935,26 @@ zebkit.package("ui", function(pkg, Class) {
             }
 
             this.pages.splice(index * 2, 0, render, { x:0, y:0, width:0, height:0 });
-            return this.$super(index, constr, c);
+
+            var r = this.$super(index, constr, c);
+            // since we have added new page the repainting area is wider than
+            // the added component (tab elements), so repaint the whole tab
+            // component
+            this.repaint();
+            return r;
         },
 
         function removeAt(i){
             if (this.selectedIndex >= 0 && i <= this.selectedIndex) {
-                if (i === this.selectedIndex) this.select(-1);
-                else {
+                if (i === this.selectedIndex) {
+                    this.select(-1);
+                } else {
                     this.selectedIndex--;
                     this.repaint();
                 }
             }
             this.pages.splice(i * 2, 2);
-            this.$super(i);
+            return this.$super(i);
         },
 
         function removeAll(){
